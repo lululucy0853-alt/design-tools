@@ -1,0 +1,5 @@
+# 敏感:翻墙 / VPN 配置，不入库、不推远程
+vpn/
+
+# 空的 skill 副本目录
+Remotion_skill/

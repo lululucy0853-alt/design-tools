@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9-slice 预览</title>
+<style>
+  :root{
+    --bg:#17181c; --panel:#1f2127; --panel2:#26292f; --line:#33363e;
+    --text:#e8e6e1; --dim:#9a9890; --acc:#c9a227;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font:14px/1.6 "Microsoft YaHei",system-ui,sans-serif;
+       display:flex; height:100vh; overflow:hidden;}
+
+  /* ---------- 左控制面板 ---------- */
+  #panel{width:320px; min-width:320px; background:var(--panel); border-right:1px solid var(--line);
+         overflow-y:auto; padding:18px 16px 40px;}
+  #panel h1{font-size:16px; letter-spacing:2px; margin-bottom:2px;}
+  #panel .sub{font-size:11px; color:var(--dim); margin-bottom:16px;}
+  .sec{margin-bottom:18px;}
+  .sec>label{display:block; font-size:12px; color:var(--dim); margin-bottom:6px; letter-spacing:1px;}
+  .btn{display:inline-block; padding:6px 12px; border:1px solid var(--line); border-radius:5px;
+       background:var(--panel2); color:var(--text); font-size:12px; cursor:pointer; user-select:none;}
+  .btn:hover{border-color:var(--acc); color:var(--acc);}
+  .btn.acc{border-color:var(--acc); color:var(--acc); background:rgba(201,162,39,.08);}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .field{display:flex; align-items:center; gap:6px;}
+  .field label{font-size:12px; color:var(--dim); width:28px; flex:none;}
+  .field input[type=number]{width:100%; background:var(--panel2); color:var(--text);
+       border:1px solid var(--line); border-radius:4px; padding:4px 6px; font-size:12px;}
+  .row{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .row>label{font-size:12px; color:var(--dim); width:40px; flex:none;}
+  .row input[type=range]{flex:1; accent-color:var(--acc); height:18px;}
+  .row .val{width:48px; text-align:right; font-size:11px; color:var(--dim);}
+  .hint{font-size:11px; color:var(--dim); line-height:1.7;}
+  .hint code{color:var(--acc); background:var(--panel2); padding:1px 5px; border-radius:3px;}
+  hr{border:0; border-top:1px solid var(--line); margin:16px 0;}
+  input[type=file]{display:none;}
+  .toggle{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--dim); cursor:pointer;}
+
+  /* ---------- 右舞台 ---------- */
+  #stage{flex:1; display:flex; flex-direction:column; overflow:auto; padding:20px; gap:18px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 16px;}
+  .card h2{font-size:12px; color:var(--dim); letter-spacing:1px; margin-bottom:12px; font-weight:normal;}
+  .checker{background-image:
+      linear-gradient(45deg,#2a2c31 25%,transparent 25%),
+      linear-gradient(-45deg,#2a2c31 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#2a2c31 75%),
+      linear-gradient(-45deg,transparent 75%,#2a2c31 75%);
+    background-size:16px 16px; background-position:0 0,0 8px,8px -8px,-8px 0;}
+
+  /* 原图 + 分割线 */
+  #srcWrap{position:relative; display:inline-block; line-height:0; user-select:none;}
+  #srcWrap img{display:block; image-rendering:auto;}
+  .guide{position:absolute; background:var(--acc); opacity:.9;}
+  .guide.v{top:0; bottom:0; width:1px; margin-left:-4px; padding:0 4px; cursor:ew-resize;}
+  .guide.h{left:0; right:0; height:1px; margin-top:-4px; padding:4px 0; cursor:ns-resize;}
+  .guide::after{content:""; position:absolute; background:var(--acc);}
+  .guide.v::after{left:3px; top:0; bottom:0; width:1px;}
+  .guide.h::after{top:3px; left:0; right:0; height:1px;}
+  .stretch-hint{font-size:11px; color:var(--dim); margin-top:8px;}
+
+  #previewCanvas{max-width:100%; height:auto; display:block;}
+</style>
+</head>
+<body>
+  <div id="panel">
+    <h1>9-SLICE 预览</h1>
+    <div class="sub">切图九宫格：拉伸不变形的边框 / 面板</div>
+
+    <div class="sec">
+      <label>图片</label>
+      <span class="btn" onclick="document.getElementById('file').click()">载入图片…</span>
+      <span class="btn" onclick="loadSample()">用示例图</span>
+      <input type="file" id="file" accept="image/png,image/webp,image/*">
+      <div class="hint" style="margin-top:8px">也可以直接把图片拖到窗口里。</div>
+    </div>
+
+    <div class="sec">
+      <label>分割线（边距 · 像素）</label>
+      <div class="grid2">
+        <div class="field"><label>左</label><input type="number" id="bL" min="0" value="28"></div>
+        <div class="field"><label>右</label><input type="number" id="bR" min="0" value="28"></div>
+        <div class="field"><label>上</label><input type="number" id="bT" min="0" value="28"></div>
+        <div class="field"><label>下</label><input type="number" id="bB" min="0" value="28"></div>
+      </div>
+      <div class="hint" style="margin-top:8px">直接拖动图上的金色线也行。</div>
+    </div>
+
+    <div class="sec">
+      <label>预览目标尺寸</label>
+      <div class="row"><label>宽</label><input type="range" id="pW" min="1" max="600" value="220"><span class="val" id="pWv">220</span></div>
+      <div class="row"><label>高</label><input type="range" id="pH" min="1" max="600" value="150"><span class="val" id="pHv">150</span></div>
+      <label class="toggle" style="margin-top:6px"><input type="checkbox" id="pixel"> 像素模式（关抗锯齿，像素图用）</label>
+    </div>
+
+    <hr>
+    <div class="sec">
+      <label>导出</label>
+      <span class="btn acc" onclick="copyBorders()">复制边距数值</span>
+      <span class="btn" onclick="exportNine()">导出九块 PNG</span>
+      <div class="hint" id="copyMsg" style="margin-top:8px"></div>
+    </div>
+
+    <hr>
+    <div class="hint">
+      <b style="color:var(--text)">边距怎么填进引擎</b><br>
+      · Unity Sprite Border：<code>L,B,R,T</code>（左下右上）<br>
+      · CSS：<code>border-image-slice: T R B L</code> + <code>border-width</code><br>
+      · Cocos scale9 / Laya：四个 inset 数值直接填<br>
+      · 自研引擎：用「导出九块」拿到 9 张图<br><br>
+      <span style="color:var(--dim)">四角保持原样，四边单向拉伸，中间双向拉伸 —— 所以圆角、描边不会被拉糊。</span>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div class="card">
+      <h2>原图 · 拖动金线调分割位置</h2>
+      <div id="srcWrap" class="checker">
+        <img id="srcImg" alt="">
+        <div class="guide v" id="gL"></div>
+        <div class="guide v" id="gR"></div>
+        <div class="guide h" id="gT"></div>
+        <div class="guide h" id="gB"></div>
+      </div>
+      <div class="stretch-hint" id="natInfo"></div>
+    </div>
+
+    <div class="card">
+      <h2>拉伸预览 · 目标尺寸下的九宫格效果</h2>
+      <div class="checker" style="display:inline-block; line-height:0; border-radius:4px;">
+        <canvas id="previewCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+<script>
+const SAMPLE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACkUlEQVR4nO2dsVHDMBSGpRzZg44RMgdN7lKEAWgyARUTpGEAKHJHwxyMQMceKeB8nDnHsRxJlvIn0veVFMb6P+s9O4WeMQA1Y3Nd+PP17scUxOLhK0tWyS5aWuDnEjL5IrUFn1qEzRX86nluSmL3tM8iwqYMv7TQQ2XESLBTg68l9BAZISJsrvCX60dTEu9vL1kk2JjwXcF3Qx+74Wtk6bG2vggfCTZF+O3NlRa6i7H1hkqwKcKvJXjftYdImBlPCP+YJvyhXhfyYjLzefoJf5qEsW+mm5iPrHbrdbdaja+ju//1b41Zb0ZLcZPpUCk6WYL6wQ6Ff3gzdbDrrff+dnu0E3weyllI6am54caWo1OlyLsJE/60nuBiFvvLZn931NYDVpHr72dsfcoPT384/cy6PaPbjL1LEOQBAZcigPKTtxm73obYAWIQIAYBYhAgBgFiECAGAWIQIAYBYhAgBgFiECAGAWIQIAYBYhAgBgFiECAGAWIQIAYBYhAgBgFiECAGAWIQIAYBYhAgBgFiECAGAWIQIAYBYhAgBgFiECAGAWIQIAYBYhAgBgFiECAGAWIQIAYBYhAgBgFiECAGAWIQIAYBYhAgBgFiECAGAWIQIAYBYhAgBgFiECAGAWIQIAYBYhAgBgFiECAGAWIQIAYBlyKge5Ri94jF0INI4Q+OrbwSKEGXKoAylKf8jM4PaPpAyPnRzA/YB58d3Z8h4F2C+s2Y+QH7wYcx9JztIwGut6EhCXDIUPiuQ7u9dwAS/BkL38WggFOzr5p/9PG9Ofgb8wPmo0G7MvWeI8YkpfhZYknmiA1tp9p7wtJzkNsYjDK85FGGLQzzNLphni4JDYyzPdM42xYGOgsHOndhpPleM9LcR0Kp3wW7E282MeFPEtAS8uNdiSwig08moFYRi4nBJxdQupBFosABwHT4BbwEaRtVwkMtAAAAAElFTkSuQmCC';
+
+let img = new Image();
+let natW = 0, natH = 0, viewScale = 1;
+let basename = 'sample';
+const $ = id => document.getElementById(id);
+const bEls = {L:$('bL'), R:$('bR'), T:$('bT'), B:$('bB')};
+const gEls = {L:$('gL'), R:$('gR'), T:$('gT'), B:$('gB')};
+
+function getB(){
+  return {
+    L: Math.max(0, +bEls.L.value|0),
+    R: Math.max(0, +bEls.R.value|0),
+    T: Math.max(0, +bEls.T.value|0),
+    B: Math.max(0, +bEls.B.value|0),
+  };
+}
+function clampBorders(){
+  let {L,R,T,B} = getB();
+  // 左右合计不得超过原宽，上下合计不得超过原高（至少给中间留 1px）
+  if(L+R > natW-1){ L = Math.min(L, natW-1); R = Math.min(R, natW-1-L); }
+  if(T+B > natH-1){ T = Math.min(T, natH-1); B = Math.min(B, natH-1-T); }
+  bEls.L.value=L; bEls.R.value=R; bEls.T.value=T; bEls.B.value=B;
+  return {L,R,T,B};
+}
+
+function layoutGuides(){
+  const {L,R,T,B} = getB();
+  const w = natW*viewScale, h = natH*viewScale;
+  gEls.L.style.left = (L*viewScale)+'px';
+  gEls.R.style.left = ((natW-R)*viewScale)+'px';
+  gEls.T.style.top  = (T*viewScale)+'px';
+  gEls.B.style.top  = ((natH-B)*viewScale)+'px';
+}
+
+function drawNineSlice(ctx, dW, dH){
+  const {L,R,T,B} = getB();
+  ctx.canvas.width = dW; ctx.canvas.height = dH;
+  ctx.imageSmoothingEnabled = !$('pixel').checked;
+  ctx.clearRect(0,0,dW,dH);
+  const xs=[0,L,natW-R,natW], xd=[0,L,dW-R,dW];
+  const ys=[0,T,natH-B,natH], yd=[0,T,dH-B,dH];
+  for(let i=0;i<3;i++){
+    for(let j=0;j<3;j++){
+      const sx=xs[i], sw=xs[i+1]-xs[i], dx=xd[i], dw=xd[i+1]-xd[i];
+      const sy=ys[j], sh=ys[j+1]-ys[j], dy=yd[j], dh=yd[j+1]-yd[j];
+      if(sw>0 && sh>0 && dw>0 && dh>0)
+        ctx.drawImage(img, sx,sy,sw,sh, dx,dy,dw,dh);
+    }
+  }
+}
+
+function render(){
+  if(!natW) return;
+  clampBorders();
+  layoutGuides();
+  const dW = Math.max(1, +$('pW').value|0), dH = Math.max(1, +$('pH').value|0);
+  $('pWv').textContent = dW; $('pHv').textContent = dH;
+  drawNineSlice($('previewCanvas').getContext('2d'), dW, dH);
+}
+
+function onImgLoaded(){
+  natW = img.naturalWidth; natH = img.naturalHeight;
+  // 显示缩放：让原图长边约 300px，方便拖线；小图放大、大图缩小
+  viewScale = 300 / Math.max(natW, natH);
+  const iw = Math.round(natW*viewScale), ih = Math.round(natH*viewScale);
+  const si = $('srcImg'); si.src = img.src; si.style.width = iw+'px'; si.style.height = ih+'px';
+  // 默认边距 = 长边的 1/4（截到不超界）
+  const g = Math.max(1, Math.round(Math.min(natW,natH)*0.28));
+  bEls.L.value=bEls.R.value = Math.min(g, (natW>>1)-1|0 || 1);
+  bEls.T.value=bEls.B.value = Math.min(g, (natH>>1)-1|0 || 1);
+  // 预览滑块范围与默认（宽拉到 2.4 倍、高拉到 1.6 倍，方便看出拉伸）
+  $('pW').max = Math.max(natW*4, 200); $('pH').max = Math.max(natH*4, 200);
+  $('pW').value = Math.round(natW*2.4); $('pH').value = Math.round(natH*1.6);
+  $('natInfo').textContent = `原图 ${natW} × ${natH} px`;
+  ['L','R','T','B'].forEach(k => gEls[k].parentNode); // no-op guard
+  render();
+}
+
+img.onload = onImgLoaded;
+function loadSample(){ basename='sample_panel'; img.src = SAMPLE; }
+
+// 文件载入
+$('file').addEventListener('change', e => {
+  const f = e.target.files[0]; if(!f) return;
+  basename = f.name.replace(/\.[^.]+$/, '');
+  const r = new FileReader(); r.onload = ev => { img.src = ev.target.result; }; r.readAsDataURL(f);
+});
+// 拖拽整页接收图片
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => {
+  e.preventDefault();
+  const f = [...e.dataTransfer.files].find(f => f.type.startsWith('image/'));
+  if(!f) return;
+  basename = f.name.replace(/\.[^.]+$/, '');
+  const r = new FileReader(); r.onload = ev => { img.src = ev.target.result; }; r.readAsDataURL(f);
+});
+
+// 输入联动
+['L','R','T','B'].forEach(k => bEls[k].addEventListener('input', render));
+['pW','pH'].forEach(k => $(k).addEventListener('input', render));
+$('pixel').addEventListener('change', render);
+
+// 拖动金线
+function dragGuide(el, axis, edge){
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault(); el.setPointerCapture(e.pointerId);
+    const wrap = $('srcWrap').getBoundingClientRect();
+    const move = ev => {
+      if(axis==='x'){
+        let px = (ev.clientX - wrap.left) / viewScale;
+        bEls[edge].value = Math.round(edge==='L' ? px : natW - px);
+      }else{
+        let py = (ev.clientY - wrap.top) / viewScale;
+        bEls[edge].value = Math.round(edge==='T' ? py : natH - py);
+      }
+      render();
+    };
+    const up = ev => { el.releasePointerCapture(e.pointerId);
+      el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); };
+    el.addEventListener('pointermove', move); el.addEventListener('pointerup', up);
+  });
+}
+dragGuide(gEls.L,'x','L'); dragGuide(gEls.R,'x','R');
+dragGuide(gEls.T,'y','T'); dragGuide(gEls.B,'y','B');
+
+// 复制边距
+function copyBorders(){
+  const {L,R,T,B} = clampBorders();
+  const txt = `左${L} 右${R} 上${T} 下${B}  |  Unity(L,B,R,T)=${L},${B},${R},${T}  |  CSS border-image-slice: ${T} ${R} ${B} ${L}`;
+  navigator.clipboard.writeText(txt).then(
+    () => { $('copyMsg').textContent = '已复制：' + txt; },
+    () => { $('copyMsg').textContent = txt; }
+  );
+}
+
+// 导出九块
+function exportNine(){
+  const {L,R,T,B} = clampBorders();
+  const xs=[0,L,natW-R,natW], ys=[0,T,natH-B,natH];
+  const names=[['tl','tc','tr'],['ml','mc','mr'],['bl','bc','br']];
+  let n=0;
+  for(let j=0;j<3;j++){
+    for(let i=0;i<3;i++){
+      const sx=xs[i], sw=xs[i+1]-xs[i], sy=ys[j], sh=ys[j+1]-ys[j];
+      if(sw<=0 || sh<=0) continue;
+      const c=document.createElement('canvas'); c.width=sw; c.height=sh;
+      c.getContext('2d').drawImage(img, sx,sy,sw,sh, 0,0,sw,sh);
+      c.toBlob(b => {
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(b);
+        a.download=`${basename}_${names[j][i]}.png`;
+        a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+      });
+      n++;
+    }
+  }
+  $('copyMsg').textContent = `已导出 ${n} 块（文件名后缀 tl/tc/tr…）`;
+}
+
+// 启动即载入示例图
+loadSample();
+</script>
+</body>
+</html>

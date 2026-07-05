@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>纹样生成器</title>
+<style>
+  :root{
+    --bg:#17181c; --panel:#1f2127; --panel2:#26292f; --line:#33363e;
+    --text:#e8e6e1; --dim:#9a9890; --acc:#c9a227;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font:14px/1.6 "Microsoft YaHei",system-ui,sans-serif; display:flex; height:100vh; overflow:hidden;}
+  /* ---------- 左侧控制面板 ---------- */
+  #panel{width:320px; min-width:320px; background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; padding:18px 16px 40px;}
+  #panel h1{font-size:16px; letter-spacing:2px; margin-bottom:2px;}
+  #panel .sub{font-size:11px; color:var(--dim); margin-bottom:16px;}
+  .sec{margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:10px;}
+  .sec>summary{list-style:none; cursor:pointer; font-size:12px; color:var(--dim); letter-spacing:1px;
+    margin-bottom:8px; display:flex; align-items:center; gap:6px; user-select:none;}
+  .sec>summary::-webkit-details-marker{display:none;}
+  .sec>summary::before{content:'▸'; font-size:10px; color:var(--acc); transition:transform .15s;}
+  .sec[open]>summary::before{transform:rotate(90deg);}
+  .sec>summary:hover{color:var(--text);}
+  .sec>label{display:block; font-size:12px; color:var(--dim); margin-bottom:6px; letter-spacing:1px;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{padding:4px 10px; border:1px solid var(--line); border-radius:4px; background:var(--panel2); color:var(--text); font-size:12px; cursor:pointer; user-select:none;}
+  .chip:hover{border-color:var(--dim);}
+  .chip.on{border-color:var(--acc); color:var(--acc); background:rgba(201,162,39,.08);}
+  .row{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .row label{font-size:12px; color:var(--dim); width:64px; flex:none;}
+  .row input[type=range]{flex:1; accent-color:var(--acc); height:18px;}
+  .row .val{width:34px; text-align:right; font-size:11px; color:var(--dim);}
+  input[type=color]{width:30px; height:24px; border:1px solid var(--line); border-radius:4px; background:none; padding:1px; cursor:pointer;}
+  select,input[type=number],input[type=text]{background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:4px 6px; font-size:12px;}
+  input[type=number]{width:64px;}
+  button{background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer;}
+  button:hover{border-color:var(--acc); color:var(--acc);}
+  button.primary{background:var(--acc); color:#17181c; border-color:var(--acc); font-weight:bold;}
+  button.primary:hover{filter:brightness(1.1); color:#17181c;}
+  .note{font-size:11px; color:var(--dim); margin-top:4px;}
+  .swatches{display:flex; gap:8px; align-items:center; margin-top:6px;}
+  .swatches span{font-size:11px; color:var(--dim);}
+  /* ---------- 右侧预览 ---------- */
+  #stage{flex:1; display:flex; flex-direction:column;}
+  #bar{display:flex; gap:8px; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel);}
+  #bar .grow{flex:1;}
+  #view{flex:1; overflow:auto; display:flex; align-items:center; justify-content:center; padding:24px;
+    background:conic-gradient(#202127 25%,#191a1f 0 50%,#202127 0 75%,#191a1f 0) 0 0/24px 24px;}
+  #view svg{max-width:100%; max-height:calc(100vh - 110px); box-shadow:0 8px 40px rgba(0,0,0,.5); background:transparent;}
+  /* 窄窗口：改上下布局，面板在上（可滚+可折叠）、预览在下 */
+  @media (max-width: 760px){
+    body{flex-direction:column;}
+    #panel{width:auto; min-width:0; max-height:50vh; border-right:0; border-bottom:1px solid var(--line);}
+    #stage{min-height:50vh;}
+    #view svg{max-height:44vh;}
+  }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>纹样生成器</h1>
+  <div class="sub">参数化装饰纹样 · SVG 矢量原生输出 · v2（+ 自定义纹样 / 预设 / 色板）</div>
+
+  <details class="sec" open>
+    <summary>纹样类型 / 导入</summary>
+    <div class="chips" id="familyChips"></div>
+    <div class="chips" id="motifChips" style="margin-top:6px;"></div>
+    <div class="row" style="margin-top:8px;">
+      <button id="btnImport" style="flex:1;" title="整张图当作一个纹样单元">＋ 导入图形</button>
+      <button id="btnImportTile" style="flex:1;" title="从一整张连续纹样大图里，自动识别最小重复单元再裁出来">🔁 提取重复单元</button>
+      <input type="file" id="importFile" accept="image/png,image/svg+xml,image/jpeg,image/webp" multiple style="display:none;">
+      <input type="file" id="importFileTile" accept="image/png,image/jpeg,image/webp" multiple style="display:none;">
+    </div>
+    <div class="note" id="importNote">「导入图形」= 整图当一个单元；「提取重复单元」= 从连续纹样大图里自动找最小重复块。都会去透明边、存进「我的纹样」。</div>
+    <div class="row" style="margin-top:6px;">
+      <label style="font-size:12px;color:var(--dim);display:flex;align-items:center;gap:4px;flex:none;white-space:nowrap;">
+        <input type="checkbox" id="rmBg"> 去纯色背景</label>
+      <input type="range" id="bgTol" min="10" max="120" value="42" style="flex:1;" title="容差：越大去得越多、也越容易误伤图案边缘">
+      <span class="val" id="bgTolV" style="width:auto;">42</span>
+    </div>
+  </details>
+
+  <details class="sec" open>
+    <summary>组合形式</summary>
+    <div class="chips" id="arrChips"></div>
+  </details>
+
+  <details class="sec" open>
+    <summary>材质</summary>
+    <div class="chips" id="matChips"></div>
+    <div class="note" id="matNote">手绘 / 刺绣 / 网点为矢量近似效果（抖动滤镜 + 排线），非位图仿真。</div>
+  </details>
+
+  <details class="sec" open>
+    <summary>参数微调</summary>
+    <div class="row"><label>元素大小</label><input type="range" id="pSize" min="24" max="400" value="88"><span class="val" id="vSize"></span></div>
+    <div class="row"><label>密度</label><input type="range" id="pDensity" min="1" max="10" value="5"><span class="val" id="vDensity"></span></div>
+    <div class="row"><label>位置抖动</label><input type="range" id="pJPos" min="0" max="100" value="0"><span class="val" id="vJPos"></span></div>
+    <div class="row"><label>旋转抖动</label><input type="range" id="pJRot" min="0" max="180" value="0"><span class="val" id="vJRot"></span></div>
+    <div class="row"><label>大小抖动</label><input type="range" id="pJScale" min="0" max="60" value="0"><span class="val" id="vJScale"></span></div>
+    <div class="row"><label>随机种子</label><input type="number" id="pSeed" value="42" style="flex:1;"><button id="btnDice" title="随机换一个种子">🎲</button></div>
+  </details>
+
+  <details class="sec" open>
+    <summary>颜色组合</summary>
+    <div class="row">
+      <select id="paletteSel" style="flex:1;"></select>
+      <button id="btnRotate" title="主色/辅色/点缀轮换">换色</button>
+      <button id="btnSavePalette" title="把当前四色存成我的色板">存色板</button>
+    </div>
+    <div class="swatches">
+      <span>背景</span><input type="color" id="cBg">
+      <span>主</span><input type="color" id="cMain">
+      <span>辅</span><input type="color" id="cAux">
+      <span>点缀</span><input type="color" id="cAccent">
+      <label style="font-size:11px;color:var(--dim);margin-left:auto;"><input type="checkbox" id="transparentBg"> 透明底</label>
+    </div>
+  </details>
+
+  <details class="sec" open>
+    <summary>我的预设</summary>
+    <div class="row">
+      <select id="presetSel" style="flex:1;"><option value="">— 选择预设 —</option></select>
+      <button id="btnSavePreset" title="把当前整套参数存成一个预设">保存</button>
+      <button id="btnDelPreset" title="删除选中的预设">删</button>
+    </div>
+    <div class="note">存下纹样 + 组合 + 材质 + 配色 + 参数，一键复用、样式统一。</div>
+  </details>
+
+  <details class="sec" open>
+    <summary>导出</summary>
+    <label style="display:flex;align-items:center;gap:5px;margin-bottom:8px;font-size:12px;color:var(--text);">
+      <input type="checkbox" id="expTransparent" checked> 导出透明背景（不含底色，纹样素材用）</label>
+    <div class="row">
+      <button class="primary" id="btnSvg" style="flex:1;">导出 SVG（矢量）</button>
+    </div>
+    <div class="row">
+      <select id="pngScale"><option value="1">PNG ×1</option><option value="2" selected>PNG ×2</option><option value="4">PNG ×4</option></select>
+      <button id="btnPng" style="flex:1;">导出 PNG（透明底可用）</button>
+    </div>
+    <div class="note">平铺 / 线性形式基于 SVG pattern，导出即无缝连续。</div>
+  </details>
+
+  <details class="sec">
+    <summary>画布尺寸</summary>
+    <div class="row">
+      <select id="sizeSel" style="flex:1;">
+        <option value="1024,1024">1024 × 1024（四方连续）</option>
+        <option value="2048,2048">2048 × 2048</option>
+        <option value="1024,256">1024 × 256（二方连续条）</option>
+        <option value="750,1334">750 × 1334（手机屏）</option>
+        <option value="custom">自定义…</option>
+      </select>
+    </div>
+    <div class="row" id="customSize" style="display:none;">
+      <input type="number" id="cw" value="1024"> ×
+      <input type="number" id="ch" value="1024">
+    </div>
+  </details>
+</div>
+
+<div id="stage">
+  <div id="bar">
+    <span style="font-size:12px;color:var(--dim);" id="statusTxt"></span>
+    <div class="grow"></div>
+    <span style="font-size:11px;color:var(--dim);">预览背景棋盘格 = 透明区域</span>
+  </div>
+  <div id="view"></div>
+</div>
+
+<script>
+'use strict';
+/* ================= 随机数（可复现） ================= */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};}
+
+/* ================= 颜色工具 ================= */
+function shade(hex,f){ // f>0 变亮, f<0 变暗
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  if(f>=0){r+= (255-r)*f; g+=(255-g)*f; b+=(255-b)*f;}
+  else{r*=1+f; g*=1+f; b*=1+f;}
+  const h=v=>('0'+Math.round(Math.max(0,Math.min(255,v))).toString(16)).slice(-2);
+  return '#'+h(r)+h(g)+h(b);
+}
+
+/* ================= 配色预设 ================= */
+const PALETTES=[
+  {name:'朱砂描金（国风）', bg:'#F6EFE3', main:'#B23A2B', aux:'#274A59', accent:'#C9A227'},
+  {name:'青花（国风）',     bg:'#F4F7F7', main:'#1D4E89', aux:'#6FA3C7', accent:'#E0B44B'},
+  {name:'墨玉（国风）',     bg:'#22261F', main:'#8FA98B', aux:'#5C6B57', accent:'#D8C08A'},
+  {name:'莫兰迪（简约）',   bg:'#EEEAE4', main:'#9A8C82', aux:'#B9C4BC', accent:'#D8A48F'},
+  {name:'黑白灰（简约）',   bg:'#F2F2F2', main:'#26262A', aux:'#8B8B90', accent:'#C4C4C8'},
+  {name:'深空（科技）',     bg:'#0D1420', main:'#35E0D6', aux:'#3D77FF', accent:'#A6B6D9'},
+  {name:'霓虹（科技）',     bg:'#14101F', main:'#FF4FA0', aux:'#7C5CFF', accent:'#3EE0FF'},
+  {name:'糖果（卡通）',     bg:'#FFF6EA', main:'#FF8FAB', aux:'#FFD166', accent:'#7BDFF2'},
+  {name:'抹茶（卡通）',     bg:'#F3F6EC', main:'#6B8E5A', aux:'#A8C686', accent:'#E4B363'},
+  {name:'皇家金蓝（西幻）', bg:'#F3EFE4', main:'#1E3A5F', aux:'#6E5B3E', accent:'#C9A227'},
+  {name:'纹章红金（西幻）', bg:'#F5ECDD', main:'#8C2B24', aux:'#3A2E22', accent:'#D4AF37'},
+];
+
+/* ================= 材质 ================= */
+const MATERIALS=[
+  {id:'flat',    name:'扁平'},
+  {id:'sketch',  name:'手绘'},
+  {id:'stitch',  name:'刺绣'},
+  {id:'gold',    name:'描金'},
+  {id:'halftone',name:'网点'},
+  {id:'paper',   name:'纸质'},
+];
+
+/* 依据材质生成填充/描边属性 */
+function makePaint(mat,colors){
+  const F=(k)=>{
+    const c=colors[k];
+    if(mat==='sketch')   return 'fill="'+c+'" fill-opacity="0.9" stroke="'+shade(c,-0.3)+'" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"';
+    if(mat==='stitch')   return 'fill="url(#hatch-'+k+')" stroke="'+c+'" stroke-width="1.6" stroke-dasharray="5 3" stroke-linecap="round"';
+    if(mat==='halftone') return 'fill="url(#dots-'+k+')" stroke="'+c+'" stroke-width="1.4"';
+    if(mat==='gold')     return 'fill="'+c+'" stroke="url(#goldGrad)" stroke-width="3"';
+    return 'fill="'+c+'"';
+  };
+  const S=(k,w)=>{
+    const c=colors[k];
+    if(mat==='sketch') return 'fill="none" stroke="'+c+'" stroke-width="'+w+'" stroke-linecap="round"';
+    if(mat==='stitch') return 'fill="none" stroke="'+c+'" stroke-width="'+w+'" stroke-dasharray="'+(w*1.6)+' '+(w*1.1)+'" stroke-linecap="round"';
+    if(mat==='gold')   return 'fill="none" stroke="url(#goldGrad)" stroke-width="'+w+'"';
+    return 'fill="none" stroke="'+c+'" stroke-width="'+w+'"';
+  };
+  return {fill:F, stroke:S};
+}
+
+/* ================= 纹样库（单元约 100×100，中心为原点） ================= */
+function starPath(spikes,R,r){
+  let p='';
+  for(let i=0;i<spikes*2;i++){
+    const rad=(i%2? r:R), a=-Math.PI/2+i*Math.PI/spikes;
+    p+=(i?'L':'M')+(Math.cos(a)*rad).toFixed(2)+','+(Math.sin(a)*rad).toFixed(2);
+  }
+  return p+'Z';
+}
+function hexPoints(R){
+  let pts=[];
+  for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3; pts.push((Math.cos(a)*R).toFixed(2)+','+(Math.sin(a)*R).toFixed(2));}
+  return pts.join(' ');
+}
+
+const MOTIFS={
+  cn:{name:'中国纹样', list:[
+    {id:'huiwen', name:'回纹', draw:(P,k)=>'<path '+P.stroke(k,9)+' stroke-linejoin="miter" d="M-42,42 L-42,-42 L42,-42 L42,42 L-14,42 L-14,-14 L14,-14 L14,14"/>'},
+    {id:'xiangyun', name:'祥云', draw:(P,k)=>'<g><circle cx="-18" cy="0" r="16" '+P.fill(k)+'/><circle cx="4" cy="-9" r="20" '+P.fill(k)+'/><circle cx="25" cy="2" r="14" '+P.fill(k)+'/><rect x="-33" y="4" width="70" height="12" rx="6" '+P.fill(k)+'/><path '+P.stroke('accent',3.5)+' d="M-26,0 a8,8 0 1 1 8,8"/></g>'},
+    {id:'tongqian', name:'铜钱', draw:(P,k)=>'<g><path fill-rule="evenodd" '+P.fill(k)+' d="M0,-40 A40,40 0 1,0 0,40 A40,40 0 1,0 0,-40 Z M-12,-12 L12,-12 L12,12 L-12,12 Z"/><circle r="32" '+P.stroke('accent',2.5)+'/></g>'},
+    {id:'haibo', name:'海波纹', draw:(P,k)=>'<g '+P.stroke(k,5)+'><path d="M-48,24 a48,48 0 0 1 96,0"/><path d="M-36,24 a36,36 0 0 1 72,0"/><path d="M-24,24 a24,24 0 0 1 48,0"/><path d="M-12,24 a12,12 0 0 1 24,0"/></g>'},
+    {id:'meihua', name:'梅花', draw:(P,k)=>{let s='<g>';for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;s+='<circle cx="'+(Math.cos(a)*17).toFixed(1)+'" cy="'+(Math.sin(a)*17).toFixed(1)+'" r="14" '+P.fill(k)+'/>';}return s+'<circle r="7" '+P.fill('accent')+'/></g>';}},
+  ]},
+  modern:{name:'现代简约', list:[
+    {id:'dot', name:'圆点', draw:(P,k)=>'<circle r="30" '+P.fill(k)+'/>'},
+    {id:'ring', name:'圆环', draw:(P,k)=>'<circle r="30" '+P.stroke(k,9)+'/>'},
+    {id:'line', name:'线条', draw:(P,k)=>'<rect x="-40" y="-5" width="80" height="10" rx="5" '+P.fill(k)+'/>'},
+    {id:'tri', name:'三角', draw:(P,k)=>'<polygon points="0,-34 36,28 -36,28" '+P.fill(k)+'/>'},
+    {id:'cross', name:'十字', draw:(P,k)=>'<path '+P.fill(k)+' d="M-7,-34 L7,-34 L7,-7 L34,-7 L34,7 L7,7 L7,34 L-7,34 L-7,7 L-34,7 L-34,-7 L-7,-7 Z"/>'},
+    {id:'semi', name:'半圆', draw:(P,k)=>'<path '+P.fill(k)+' d="M-34,17 a34,34 0 0 1 68,0 Z"/>'},
+  ]},
+  tech:{name:'科技纹样', list:[
+    {id:'hex', name:'六边形', draw:(P,k)=>'<g><polygon points="'+hexPoints(36)+'" '+P.stroke(k,6)+'/><circle r="4.5" '+P.fill('accent')+'/></g>'},
+    {id:'circuit', name:'电路', draw:(P,k)=>'<g><path '+P.stroke(k,5)+' d="M-34,-22 L2,-22 L2,14 L34,14"/><circle cx="-34" cy="-22" r="6" '+P.fill('accent')+'/><circle cx="34" cy="14" r="6" '+P.fill('accent')+'/></g>'},
+    {id:'hud', name:'HUD角标', draw:(P,k)=>'<g><g '+P.stroke(k,6)+'><path d="M-36,-16 L-36,-36 L-16,-36"/><path d="M16,-36 L36,-36 L36,-16"/><path d="M36,16 L36,36 L16,36"/><path d="M-16,36 L-36,36 L-36,16"/></g><circle r="5" '+P.fill('accent')+'/></g>'},
+    {id:'dots9', name:'点阵', draw:(P,k)=>{let s='<g>';for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){s+='<circle cx="'+(i*22)+'" cy="'+(j*22)+'" r="4.5" '+P.fill((i+j)%2===0?k:'accent')+'/>';}return s+'</g>';}},
+    {id:'chip', name:'芯片', draw:(P,k)=>{let s='<g><rect x="-24" y="-24" width="48" height="48" rx="5" '+P.fill(k)+'/>';for(const o of [-14,0,14]){s+='<line x1="'+o+'" y1="-24" x2="'+o+'" y2="-36" '+P.stroke(k,4)+'/><line x1="'+o+'" y1="24" x2="'+o+'" y2="36" '+P.stroke(k,4)+'/><line x1="-24" y1="'+o+'" x2="-36" y2="'+o+'" '+P.stroke(k,4)+'/><line x1="24" y1="'+o+'" x2="36" y2="'+o+'" '+P.stroke(k,4)+'/>';}return s+'<rect x="-11" y="-11" width="22" height="22" rx="3" '+P.stroke('accent',3)+'/></g>';}},
+  ]},
+  cartoon:{name:'卡通纹样', list:[
+    {id:'star', name:'星星', draw:(P,k)=>'<path '+P.fill(k)+' d="'+starPath(5,36,15)+'"/>'},
+    {id:'heart', name:'爱心', draw:(P,k)=>'<path '+P.fill(k)+' d="M0,28 C-30,8 -34,-16 -18,-24 C-8,-29 -1,-22 0,-16 C1,-22 8,-29 18,-24 C34,-16 30,8 0,28 Z"/>'},
+    {id:'sparkle', name:'闪光', draw:(P,k)=>'<g><path '+P.fill(k)+' d="M0,-38 C3,-11 11,-3 38,0 C11,3 3,11 0,38 C-3,11 -11,3 -38,0 C-11,-3 -3,-11 0,-38 Z"/><circle cx="20" cy="-20" r="4" '+P.fill('accent')+'/></g>'},
+    {id:'cloud', name:'云朵', draw:(P,k)=>'<g><circle cx="-16" cy="4" r="14" '+P.fill(k)+'/><circle cx="2" cy="-7" r="18" '+P.fill(k)+'/><circle cx="20" cy="4" r="12" '+P.fill(k)+'/><rect x="-28" y="8" width="56" height="10" rx="5" '+P.fill(k)+'/></g>'},
+    {id:'bubble', name:'泡泡', draw:(P,k)=>'<g><circle r="28" '+P.fill(k)+'/><circle r="28" '+P.stroke('aux',2.5)+'/><circle cx="-10" cy="-11" r="6" '+P.fill('accent')+'/></g>'},
+  ]},
+  euro:{name:'欧式/西幻', list:[
+    {id:'fleurdelis', name:'鸢尾百合', draw:(P,k)=>'<g '+P.fill(k)+'>'
+      +'<path d="M0,-44 C-7,-30 -7,-14 0,-6 C7,-14 7,-30 0,-44 Z"/>'
+      +'<path d="M-2,-6 C-18,-20 -34,-10 -26,8 C-24,-2 -14,-4 -2,4 Z"/>'
+      +'<path d="M2,-6 C18,-20 34,-10 26,8 C24,-2 14,-4 2,4 Z"/>'
+      +'<path d="M-5,0 C-5,18 -8,30 0,44 C8,30 5,18 5,0 Z"/>'
+      +'<path d="M-22,6 Q0,0 22,6 Q0,18 -22,6 Z"/></g>'},
+    {id:'acanthus', name:'莨苕卷草', draw:(P,k)=>'<g fill="none" '+P.stroke(k,5)+' stroke-linecap="round">'
+      +'<path d="M-40,24 C-40,-16 -6,-32 6,-6 C14,10 -6,20 -12,6 C-15,-1 -6,-4 -2,2"/>'
+      +'<path d="M6,-6 C18,-22 40,-16 40,10"/>'
+      +'<path d="M-40,24 C-30,10 -18,10 -8,20"/></g>'
+      +'<circle cx="-12" cy="6" r="3.5" '+P.fill('accent')+'/><circle cx="40" cy="10" r="3.5" '+P.fill('accent')+'/>'},
+    {id:'shield', name:'盾徽', draw:(P,k)=>'<g><path '+P.fill(k)+' d="M-30,-34 L30,-34 L30,6 C30,30 14,40 0,46 C-14,40 -30,30 -30,6 Z"/>'
+      +'<path fill="none" '+P.stroke('accent',3)+' d="M-22,-26 L22,-26 L22,4 C22,22 10,30 0,35 C-10,30 -22,22 -22,4 Z"/>'
+      +'<path fill="none" '+P.stroke('accent',3.5)+' d="M0,-20 L0,28 M-16,-6 L16,-6"/></g>'},
+    {id:'crown', name:'皇冠', draw:(P,k)=>'<g '+P.fill(k)+'>'
+      +'<path d="M-34,18 L-30,-18 L-14,4 L0,-26 L14,4 L30,-18 L34,18 Z"/>'
+      +'<rect x="-34" y="16" width="68" height="14" rx="3"/></g>'
+      +'<g '+P.fill('accent')+'><circle cx="-30" cy="-20" r="4"/><circle cx="0" cy="-28" r="4.5"/>'
+      +'<circle cx="30" cy="-20" r="4"/><circle cx="0" cy="23" r="4"/></g>'},
+    {id:'gotharch', name:'哥特尖拱', draw:(P,k)=>'<g fill="none" '+P.stroke(k,6)+' stroke-linejoin="round">'
+      +'<path d="M-28,42 L-28,-6 Q-28,-40 0,-40 Q28,-40 28,-6 L28,42"/>'
+      +'<path '+P.stroke('accent',3)+' d="M-15,42 L-15,-4 Q-15,-24 0,-24 Q15,-24 15,-4 L15,42"/></g>'
+      +'<circle cx="0" cy="-31" r="4" '+P.fill('accent')+'/>'},
+    {id:'rosewindow', name:'玫瑰窗', draw:(P,k)=>{let s='<g fill="none" '+P.stroke(k,4)+'><circle r="38"/><circle r="14"/>';
+      for(let i=0;i<8;i++){const a=i*Math.PI/4, x=Math.cos(a), y=Math.sin(a);
+        s+='<line x1="'+(x*14).toFixed(1)+'" y1="'+(y*14).toFixed(1)+'" x2="'+(x*38).toFixed(1)+'" y2="'+(y*38).toFixed(1)+'"/>';
+        s+='<circle cx="'+(x*26).toFixed(1)+'" cy="'+(y*26).toFixed(1)+'" r="7"/>';}
+      return s+'</g><circle r="5" '+P.fill('accent')+'/>';}},
+  ]},
+};
+
+/* ================= 组合形式（对应原理轴 · 装饰衍生） ================= */
+const ARRANGEMENTS=[
+  {id:'tile',    name:'平铺'},
+  {id:'linear',  name:'线性'},
+  {id:'focus',   name:'集中'},
+  {id:'diffuse', name:'扩散'},
+  {id:'ring',    name:'环状'},
+  {id:'planar',  name:'面化'},
+  {id:'grad',    name:'渐变'},
+  {id:'edge',    name:'边缘'},
+  {id:'center',  name:'单张放大'},
+];
+
+/* ================= 状态 ================= */
+const state={
+  family:'cn', motif:'xiangyun', arr:'tile', mat:'flat',
+  palette:0, bg:'#F6EFE3', main:'#B23A2B', aux:'#274A59', accent:'#C9A227',
+  transparent:false,
+  size:88, density:5, jPos:0, jRot:0, jScale:0, seed:42,
+  W:1024, H:1024,
+};
+
+/* ================= 渲染 ================= */
+function pickColorKey(rng){
+  const r=rng();
+  return r<0.55?'main':(r<0.85?'aux':'accent');
+}
+
+function instance(motifStr,x,y,sc,rot){
+  return '<g transform="translate('+x.toFixed(1)+','+y.toFixed(1)+') rotate('+rot.toFixed(1)+') scale('+sc.toFixed(3)+')">'+motifStr+'</g>';
+}
+
+function buildDefs(mat,colors){
+  let d='';
+  if(mat==='stitch'){
+    for(const k of ['main','aux','accent']){
+      d+='<pattern id="hatch-'+k+'" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+        +'<rect width="5" height="5" fill="'+colors[k]+'" opacity="0.28"/>'
+        +'<line x1="1.4" y1="0" x2="1.4" y2="5" stroke="'+colors[k]+'" stroke-width="2.4"/></pattern>';
+    }
+    d+='<filter id="wobble" x="-8%" y="-8%" width="116%" height="116%">'
+      +'<feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="7" result="n"/>'
+      +'<feDisplacementMap in="SourceGraphic" in2="n" scale="3.5"/></filter>';
+    d+='<pattern id="weave" width="6" height="6" patternUnits="userSpaceOnUse">'
+      +'<rect width="6" height="6" fill="none"/>'
+      +'<line x1="0" y1="3" x2="6" y2="3" stroke="#000" stroke-opacity="0.05" stroke-width="1.5"/>'
+      +'<line x1="3" y1="0" x2="3" y2="6" stroke="#fff" stroke-opacity="0.05" stroke-width="1.5"/></pattern>';
+  }
+  if(mat==='sketch'){
+    d+='<filter id="roughen" x="-8%" y="-8%" width="116%" height="116%">'
+      +'<feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="3" seed="11" result="n"/>'
+      +'<feDisplacementMap in="SourceGraphic" in2="n" scale="7"/></filter>';
+  }
+  if(mat==='halftone'){
+    for(const k of ['main','aux','accent']){
+      d+='<pattern id="dots-'+k+'" width="7" height="7" patternUnits="userSpaceOnUse">'
+        +'<circle cx="3.5" cy="3.5" r="2.2" fill="'+colors[k]+'"/></pattern>';
+    }
+  }
+  if(mat==='gold'){
+    const a=state.accent;
+    d+='<linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">'
+      +'<stop offset="0" stop-color="'+shade(a,0.45)+'"/><stop offset="0.5" stop-color="'+a+'"/>'
+      +'<stop offset="1" stop-color="'+shade(a,-0.35)+'"/></linearGradient>';
+  }
+  if(mat==='paper'){
+    d+='<filter id="grainShape"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/>'
+      +'<feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.22 0" result="na"/>'
+      +'<feComposite in="na" in2="SourceAlpha" operator="in" result="gc"/>'
+      +'<feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="gc"/></feMerge></filter>';
+    d+='<filter id="grainBg"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" result="n"/>'
+      +'<feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.10 0"/></filter>';
+  }
+  return d;
+}
+
+function render(forceTransparent, skipView){
+  const transp = forceTransparent || state.transparent;   // 导出可强制透明而不动预览
+  const {W,H}=state;
+  const rng=mulberry32(state.seed);
+  const colors={main:state.main, aux:state.aux, accent:state.accent};
+  const P=makePaint(state.mat,colors);
+  // 防崩：族或纹样找不到（自定义被删/存储清空）就回退到内置第一个
+  let fam0=MOTIFS[state.family];
+  if(!fam0 || !fam0.list.length){ state.family='cn'; state.motif='xiangyun'; fam0=MOTIFS.cn; }
+  let motifDef=fam0.list.find(m=>m.id===state.motif);
+  if(!motifDef){ motifDef=fam0.list[0]; state.motif=motifDef.id; }
+  const draw=(k)=>motifDef.draw(P,k);
+
+  const s=state.size;                       // 元素像素大小
+  const baseScale=s/100;                    // 纹样单元 100 → 目标大小
+  const dd=(state.density-1)/9;             // 0..1
+  const spacing=s*(3.2-2.05*dd);            // 密度→间距
+  const jPos=state.jPos/100, jRot=state.jRot, jScale=state.jScale/100;
+  const jitR=()=> (rng()*2-1)*jRot;
+  const jitS=()=> 1+(rng()*2-1)*jScale;
+
+  let defs=buildDefs(state.mat,colors);
+  let body='';
+
+  /* ---- 各组合形式 ---- */
+  if(state.arr==='tile' || state.arr==='linear'){
+    const K = state.arr==='tile' ? 4 : 6;
+    const tileW=spacing*K;
+    const tileH= state.arr==='tile' ? spacing*K : H;
+    let cells='';
+    const cols=K, rows= state.arr==='tile' ? K : 1;
+    for(let i=0;i<cols;i++)for(let j=0;j<rows;j++){
+      const cx=(i+0.5)*spacing + (rng()*2-1)*spacing*0.45*jPos;
+      const cy= state.arr==='tile' ? (j+0.5)*spacing + (rng()*2-1)*spacing*0.45*jPos : H/2 + (rng()*2-1)*H*0.1*jPos;
+      cells+=instance(draw(pickColorKey(rng)),cx,cy,baseScale*jitS(),jitR());
+    }
+    // 8 邻域复制，保证 pattern 边界无缝
+    defs+='<g id="cellsG">'+cells+'</g>'
+      +'<pattern id="tileP" width="'+tileW+'" height="'+tileH+'" patternUnits="userSpaceOnUse">';
+    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+      defs+='<use href="#cellsG" x="'+(dx*tileW)+'" y="'+(dy*tileH)+'"/>';
+    }
+    defs+='</pattern>';
+    body='<rect width="'+W+'" height="'+H+'" fill="url(#tileP)"/>';
+  }
+  else if(state.arr==='focus'){
+    const n=Math.round(26*state.density);
+    const rmax=Math.min(W,H)*0.46;
+    for(let i=0;i<n;i++){
+      const t=Math.pow(rng(),1.7), a=rng()*Math.PI*2;
+      const r=t*rmax;
+      const sc=baseScale*(1.25-0.85*t)*jitS();
+      body+=instance(draw(pickColorKey(rng)), W/2+Math.cos(a)*r, H/2+Math.sin(a)*r, sc, jitR());
+    }
+  }
+  else if(state.arr==='diffuse'){
+    const spokes=6+state.density;
+    const steps=4+Math.round(state.density/2);
+    const rmax=Math.min(W,H)*0.46, r0=Math.min(W,H)*0.1;
+    for(let i=0;i<spokes;i++){
+      const a=i*Math.PI*2/spokes + (rng()*2-1)*0.12*jPos;
+      for(let j=0;j<steps;j++){
+        const t=j/(steps-1), r=r0+(rmax-r0)*t;
+        const sc=baseScale*(0.35+0.8*t)*jitS();
+        body+=instance(draw(pickColorKey(rng)), W/2+Math.cos(a)*r, H/2+Math.sin(a)*r, sc, a*180/Math.PI+90+jitR());
+      }
+    }
+  }
+  else if(state.arr==='ring'){
+    const rings=1+Math.round(state.density/3);
+    const rmax=Math.min(W,H)*0.44;
+    for(let k=0;k<rings;k++){
+      const r=rmax*(k+1)/(rings+0.25);
+      const n=Math.max(4,Math.floor(Math.PI*2*r/(spacing*0.75)));
+      for(let i=0;i<n;i++){
+        const a=i*Math.PI*2/n;
+        body+=instance(draw(pickColorKey(rng)), W/2+Math.cos(a)*r, H/2+Math.sin(a)*r, baseScale*jitS(), a*180/Math.PI+90+jitR());
+      }
+    }
+  }
+  else if(state.arr==='planar'){
+    const rmax=Math.min(W,H)*0.44;
+    const step=spacing*0.6;
+    for(let r=step*0.5; r<rmax; r+=step){
+      const n=Math.max(4,Math.floor(Math.PI*2*r/step));
+      for(let i=0;i<n;i++){
+        const a=i*Math.PI*2/n + (rng()*2-1)*0.1;
+        const rr=r+(rng()*2-1)*step*0.25*Math.max(jPos,0.3);
+        body+=instance(draw(pickColorKey(rng)), W/2+Math.cos(a)*rr, H/2+Math.sin(a)*rr, baseScale*0.82*jitS(), jitR());
+      }
+    }
+    body+=instance(draw('main'), W/2, H/2, baseScale*0.95, 0);
+  }
+  else if(state.arr==='grad'){
+    for(let y=spacing*0.5; y<H+s; y+=spacing){
+      for(let x=spacing*0.5; x<W+s; x+=spacing){
+        const t=1-y/H;                       // 上密下疏、上大下小
+        const sc=baseScale*Math.pow(t,1.25)*jitS();
+        if(sc<baseScale*0.07) continue;
+        const jx=(rng()*2-1)*spacing*0.4*jPos, jy=(rng()*2-1)*spacing*0.4*jPos;
+        body+='<g opacity="'+(0.25+0.75*t).toFixed(2)+'">'+instance(draw(pickColorKey(rng)),x+jx,y+jy,sc,jitR())+'</g>';
+      }
+    }
+  }
+  else if(state.arr==='edge'){
+    const m=s*0.85;
+    const per=[];
+    const wIn=W-m*2, hIn=H-m*2;
+    const stepE=spacing*0.85;
+    for(let x=m; x<=W-m+1; x+=stepE){ per.push([x,m,0]); per.push([x,H-m,0]); }
+    for(let y=m+stepE; y<=H-m-stepE+1; y+=stepE){ per.push([m,y,90]); per.push([W-m,y,90]); }
+    for(const [x,y,rot] of per){
+      const corner=(Math.abs(x-m)<2||Math.abs(x-(W-m))<2)&&(Math.abs(y-m)<2||Math.abs(y-(H-m))<2);
+      body+=instance(draw(corner?'accent':pickColorKey(rng)), x, y, baseScale*(corner?1.25:1)*jitS(), rot+jitR());
+    }
+  }
+  else if(state.arr==='center'){
+    // 单张放大：填满画布短边 ~90%、居中，专门看单个纹样 / 检查抠图细节
+    const sc=Math.min(W,H)*0.9/100 * (s/88);
+    body+=instance(draw('main'), W/2, H/2, sc, 0);
+  }
+
+  /* ---- 组装 ---- */
+  let bgLayer='';
+  if(!transp){
+    bgLayer='<rect width="'+W+'" height="'+H+'" fill="'+state.bg+'"/>';
+    if(state.mat==='stitch') bgLayer+='<rect width="'+W+'" height="'+H+'" fill="url(#weave)"/>';
+    if(state.mat==='paper')  bgLayer+='<rect width="'+W+'" height="'+H+'" filter="url(#grainBg)"/>';
+  }
+  let gAttr='';
+  if(state.mat==='stitch') gAttr=' filter="url(#wobble)"';
+  else if(state.mat==='sketch') gAttr=' filter="url(#roughen)"';
+  else if(state.mat==='paper') gAttr=' filter="url(#grainShape)"';
+
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'">'
+    +'<defs>'+defs+'</defs>'+bgLayer+'<g'+gAttr+'>'+body+'</g></svg>';
+
+  if(!skipView) document.getElementById('view').innerHTML=svg;
+  const fam=MOTIFS[state.family];
+  document.getElementById('statusTxt').textContent=
+    fam.name+' · '+motifDef.name+' · '+ARRANGEMENTS.find(a=>a.id===state.arr).name
+    +' · '+MATERIALS.find(m=>m.id===state.mat).name+' · '+W+'×'+H+' · 种子 '+state.seed;
+  return svg;
+}
+
+/* ================= 导出 ================= */
+function fileBase(){
+  const fam=MOTIFS[state.family], mo=fam.list.find(m=>m.id===state.motif);
+  return '纹样_'+fam.name+'_'+mo.name+'_'+ARRANGEMENTS.find(a=>a.id===state.arr).name+'_'+state.seed;
+}
+function download(blob,name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
+}
+document.getElementById('btnSvg').onclick=()=>{
+  const svg=render(document.getElementById('expTransparent').checked, true);
+  download(new Blob([svg],{type:'image/svg+xml'}), fileBase()+'.svg');
+};
+document.getElementById('btnPng').onclick=()=>{
+  const svg=render(document.getElementById('expTransparent').checked, true);
+  const scale=+document.getElementById('pngScale').value;
+  const img=new Image();
+  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
+  img.onload=()=>{
+    const c=document.createElement('canvas');
+    c.width=state.W*scale; c.height=state.H*scale;
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(url);
+    c.toBlob(b=>download(b,fileBase()+'@'+scale+'x.png'),'image/png');
+  };
+  img.src=url;
+};
+
+/* ================= UI 绑定 ================= */
+function chips(elId,items,cur,onPick,onDelete){
+  const el=document.getElementById(elId);
+  el.innerHTML='';
+  for(const it of items){
+    const b=document.createElement('span');
+    b.className='chip'+(it.id===cur?' on':'');
+    b.textContent=it.name;
+    b.onclick=()=>onPick(it.id);
+    if(onDelete){
+      const x=document.createElement('b');
+      x.textContent=' ×'; x.style.cssText='margin-left:4px;color:var(--dim);';
+      x.onclick=(e)=>{e.stopPropagation(); onDelete(it.id);};
+      b.appendChild(x);
+    }
+    el.appendChild(b);
+  }
+}
+function refreshChips(){
+  chips('familyChips',Object.entries(MOTIFS).map(([id,f])=>({id,name:f.name})),state.family,(id)=>{
+    state.family=id;
+    const first=MOTIFS[id].list[0];
+    state.motif=first?first.id:null;
+    refreshChips(); render();
+  });
+  const isCustom = state.family==='custom';
+  chips('motifChips',MOTIFS[state.family].list,state.motif,
+    (id)=>{state.motif=id; refreshChips(); render();},
+    isCustom ? (id)=>deleteCustomMotif(id) : null);
+  chips('arrChips',ARRANGEMENTS,state.arr,(id)=>{state.arr=id; refreshChips(); render();});
+  chips('matChips',MATERIALS,state.mat,(id)=>{state.mat=id; refreshChips(); render();});
+}
+
+let customPalettes = [];   // 自定义色板（localStorage 加载）
+const paletteSel=document.getElementById('paletteSel');
+function allPalettes(){ return PALETTES.concat(customPalettes); }
+function rebuildPaletteSel(){
+  const cur=paletteSel.value;
+  paletteSel.innerHTML='';
+  allPalettes().forEach((p,i)=>{
+    const o=document.createElement('option');
+    o.value=i; o.textContent=p.name+(i>=PALETTES.length?'（我的）':'');
+    paletteSel.appendChild(o);
+  });
+  if(cur!=='' && +cur<allPalettes().length) paletteSel.value=cur;
+}
+function applyPalette(i){
+  const p=allPalettes()[i]; if(!p) return;
+  state.bg=p.bg; state.main=p.main; state.aux=p.aux; state.accent=p.accent;
+  for(const [id,k] of [['cBg','bg'],['cMain','main'],['cAux','aux'],['cAccent','accent']])
+    document.getElementById(id).value=state[k];
+}
+paletteSel.onchange=()=>{applyPalette(+paletteSel.value); render();};
+document.getElementById('btnRotate').onclick=()=>{
+  const t=state.main; state.main=state.aux; state.aux=state.accent; state.accent=t;
+  for(const [id,k] of [['cMain','main'],['cAux','aux'],['cAccent','accent']])
+    document.getElementById(id).value=state[k];
+  render();
+};
+for(const [id,k] of [['cBg','bg'],['cMain','main'],['cAux','aux'],['cAccent','accent']])
+  document.getElementById(id).oninput=(e)=>{state[k]=e.target.value; render();};
+document.getElementById('transparentBg').onchange=(e)=>{state.transparent=e.target.checked; render();};
+
+function bindRange(id,key,valId){
+  const el=document.getElementById(id), v=document.getElementById(valId);
+  const sync=()=>{v.textContent=el.value;};
+  el.oninput=()=>{state[key]=+el.value; sync(); render();};
+  sync();
+}
+bindRange('pSize','size','vSize');
+bindRange('pDensity','density','vDensity');
+bindRange('pJPos','jPos','vJPos');
+bindRange('pJRot','jRot','vJRot');
+bindRange('pJScale','jScale','vJScale');
+document.getElementById('pSeed').onchange=(e)=>{state.seed=+e.target.value||0; render();};
+document.getElementById('btnDice').onclick=()=>{
+  state.seed=Math.floor(Math.random()*99999);
+  document.getElementById('pSeed').value=state.seed; render();
+};
+
+const sizeSel=document.getElementById('sizeSel'), customRow=document.getElementById('customSize');
+sizeSel.onchange=()=>{
+  if(sizeSel.value==='custom'){customRow.style.display='flex';}
+  else{
+    customRow.style.display='none';
+    const [w,h]=sizeSel.value.split(',').map(Number);
+    state.W=w; state.H=h; render();
+  }
+};
+for(const id of ['cw','ch']) document.getElementById(id).onchange=()=>{
+  state.W=+document.getElementById('cw').value||1024;
+  state.H=+document.getElementById('ch').value||1024;
+  render();
+};
+
+/* ================= 自定义功能：本地存储 · 导入纹样 · 预设 · 色板 ================= */
+const LS={motifs:'patternGen_motifs', presets:'patternGen_presets', palettes:'patternGen_palettes'};
+function lsLoad(k){ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } }
+function lsSave(k,v){
+  try{ localStorage.setItem(k,JSON.stringify(v)); return true; }
+  catch(e){
+    const mb=(JSON.stringify(v).length/1048576).toFixed(1);
+    alert('保存失败：这批数据约 '+mb+'MB，超过浏览器本地存储上限（约 5MB）。\n可以：① 换更小/更简单的图；② 用 chip 上的 × 删掉几张旧纹样；③ 用「备份」把纹样库导出成文件再清理。');
+    return false;
+  }
+}
+
+/* ---- 自定义纹样 ---- */
+let customMotifs = lsLoad(LS.motifs) || [];   // [{id,name,src,w,h}]
+const rawCache = {};   // id -> {raw, mode, isSVG}：仅当次会话保留原图，用于事后调容差重新抠背景
+function customDraw(m){
+  const k=100/Math.max(m.w,m.h), dw=m.w*k, dh=m.h*k;
+  return ()=>'<image href="'+m.src+'" x="'+(-dw/2).toFixed(1)+'" y="'+(-dh/2).toFixed(1)
+    +'" width="'+dw.toFixed(1)+'" height="'+dh.toFixed(1)+'" preserveAspectRatio="xMidYMid meet"/>';
+}
+function rebuildCustomFamily(){
+  MOTIFS.custom = {name:'我的纹样', list: customMotifs.map(m=>({id:m.id, name:m.name, draw:customDraw(m)}))};
+}
+function fileToDataURL(file){
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+}
+// 位图：去透明边 + 限长边 512（保细节又不撑爆存储）；SVG：原样存
+// 把画布编成体积友好的 dataURL：透明图用 WebP（保透明+压缩），不透明用 JPEG，WebP 不支持时兜底 PNG
+function encodeMotif(canvas, hasAlpha){
+  if(hasAlpha){
+    const w=canvas.toDataURL('image/webp',0.9);
+    if(w.slice(0,15)==='data:image/webp') return w;
+    return canvas.toDataURL('image/png');
+  }
+  return canvas.toDataURL('image/jpeg',0.85);
+}
+const MAX_DIM=384;   // 自定义纹样长边上限（平铺单元够用，控体积）
+
+// 去纯色背景：从四边 flood fill，把与背景色接近、且和边缘连通的像素设透明；图案内部同色不受影响
+function removeSolidBg(canvas, tol){
+  const cx=canvas.getContext('2d'), W=canvas.width, H=canvas.height;
+  if(!W||!H) return;
+  const im=cx.getImageData(0,0,W,H), d=im.data;
+  let br=0,bg=0,bb=0;                                  // 背景色 = 四角平均
+  for(const [x,y] of [[0,0],[W-1,0],[0,H-1],[W-1,H-1]]){ const i=(y*W+x)*4; br+=d[i]; bg+=d[i+1]; bb+=d[i+2]; }
+  br/=4; bg/=4; bb/=4;
+  const visited=new Uint8Array(W*H), stack=[];
+  const push=(x,y)=>{ if(x<0||y<0||x>=W||y>=H) return; const p=y*W+x; if(!visited[p]){ visited[p]=1; stack.push(p); } };
+  for(let x=0;x<W;x++){ push(x,0); push(x,H-1); }
+  for(let y=0;y<H;y++){ push(0,y); push(W-1,y); }
+  const tol2=tol*tol*3;
+  while(stack.length){
+    const p=stack.pop(), i=p*4;
+    const dr=d[i]-br, dg=d[i+1]-bg, db=d[i+2]-bb;
+    if(dr*dr+dg*dg+db*db<=tol2){
+      d[i+3]=0;
+      const x=p%W, y=(p/W)|0;
+      push(x+1,y); push(x-1,y); push(x,y+1); push(x,y-1);
+    }
+  }
+  cx.putImageData(im,0,0);
+}
+
+function processImage(dataURL, isSVG, removeBg, tol){
+  return new Promise((res)=>{
+    const img=new Image();
+    if(isSVG){ img.onload=()=>res({src:dataURL, w:img.naturalWidth||256, h:img.naturalHeight||256});
+               img.onerror=()=>res({src:dataURL,w:256,h:256}); img.src=dataURL; return; }
+    img.onload=()=>{
+      const cv=document.createElement('canvas'); cv.width=img.naturalWidth; cv.height=img.naturalHeight;
+      const cx=cv.getContext('2d'); cx.drawImage(img,0,0);
+      if(removeBg){ try{ removeSolidBg(cv, tol||42); }catch(e){} }   // 先抠纯色底，再走去透明边
+      let l=0,t=0,r=cv.width,b=cv.height, hasAlpha=true;
+      try{
+        const d=cx.getImageData(0,0,cv.width,cv.height).data;
+        let minX=cv.width,minY=cv.height,maxX=-1,maxY=-1; hasAlpha=false;
+        for(let y=0;y<cv.height;y++)for(let x=0;x<cv.width;x++){
+          const a=d[(y*cv.width+x)*4+3];
+          if(a>8){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; }
+          if(a<250) hasAlpha=true;
+        }
+        if(maxX>=minX){ l=minX; t=minY; r=maxX+1; b=maxY+1; }   // 有透明边才裁；不透明图保持整幅
+      }catch(e){ /* 取不到像素就不裁边、按有透明处理 */ }
+      const cw=r-l, ch=b-t, scale=Math.min(1, MAX_DIM/Math.max(cw,ch));
+      const ow=Math.max(1,Math.round(cw*scale)), oh=Math.max(1,Math.round(ch*scale));
+      const oc=document.createElement('canvas'); oc.width=ow; oc.height=oh;
+      oc.getContext('2d').drawImage(cv, l,t,cw,ch, 0,0,ow,oh);   // 从去背景后的 cv 裁，不是原图 img
+      res({src:encodeMotif(oc,hasAlpha), w:ow, h:oh});
+    };
+    img.onerror=()=>res(null);
+    img.src=dataURL;
+  });
+}
+// —— 进阶：从连续纹样图自动检测最小重复单元（周期检测：灰度平移差最小）——
+function findPeriod(g,w,h,axis){
+  const dim = axis==='x' ? w : h;
+  const minP = Math.max(6, Math.floor(dim*0.06)), maxP = Math.floor(dim/2);
+  if(maxP<=minP) return null;
+  const diff=[]; let best=Infinity, bestD=null;
+  for(let d=minP; d<=maxP; d++){
+    let s=0, c=0;
+    if(axis==='x'){
+      for(let y=0;y<h;y++) for(let x=0; x+d<w; x++){ s+=Math.abs(g[y*w+x]-g[y*w+x+d]); c++; }
+    }else{
+      for(let y=0; y+d<h; y++) for(let x=0;x<w;x++){ s+=Math.abs(g[y*w+x]-g[(y+d)*w+x]); c++; }
+    }
+    const v = c ? s/c : Infinity; diff[d]=v;
+    if(v<best){ best=v; bestD=d; }
+  }
+  if(best>18) return null;                    // 最优差异仍大 → 判定为「无明显周期」
+  const thr = best*1.4 + 3;
+  for(let d=minP; d<=maxP; d++){ if(diff[d]<=thr) return d; }   // 取第一个低谷 = 基本周期（非其倍数）
+  return bestD;
+}
+function processTile(dataURL, removeBg, tol){
+  return new Promise((res)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const W=img.naturalWidth, H=img.naturalHeight;
+      const dw=Math.min(W,384), scale=dw/W, dh=Math.max(1,Math.round(H*scale));
+      const cv=document.createElement('canvas'); cv.width=dw; cv.height=dh;
+      const cx=cv.getContext('2d'); cx.drawImage(img,0,0,dw,dh);
+      let g, hasAlpha=false;
+      try{ const d=cx.getImageData(0,0,dw,dh).data; g=new Float64Array(dw*dh);
+        for(let i=0;i<dw*dh;i++){ g[i]=d[i*4]*0.3+d[i*4+1]*0.59+d[i*4+2]*0.11; if(d[i*4+3]<250) hasAlpha=true; }
+      }catch(e){ res(null); return; }
+      const pX=findPeriod(g,dw,dh,'x'), pY=findPeriod(g,dw,dh,'y');
+      let tileW = pX ? Math.min(W, Math.round(pX/scale)) : W;
+      let tileH = pY ? Math.min(H, Math.round(pY/scale)) : H;
+      const s2=Math.min(1, MAX_DIM/Math.max(tileW,tileH));
+      const ow=Math.max(1,Math.round(tileW*s2)), oh=Math.max(1,Math.round(tileH*s2));
+      const oc=document.createElement('canvas'); oc.width=ow; oc.height=oh;
+      oc.getContext('2d').drawImage(img, 0,0,tileW,tileH, 0,0,ow,oh);
+      if(removeBg){ try{ removeSolidBg(oc, tol||42); hasAlpha=true; }catch(e){} }   // 提取重复单元也支持去背景
+      res({src:encodeMotif(oc,hasAlpha), w:ow, h:oh, detected:(pX?tileW:'整宽')+'×'+(pY?tileH:'整高')});
+    };
+    img.onerror=()=>res(null);
+    img.src=dataURL;
+  });
+}
+
+async function importFiles(files, mode){
+  let added=0, lastDetect='', lastKB=0;
+  const rmBg=document.getElementById('rmBg').checked, bgTol=+document.getElementById('bgTol').value;
+  document.getElementById('importNote').textContent='正在导入…';
+  for(const file of files){
+    const isSVG = file.type==='image/svg+xml' || /\.svg$/i.test(file.name);
+    try{
+      const dataURL = await fileToDataURL(file);
+      const info = (mode==='tile' && !isSVG) ? await processTile(dataURL, rmBg, bgTol) : await processImage(dataURL, isSVG, rmBg, bgTol);
+      if(!info) continue;
+      if(info.detected) lastDetect=info.detected;
+      const id='c'+Date.now().toString(36)+'_'+customMotifs.length+'_'+Math.floor(Math.random()*1e4);
+      const name=(file.name.replace(/\.[^.]+$/,'')||'纹样').slice(0,8);
+      customMotifs.push({id, name, src:info.src, w:info.w, h:info.h});
+      rawCache[id]={raw:dataURL, mode, isSVG};   // 留原图，供事后调容差重抠
+      lastKB=Math.round(info.src.length/1024);
+      added++;
+    }catch(e){ /* 单张失败跳过 */ }
+  }
+  if(added){
+    if(lsSave(LS.motifs, customMotifs)){
+      rebuildCustomFamily();
+      state.family='custom'; state.motif=customMotifs[customMotifs.length-1].id;
+      refreshChips(); render();
+      const libKB=Math.round(JSON.stringify(customMotifs).length/1024);
+      document.getElementById('importNote').textContent =
+        (lastDetect ? ('检测到重复单元 '+lastDetect+'。') : '已导入。')
+        + ' 本张约 '+lastKB+'KB，纹样库共约 '+libKB+'KB（上限约 5000KB）。'
+        + (lastDetect ? ' 识别不准就改用「导入图形」。' : '');
+    } else {
+      // 保存失败：把只进了内存、没存住的回滚掉，避免累积让后续更容易再满
+      customMotifs = lsLoad(LS.motifs) || [];
+      rebuildCustomFamily();
+      document.getElementById('importNote').textContent='这张没能存下（见弹窗）：换更小/简单的图，或先用 × 删掉几张旧纹样。';
+    }
+  } else {
+    document.getElementById('importNote').textContent='没能读取这张图，换一张试试。';
+  }
+}
+function deleteCustomMotif(id){
+  if(!confirm('删掉这张自定义纹样？')) return;
+  customMotifs = customMotifs.filter(m=>m.id!==id);
+  lsSave(LS.motifs, customMotifs);
+  rebuildCustomFamily();
+  if(state.family==='custom' && !MOTIFS.custom.list.some(m=>m.id===state.motif)){
+    const f=MOTIFS.custom.list[0];
+    if(f){ state.motif=f.id; } else { state.family='cn'; state.motif='xiangyun'; }
+  }
+  refreshChips(); render();
+}
+document.getElementById('btnImport').onclick=()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange=(e)=>{ if(e.target.files.length) importFiles([...e.target.files],'whole'); e.target.value=''; };
+document.getElementById('btnImportTile').onclick=()=>document.getElementById('importFileTile').click();
+document.getElementById('importFileTile').onchange=(e)=>{ if(e.target.files.length) importFiles([...e.target.files],'tile'); e.target.value=''; };
+// 事后调容差/开关：对当前选中的自定义纹样，用内存里的原图重新抠背景
+let reprocessing=false;
+async function reprocessCurrent(){
+  if(state.family!=='custom' || reprocessing) return;
+  const m = customMotifs.find(x=>x.id===state.motif);
+  const cache = m && rawCache[m.id];
+  if(!cache){
+    if(m) document.getElementById('importNote').textContent='这张是刷新前导入的，原图不在内存里 —— 改容差请重新导入一次这张图。';
+    return;
+  }
+  reprocessing=true;
+  const rmBg=document.getElementById('rmBg').checked, tol=+document.getElementById('bgTol').value;
+  const info = (cache.mode==='tile' && !cache.isSVG) ? await processTile(cache.raw, rmBg, tol) : await processImage(cache.raw, cache.isSVG, rmBg, tol);
+  reprocessing=false;
+  if(info){ m.src=info.src; m.w=info.w; m.h=info.h; lsSave(LS.motifs, customMotifs); rebuildCustomFamily(); render(); }
+}
+document.getElementById('bgTol').oninput=(e)=>{ document.getElementById('bgTolV').textContent=e.target.value; };
+document.getElementById('bgTol').onchange=()=>reprocessCurrent();       // 松手即重抠
+document.getElementById('rmBg').onchange=()=>reprocessCurrent();        // 勾/取消即重抠
+
+/* ---- 预设 ---- */
+let presets = lsLoad(LS.presets) || [];   // [{name,state}]
+const presetSel=document.getElementById('presetSel');
+function rebuildPresetSel(){
+  presetSel.innerHTML='<option value="">— 选择预设 —</option>';
+  presets.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.name;presetSel.appendChild(o);});
+}
+function syncControls(){   // 把 state 写回所有控件（加载预设时用）
+  for(const [id,k,vid] of [['pSize','size','vSize'],['pDensity','density','vDensity'],
+      ['pJPos','jPos','vJPos'],['pJRot','jRot','vJRot'],['pJScale','jScale','vJScale']]){
+    document.getElementById(id).value=state[k]; document.getElementById(vid).textContent=state[k];
+  }
+  document.getElementById('pSeed').value=state.seed;
+  for(const [id,k] of [['cBg','bg'],['cMain','main'],['cAux','aux'],['cAccent','accent']]) document.getElementById(id).value=state[k];
+  document.getElementById('transparentBg').checked=state.transparent;
+  const sizeSel=document.getElementById('sizeSel'), val=state.W+','+state.H;
+  const has=[...sizeSel.options].some(o=>o.value===val);
+  sizeSel.value = has ? val : 'custom';
+  document.getElementById('customSize').style.display = has ? 'none' : 'flex';
+  document.getElementById('cw').value=state.W; document.getElementById('ch').value=state.H;
+}
+presetSel.onchange=()=>{
+  const i=presetSel.value; if(i==='') return;
+  const p=presets[+i]; if(!p) return;
+  Object.assign(state, p.state);
+  rebuildCustomFamily(); syncControls(); refreshChips(); render();
+};
+document.getElementById('btnSavePreset').onclick=()=>{
+  const name=(prompt('给这套参数起个名字：','我的预设 '+(presets.length+1))||'').trim(); if(!name) return;
+  presets.push({name, state:JSON.parse(JSON.stringify(state))});
+  if(lsSave(LS.presets, presets)){ rebuildPresetSel(); presetSel.value=presets.length-1; }
+};
+document.getElementById('btnDelPreset').onclick=()=>{
+  const i=presetSel.value; if(i===''){ alert('先在下拉里选一个预设'); return; }
+  if(!confirm('删掉预设「'+presets[+i].name+'」？')) return;
+  presets.splice(+i,1); lsSave(LS.presets, presets); rebuildPresetSel();
+};
+
+/* ---- 自定义色板 ---- */
+document.getElementById('btnSavePalette').onclick=()=>{
+  const name=(prompt('给这组配色起个名字：','我的色板 '+(customPalettes.length+1))||'').trim(); if(!name) return;
+  customPalettes.push({name, bg:state.bg, main:state.main, aux:state.aux, accent:state.accent});
+  if(lsSave(LS.palettes, customPalettes)){ rebuildPaletteSel(); paletteSel.value=allPalettes().length-1; }
+};
+
+/* ================= 初始化 ================= */
+customPalettes = lsLoad(LS.palettes) || [];
+rebuildCustomFamily();
+rebuildPresetSel();
+rebuildPaletteSel();
+applyPalette(0);
+refreshChips();
+render();
+</script>
+</body>
+</html>
