@@ -91,11 +91,14 @@
     <summary>材质</summary>
     <div class="chips" id="matChips"></div>
     <div class="note" id="matNote">手绘 / 刺绣 / 网点为矢量近似效果（抖动滤镜 + 排线），非位图仿真。</div>
+    <label style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--dim);">
+      <input type="checkbox" id="outlineMode"> 线框模式（只描边、不填充；内置纹样有效）</label>
   </details>
 
   <details class="sec" open>
     <summary>参数微调</summary>
     <div class="row"><label>元素大小</label><input type="range" id="pSize" min="24" max="400" value="88"><span class="val" id="vSize"></span></div>
+    <div class="row"><label>旋转°</label><input type="range" id="pSpin" min="0" max="360" value="0" title="0~360°旋转；单张放大时最直观"><span class="val" id="vSpin"></span></div>
     <div class="row"><label>密度</label><input type="range" id="pDensity" min="1" max="10" value="5"><span class="val" id="vDensity"></span></div>
     <div class="row"><label>位置抖动</label><input type="range" id="pJPos" min="0" max="100" value="0"><span class="val" id="vJPos"></span></div>
     <div class="row"><label>旋转抖动</label><input type="range" id="pJRot" min="0" max="180" value="0"><span class="val" id="vJRot"></span></div>
@@ -211,9 +214,10 @@ const MATERIALS=[
 ];
 
 /* 依据材质生成填充/描边属性 */
-function makePaint(mat,colors){
+function makePaint(mat,colors,outline){
   const F=(k)=>{
     const c=colors[k];
+    if(outline) return 'fill="none" stroke="'+c+'" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
     if(mat==='sketch')   return 'fill="'+c+'" fill-opacity="0.9" stroke="'+shade(c,-0.3)+'" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"';
     if(mat==='stitch')   return 'fill="url(#hatch-'+k+')" stroke="'+c+'" stroke-width="1.6" stroke-dasharray="5 3" stroke-linecap="round"';
     if(mat==='halftone') return 'fill="url(#dots-'+k+')" stroke="'+c+'" stroke-width="1.4"';
@@ -324,7 +328,7 @@ const ARRANGEMENTS=[
 const state={
   family:'cn', motif:'xiangyun', arr:'tile', mat:'flat',
   palette:0, bg:'#F6EFE3', main:'#B23A2B', aux:'#274A59', accent:'#C9A227',
-  transparent:false,
+  transparent:false, outline:false, spin:0,
   size:88, density:5, jPos:0, jRot:0, jScale:0, seed:42,
   W:1024, H:1024,
 };
@@ -388,7 +392,7 @@ function render(forceTransparent, skipView){
   const {W,H}=state;
   const rng=mulberry32(state.seed);
   const colors={main:state.main, aux:state.aux, accent:state.accent};
-  const P=makePaint(state.mat,colors);
+  const P=makePaint(state.mat,colors,state.outline);
   // 防崩：族或纹样找不到（自定义被删/存储清空）就回退到内置第一个
   let fam0=MOTIFS[state.family];
   if(!fam0 || !fam0.list.length){ state.family='cn'; state.motif='xiangyun'; fam0=MOTIFS.cn; }
@@ -401,7 +405,7 @@ function render(forceTransparent, skipView){
   const dd=(state.density-1)/9;             // 0..1
   const spacing=s*(3.2-2.05*dd);            // 密度→间距
   const jPos=state.jPos/100, jRot=state.jRot, jScale=state.jScale/100;
-  const jitR=()=> (rng()*2-1)*jRot;
+  const jitR=()=> (rng()*2-1)*jRot + state.spin;
   const jitS=()=> 1+(rng()*2-1)*jScale;
 
   let defs=buildDefs(state.mat,colors);
@@ -502,7 +506,7 @@ function render(forceTransparent, skipView){
   else if(state.arr==='center'){
     // 单张放大：填满画布短边 ~90%、居中，专门看单个纹样 / 检查抠图细节
     const sc=Math.min(W,H)*0.9/100 * (s/88);
-    body+=instance(draw('main'), W/2, H/2, sc, 0);
+    body+=instance(draw('main'), W/2, H/2, sc, state.spin);
   }
 
   /* ---- 组装 ---- */
@@ -620,6 +624,7 @@ document.getElementById('btnRotate').onclick=()=>{
 for(const [id,k] of [['cBg','bg'],['cMain','main'],['cAux','aux'],['cAccent','accent']])
   document.getElementById(id).oninput=(e)=>{state[k]=e.target.value; render();};
 document.getElementById('transparentBg').onchange=(e)=>{state.transparent=e.target.checked; render();};
+document.getElementById('outlineMode').onchange=(e)=>{state.outline=e.target.checked; render();};
 
 function bindRange(id,key,valId){
   const el=document.getElementById(id), v=document.getElementById(valId);
@@ -632,6 +637,7 @@ bindRange('pDensity','density','vDensity');
 bindRange('pJPos','jPos','vJPos');
 bindRange('pJRot','jRot','vJRot');
 bindRange('pJScale','jScale','vJScale');
+bindRange('pSpin','spin','vSpin');
 document.getElementById('pSeed').onchange=(e)=>{state.seed=+e.target.value||0; render();};
 document.getElementById('btnDice').onclick=()=>{
   state.seed=Math.floor(Math.random()*99999);
