@@ -80,6 +80,8 @@
     <div class="note" id="matNote">手绘 / 刺绣 / 网点为矢量近似效果（抖动滤镜 + 排线），非位图仿真。</div>
     <label style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--dim);">
       <input type="checkbox" id="outlineMode"> 线框模式（只描边、不填充；内置纹样有效）</label>
+    <label style="display:flex;align-items:center;gap:5px;margin-top:6px;margin-left:20px;font-size:12px;color:var(--dim);">
+      <input type="checkbox" id="wireOutlineMode"> 仅轮廓（只留外形，隐藏内部结构线；部分纹样有效）</label>
     <div class="row" style="margin-top:8px;"><label>线条粗细</label><input type="range" id="pLineW" min="1" max="16" value="5" title="管「线框模式」描边 + 「底纹/线纹」族的线宽"><span class="val" id="vLineW"></span></div>
   </details>
 
@@ -219,8 +221,8 @@ const MATERIALS=[
 ];
 
 /* 依据材质生成填充/描边属性 */
-function makePaint(mat,colors,outline,lineW,bg){
-  lineW=lineW||5; bg=bg||'#ffffff';
+function makePaint(mat,colors,outline,lineW,bg,detail){
+  lineW=lineW||5; bg=bg||'#ffffff'; detail=detail||'full';
   const F=(k)=>{
     const c=colors[k];
     if(outline) return 'fill="none" stroke="'+c+'" stroke-width="'+lineW+'" stroke-linejoin="round" stroke-linecap="round"';
@@ -238,7 +240,7 @@ function makePaint(mat,colors,outline,lineW,bg){
     if(mat==='gold')   return 'fill="none" stroke="url(#goldGrad)" stroke-width="'+sw+'"';
     return 'fill="none" stroke="'+c+'" stroke-width="'+sw+'"';
   };
-  return {fill:F, stroke:S, lineW:lineW, bg:bg};
+  return {fill:F, stroke:S, lineW:lineW, bg:bg, detail:detail};
 }
 
 /* ================= 纹样库（单元约 100×100，中心为原点） ================= */
@@ -411,9 +413,15 @@ const MOTIFS={
       for(let i=0;i<5;i++){s+='<path transform="rotate('+(i*72)+')" d="M0,-12 C10,-18 10,-34 3,-40 L0,-36 L-3,-40 C-10,-34 -10,-18 0,-12 Z"/>';}
       return s+'</g><circle r="6" '+P.fill('accent')+'/>';}},
     {id:'shippo', name:'七宝', seamless:true, draw:(P,k)=>{
-      const r=35.36;   // = 50/√2：圆心网格间距 50，相邻相交成四叶、对角相切 → 七宝繋ぎ无缝
       let s='<g '+P.stroke(k,P.lineW)+'>';
-      for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){ s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none"/>'; }
+      if(P.detail==='outline'){                                  // 仅轮廓：花瓣四叶（不画整圆）
+        for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){
+          for(let a=0;a<4;a++){ s+='<path fill="none" transform="translate('+cx+','+cy+') rotate('+(a*90)+')" d="M0,0 Q13,-13 0,-25 Q-13,-13 0,0 Z"/>'; }
+        }
+      } else {                                                   // 完整结构：七宝繋ぎ交叠圆（圆心网格50、半径50/√2）
+        const r=35.36;
+        for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){ s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none"/>'; }
+      }
       return s+'</g>';}},
     {id:'uroko', name:'鳞纹', draw:(P,k)=>'<g><polygon points="0,-38 34,20 -34,20" '+P.fill(k)+'/>'
       +'<polygon points="0,-20 17,11 -17,11" '+P.stroke('accent',3)+'/></g>'},
@@ -456,7 +464,7 @@ const ARRANGEMENTS=[
 const state={
   family:'cn', motif:'xiangyun', arr:'tile', mat:'flat',
   palette:0, bg:'#F6EFE3', main:'#B23A2B', aux:'#274A59', accent:'#C9A227',
-  transparent:false, outline:false, spin:0, lineW:5,
+  transparent:false, outline:false, wireOutline:false, spin:0, lineW:5,
   size:88, density:5, jPos:0, jRot:0, jScale:0, seed:42,
   W:1024, H:1024,
 };
@@ -520,7 +528,7 @@ function render(forceTransparent, skipView){
   const {W,H}=state;
   const rng=mulberry32(state.seed);
   const colors={main:state.main, aux:state.aux, accent:state.accent};
-  const P=makePaint(state.mat,colors,state.outline,state.lineW,state.bg);
+  const P=makePaint(state.mat,colors,state.outline,state.lineW,state.bg,state.wireOutline?'outline':'full');
   // 防崩：族或纹样找不到（自定义被删/存储清空）就回退到内置第一个
   let fam0=MOTIFS[state.family];
   if(!fam0 || !fam0.list.length){ state.family='cn'; state.motif='xiangyun'; fam0=MOTIFS.cn; }
@@ -762,6 +770,7 @@ for(const [id,k] of [['cBg','bg'],['cMain','main'],['cAux','aux'],['cAccent','ac
   document.getElementById(id).oninput=(e)=>{state[k]=e.target.value; render();};
 document.getElementById('transparentBg').onchange=(e)=>{state.transparent=e.target.checked; render();};
 document.getElementById('outlineMode').onchange=(e)=>{state.outline=e.target.checked; render();};
+document.getElementById('wireOutlineMode').onchange=(e)=>{state.wireOutline=e.target.checked; render();};
 
 function bindRange(id,key,valId){
   const el=document.getElementById(id), v=document.getElementById(valId);
