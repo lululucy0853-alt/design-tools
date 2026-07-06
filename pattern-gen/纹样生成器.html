@@ -219,8 +219,8 @@ const MATERIALS=[
 ];
 
 /* 依据材质生成填充/描边属性 */
-function makePaint(mat,colors,outline,lineW){
-  lineW=lineW||5;
+function makePaint(mat,colors,outline,lineW,bg){
+  lineW=lineW||5; bg=bg||'#ffffff';
   const F=(k)=>{
     const c=colors[k];
     if(outline) return 'fill="none" stroke="'+c+'" stroke-width="'+lineW+'" stroke-linejoin="round" stroke-linecap="round"';
@@ -238,7 +238,7 @@ function makePaint(mat,colors,outline,lineW){
     if(mat==='gold')   return 'fill="none" stroke="url(#goldGrad)" stroke-width="'+sw+'"';
     return 'fill="none" stroke="'+c+'" stroke-width="'+sw+'"';
   };
-  return {fill:F, stroke:S, lineW:lineW};
+  return {fill:F, stroke:S, lineW:lineW, bg:bg};
 }
 
 /* ================= 纹样库（单元约 100×100，中心为原点） ================= */
@@ -259,7 +259,13 @@ function hexPoints(R){
 const MOTIFS={
   cn:{name:'中国纹样', list:[
     {id:'huiwen', name:'回纹', draw:(P,k)=>'<path '+P.stroke(k,9)+' stroke-linejoin="miter" d="M-42,42 L-42,-42 L42,-42 L42,42 L-14,42 L-14,-14 L14,-14 L14,14"/>'},
-    {id:'xiangyun', name:'祥云', draw:(P,k)=>'<g><circle cx="-18" cy="0" r="16" '+P.fill(k)+'/><circle cx="4" cy="-9" r="20" '+P.fill(k)+'/><circle cx="25" cy="2" r="14" '+P.fill(k)+'/><rect x="-33" y="4" width="70" height="12" rx="6" '+P.fill(k)+'/><path '+P.stroke('accent',3.5)+' d="M-26,0 a8,8 0 1 1 8,8"/></g>'},
+    {id:'xiangyun', name:'祥云', draw:(P,k)=>{
+      let s='<g '+P.stroke(k,8)+' stroke-linecap="round" stroke-linejoin="round">';   // 粗圆头带=扁平流动云条
+      s+='<path d="M-42,-4 C-24,-4 -14,-11 0,-9 C9,-7.5 12,-4 19,-4 C31,-4 33,-19 20,-19 C10,-19 12,-7 22,-7"/>';  // 主云带(起伏) + 右端大卷如意头
+      s+='<path d="M-32,10 C-20,10 -10,5 2,8 C8,9.5 11,10 15,10"/>';   // 中云带(错落起伏)
+      s+='<path d="M-24,20 L-4,20"/>';                                 // 下短云带
+      s+='</g>';
+      return s;}},
     {id:'tongqian', name:'铜钱', draw:(P,k)=>'<g><path fill-rule="evenodd" '+P.fill(k)+' d="M0,-40 A40,40 0 1,0 0,40 A40,40 0 1,0 0,-40 Z M-12,-12 L12,-12 L12,12 L-12,12 Z"/><circle r="32" '+P.stroke('accent',2.5)+'/></g>'},
     {id:'haibo', name:'海波纹', draw:(P,k)=>'<g '+P.stroke(k,5)+'><path d="M-48,24 a48,48 0 0 1 96,0"/><path d="M-36,24 a36,36 0 0 1 72,0"/><path d="M-24,24 a24,24 0 0 1 48,0"/><path d="M-12,24 a12,12 0 0 1 24,0"/></g>'},
     {id:'meihua', name:'梅花', draw:(P,k)=>{let s='<g>';for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;s+='<circle cx="'+(Math.cos(a)*17).toFixed(1)+'" cy="'+(Math.sin(a)*17).toFixed(1)+'" r="14" '+P.fill(k)+'/>';}return s+'<circle r="7" '+P.fill('accent')+'/></g>';}},
@@ -365,11 +371,18 @@ const MOTIFS={
       return s;}},
   ]},
   japanese:{name:'日式和风', list:[
-    {id:'seigaiha', name:'青海波', draw:(P,k)=>{let s='<g>';const rs=[40,30,20,10];
-      for(let i=0;i<rs.length;i++){const R=rs[i], r=(i<rs.length-1?rs[i+1]:0), col=(i%2===0?'main':'aux');
-        if(r>0) s+='<path '+P.fill(col)+' d="M-'+R+',0 A'+R+','+R+' 0 0 1 '+R+',0 L'+r+',0 A'+r+','+r+' 0 0 0 -'+r+',0 Z"/>';
-        else s+='<path '+P.fill(col)+' d="M-'+R+',0 A'+R+','+R+' 0 0 1 '+R+',0 Z"/>';}
-      return s+'</g>';}},
+    {id:'seigaiha', name:'青海波', seamless:true, draw:(P,k)=>{
+      let s=''; const R=25;
+      for(let cy=-50; cy<=50; cy+=R){                       // 行距=半径 → 下行盖住上行下半，叠瓦
+        const odd=(Math.round(cy/R)&1)!==0, off=odd?R:0;    // 奇行水平错位半个
+        for(let cx=-100+off; cx<=100; cx+=2*R){
+          s+='<path fill="'+P.bg+'" d="M'+(cx-R)+','+cy+' A'+R+','+R+' 0 0 1 '+(cx+R)+','+cy+' Z"/>';  // 底色遮罩半圆
+          for(const r of [23,15,7]){                        // 同心弧
+            s+='<path fill="none" '+P.stroke(k,P.lineW)+' d="M'+(cx-r)+','+cy+' A'+r+','+r+' 0 0 1 '+(cx+r)+','+cy+'"/>';
+          }
+        }
+      }
+      return s;}},
     {id:'asanoha', name:'麻叶', draw:(P,k)=>{let s='<g '+P.stroke(k,3.5)+' stroke-linejoin="round">';
       const pts=[];for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3;pts.push([Math.cos(a)*40,Math.sin(a)*40]);}
       s+='<polygon points="'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')+'"/>';
@@ -487,7 +500,7 @@ function render(forceTransparent, skipView){
   const {W,H}=state;
   const rng=mulberry32(state.seed);
   const colors={main:state.main, aux:state.aux, accent:state.accent};
-  const P=makePaint(state.mat,colors,state.outline,state.lineW);
+  const P=makePaint(state.mat,colors,state.outline,state.lineW,state.bg);
   // 防崩：族或纹样找不到（自定义被删/存储清空）就回退到内置第一个
   let fam0=MOTIFS[state.family];
   if(!fam0 || !fam0.list.length){ state.family='cn'; state.motif='xiangyun'; fam0=MOTIFS.cn; }
