@@ -290,21 +290,23 @@ const MOTIFS={
       return s;}},
   ]},
   modern:{name:'现代简约', list:[
-    {id:'dot', name:'圆点', seamless:true, draw:(P,k)=>'<circle r="30" '+P.fill(k)+'/>'},
-    {id:'ring', name:'圆环', seamless:true, draw:(P,k)=>'<circle r="30" fill="none" '+P.stroke(k,P.lineW)+'/>'},
-    {id:'line', name:'线条', seamless:true, draw:(P,k)=>'<rect x="-50" y="-5" width="100" height="10" '+P.fill(k)+'/>'},
-    {id:'tri', name:'三角', seamless:true, tw:100, th:86.6, draw:(P,k)=>{
-      const H='43.30';
-      return '<path '+P.fill(k)+' d="M0,-'+H+' L-50,'+H+' L50,'+H+' Z"/>'          // 正三角(主色)
-        +'<path '+P.fill('aux')+' d="M-100,-'+H+' L0,-'+H+' L-50,'+H+' Z"/>'       // 左倒三角(辅色,跨边界)
-        +'<path '+P.fill('aux')+' d="M0,-'+H+' L100,-'+H+' L50,'+H+' Z"/>';}},     // 右倒三角(辅色,跨边界)
-    {id:'cross', name:'十字', seamless:true, draw:(P,k)=>'<path '+P.fill(k)+' d="M-6,-50 L6,-50 L6,-6 L50,-6 L50,6 L6,6 L6,50 L-6,50 L-6,6 L-50,6 L-50,-6 L-6,-6 Z"/>'},
-    {id:'semi', name:'半圆', seamless:true, draw:(P,k)=>{
-      const R=50;
-      let s='<g fill="none" '+P.stroke(k,P.lineW)+'>';
-      for(let cy=-50;cy<=50;cy+=50){ const odd=(Math.round(cy/50)&1)!==0, off=odd?50:0;
-        for(let cx=-100+off;cx<=100;cx+=100){ s+='<path d="M'+(cx-R)+','+cy+' A'+R+','+R+' 0 0 1 '+(cx+R)+','+cy+'"/>'; } }
-      return s+'</g>';}},
+    {id:'dot', name:'圆点', seamless:true, draw:(P,k)=>'<circle r="30" '+P.fill(k)+'/>', tileDraw:(P,k)=>'<circle r="50" '+P.fill(k)+'/>'},
+    {id:'ring', name:'圆环', seamless:true, draw:(P,k)=>'<circle r="30" fill="none" '+P.stroke(k,P.lineW)+'/>', tileDraw:(P,k)=>'<circle r="50" fill="none" '+P.stroke(k,P.lineW)+'/>'},
+    {id:'line', name:'线条', seamless:true, draw:(P,k)=>'<rect x="-40" y="-5" width="80" height="10" rx="5" '+P.fill(k)+'/>', tileDraw:(P,k)=>'<rect x="-50" y="-5" width="100" height="10" '+P.fill(k)+'/>'},
+    {id:'tri', name:'三角', seamless:true, tw:100, th:86.6,
+      draw:(P,k)=>'<polygon points="0,-34 36,28 -36,28" '+P.fill(k)+'/>',          // 单个三角(密度<最大)
+      tileDraw:(P,k)=>{const H='43.30';                                            // 正倒三角双色密铺(密度最大)
+        return '<path '+P.fill(k)+' d="M0,-'+H+' L-50,'+H+' L50,'+H+' Z"/>'
+          +'<path '+P.fill('aux')+' d="M-100,-'+H+' L0,-'+H+' L-50,'+H+' Z"/>'
+          +'<path '+P.fill('aux')+' d="M0,-'+H+' L100,-'+H+' L50,'+H+' Z"/>';}},
+    {id:'cross', name:'十字', seamless:true, draw:(P,k)=>'<path '+P.fill(k)+' d="M-7,-34 L7,-34 L7,-7 L34,-7 L34,7 L7,7 L7,34 L-7,34 L-7,7 L-34,7 L-34,-7 L-7,-7 Z"/>', tileDraw:(P,k)=>'<path '+P.fill(k)+' d="M-6,-50 L6,-50 L6,-6 L50,-6 L50,6 L6,6 L6,50 L-6,50 L-6,6 L-50,6 L-50,-6 L-6,-6 Z"/>'},
+    {id:'semi', name:'半圆', seamless:true,
+      draw:(P,k)=>'<path '+P.fill(k)+' d="M-34,17 a34,34 0 0 1 68,0 Z"/>',           // 单个半圆(密度<最大)
+      tileDraw:(P,k)=>{const R=50;                                                  // 半圆叠瓦鱼鳞(密度最大)
+        let s='<g fill="none" '+P.stroke(k,P.lineW)+'>';
+        for(let cy=-50;cy<=50;cy+=50){ const odd=(Math.round(cy/50)&1)!==0, off=odd?50:0;
+          for(let cx=-100+off;cx<=100;cx+=100){ s+='<path d="M'+(cx-R)+','+cy+' A'+R+','+R+' 0 0 1 '+(cx+R)+','+cy+'"/>'; } }
+        return s+'</g>';}},
   ]},
   tech:{name:'科技纹样', list:[
     {id:'hex', name:'六边形', seamless:true, tw:100, th:57.735, draw:(P,k)=>{
@@ -568,13 +570,14 @@ function render(forceTransparent, skipView){
   let body='';
 
   /* ---- 各组合形式 ---- */
-  if(state.arr==='tile' && motifDef.seamless){
-    // 无缝底纹：单元本身周期匹配 → 直接做 pattern 平铺；patternTransform 旋转任意角度都无限延展无缝
-    // motif 可声明 tw/th（单元坐标下的 tile 宽高，默认 100×100 正方形）→ 支持蜂窝等矩形周期
+  // 无缝：有 tileDraw 的纹样仅在密度最大(10)时密铺无缝，密度降低回落到离散摆放（单个图案分开）；无 tileDraw 的底纹一直无缝
+  const useSeamless = motifDef.seamless && (!motifDef.tileDraw || state.density>=10);
+  if(state.arr==='tile' && useSeamless){
     const tw=(motifDef.tw||100), th=(motifDef.th||100);
     const tsW=s*tw/100, tsH=s*th/100;
+    const tileContent = motifDef.tileDraw ? motifDef.tileDraw(P,'main') : draw('main');
     defs+='<pattern id="tileP" width="'+tsW+'" height="'+tsH+'" patternUnits="userSpaceOnUse" patternTransform="rotate('+state.spin+')">'
-      +'<g transform="translate('+(tsW/2)+','+(tsH/2)+') scale('+baseScale+')">'+draw('main')+'</g></pattern>';
+      +'<g transform="translate('+(tsW/2)+','+(tsH/2)+') scale('+baseScale+')">'+tileContent+'</g></pattern>';
     body='<rect width="'+W+'" height="'+H+'" fill="url(#tileP)"/>';
   }
   else if(state.arr==='tile' || state.arr==='linear'){
