@@ -80,6 +80,7 @@
     <div class="note" id="matNote">手绘 / 刺绣 / 网点为矢量近似效果（抖动滤镜 + 排线），非位图仿真。</div>
     <label style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--dim);">
       <input type="checkbox" id="outlineMode"> 线框模式（只描边、不填充；内置纹样有效）</label>
+    <div class="row" style="margin-top:8px;"><label>线条粗细</label><input type="range" id="pLineW" min="1" max="16" value="5" title="管「线框模式」描边 + 「底纹/线纹」族的线宽"><span class="val" id="vLineW"></span></div>
   </details>
 
   <details class="sec" open>
@@ -218,10 +219,11 @@ const MATERIALS=[
 ];
 
 /* 依据材质生成填充/描边属性 */
-function makePaint(mat,colors,outline){
+function makePaint(mat,colors,outline,lineW){
+  lineW=lineW||5;
   const F=(k)=>{
     const c=colors[k];
-    if(outline) return 'fill="none" stroke="'+c+'" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
+    if(outline) return 'fill="none" stroke="'+c+'" stroke-width="'+lineW+'" stroke-linejoin="round" stroke-linecap="round"';
     if(mat==='sketch')   return 'fill="'+c+'" fill-opacity="0.9" stroke="'+shade(c,-0.3)+'" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"';
     if(mat==='stitch')   return 'fill="url(#hatch-'+k+')" stroke="'+c+'" stroke-width="1.6" stroke-dasharray="5 3" stroke-linecap="round"';
     if(mat==='halftone') return 'fill="url(#dots-'+k+')" stroke="'+c+'" stroke-width="1.4"';
@@ -235,7 +237,7 @@ function makePaint(mat,colors,outline){
     if(mat==='gold')   return 'fill="none" stroke="url(#goldGrad)" stroke-width="'+w+'"';
     return 'fill="none" stroke="'+c+'" stroke-width="'+w+'"';
   };
-  return {fill:F, stroke:S};
+  return {fill:F, stroke:S, lineW:lineW};
 }
 
 /* ================= 纹样库（单元约 100×100，中心为原点） ================= */
@@ -387,6 +389,20 @@ const MOTIFS={
       for(let i=0;i<N;i++){s+='<ellipse transform="rotate('+(i*360/N+15)+')" cx="0" cy="-16" rx="4.5" ry="10"/>';}
       return s+'</g><circle r="8" '+P.fill('accent')+'/>';}},
   ]},
+  texture:{name:'底纹/线纹', list:[
+    {id:'slash', name:'斜杠纹', draw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
+      for(const b of [-100,-75,-50,-25,0,25,50,75,100]){ s+='<line x1="-60" y1="'+(-60+b)+'" x2="60" y2="'+(60+b)+'"/>'; }
+      return s+'</g>';}},
+    {id:'contour', name:'等高线纹', draw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
+      for(const y0 of [-50,-25,0,25,50]){ let d='M-50,'+y0.toFixed(1);
+        for(let x=-45;x<=50;x+=5){ const y=y0+8*Math.sin(2*Math.PI*x/100); d+=' L'+x+','+y.toFixed(1); }
+        s+='<path d="'+d+'"/>'; }
+      return s+'</g>';}},
+    {id:'grid', name:'网格纹', draw:(P,k)=>'<g '+P.stroke(k,P.lineW)+'>'
+      +'<rect x="-50" y="-50" width="100" height="100"/>'
+      +'<line x1="0" y1="-50" x2="0" y2="50"/><line x1="-50" y1="0" x2="50" y2="0"/></g>'
+      +'<rect x="-4" y="-4" width="8" height="8" '+P.fill('accent')+'/>'},
+  ]},
 };
 
 /* ================= 组合形式（对应原理轴 · 装饰衍生） ================= */
@@ -406,7 +422,7 @@ const ARRANGEMENTS=[
 const state={
   family:'cn', motif:'xiangyun', arr:'tile', mat:'flat',
   palette:0, bg:'#F6EFE3', main:'#B23A2B', aux:'#274A59', accent:'#C9A227',
-  transparent:false, outline:false, spin:0,
+  transparent:false, outline:false, spin:0, lineW:5,
   size:88, density:5, jPos:0, jRot:0, jScale:0, seed:42,
   W:1024, H:1024,
 };
@@ -470,7 +486,7 @@ function render(forceTransparent, skipView){
   const {W,H}=state;
   const rng=mulberry32(state.seed);
   const colors={main:state.main, aux:state.aux, accent:state.accent};
-  const P=makePaint(state.mat,colors,state.outline);
+  const P=makePaint(state.mat,colors,state.outline,state.lineW);
   // 防崩：族或纹样找不到（自定义被删/存储清空）就回退到内置第一个
   let fam0=MOTIFS[state.family];
   if(!fam0 || !fam0.list.length){ state.family='cn'; state.motif='xiangyun'; fam0=MOTIFS.cn; }
@@ -716,6 +732,7 @@ bindRange('pJPos','jPos','vJPos');
 bindRange('pJRot','jRot','vJRot');
 bindRange('pJScale','jScale','vJScale');
 bindRange('pSpin','spin','vSpin');
+bindRange('pLineW','lineW','vLineW');
 document.getElementById('pSeed').onchange=(e)=>{state.seed=+e.target.value||0; render();};
 document.getElementById('btnDice').onclick=()=>{
   state.seed=Math.floor(Math.random()*99999);
@@ -960,13 +977,14 @@ function rebuildPresetSel(){
   presets.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.name;presetSel.appendChild(o);});
 }
 function syncControls(){   // 把 state 写回所有控件（加载预设时用）
-  for(const [id,k,vid] of [['pSize','size','vSize'],['pDensity','density','vDensity'],
+  for(const [id,k,vid] of [['pSize','size','vSize'],['pSpin','spin','vSpin'],['pLineW','lineW','vLineW'],['pDensity','density','vDensity'],
       ['pJPos','jPos','vJPos'],['pJRot','jRot','vJRot'],['pJScale','jScale','vJScale']]){
     document.getElementById(id).value=state[k]; document.getElementById(vid).textContent=state[k];
   }
   document.getElementById('pSeed').value=state.seed;
   for(const [id,k] of [['cBg','bg'],['cMain','main'],['cAux','aux'],['cAccent','accent']]) document.getElementById(id).value=state[k];
   document.getElementById('transparentBg').checked=state.transparent;
+  document.getElementById('outlineMode').checked=state.outline;
   const sizeSel=document.getElementById('sizeSel'), val=state.W+','+state.H;
   const has=[...sizeSel.options].some(o=>o.value===val);
   sizeSel.value = has ? val : 'custom';
