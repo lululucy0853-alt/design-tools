@@ -64,22 +64,9 @@
   <div class="sub">参数化装饰纹样 · SVG 矢量原生输出 · v2（+ 自定义纹样 / 预设 / 色板）</div>
 
   <details class="sec" open>
-    <summary>纹样类型 / 导入</summary>
+    <summary>纹样类型</summary>
     <div class="chips" id="familyChips"></div>
     <div class="chips" id="motifChips" style="margin-top:6px;"></div>
-    <div class="row" style="margin-top:8px;">
-      <button id="btnImport" style="flex:1;" title="整张图当作一个纹样单元">＋ 导入图形</button>
-      <button id="btnImportTile" style="flex:1;" title="从一整张连续纹样大图里，自动识别最小重复单元再裁出来">🔁 提取重复单元</button>
-      <input type="file" id="importFile" accept="image/png,image/svg+xml,image/jpeg,image/webp" multiple style="display:none;">
-      <input type="file" id="importFileTile" accept="image/png,image/jpeg,image/webp" multiple style="display:none;">
-    </div>
-    <div class="note" id="importNote">「导入图形」= 整图当一个单元；「提取重复单元」= 从连续纹样大图里自动找最小重复块。都会去透明边、存进「我的纹样」。</div>
-    <div class="row" style="margin-top:6px;">
-      <label style="font-size:12px;color:var(--dim);display:flex;align-items:center;gap:4px;flex:none;white-space:nowrap;">
-        <input type="checkbox" id="rmBg"> 去纯色背景</label>
-      <input type="range" id="bgTol" min="10" max="120" value="42" style="flex:1;" title="容差：越大去得越多、也越容易误伤图案边缘">
-      <span class="val" id="bgTolV" style="width:auto;">42</span>
-    </div>
   </details>
 
   <details class="sec" open>
@@ -119,6 +106,23 @@
       <span>辅</span><input type="color" id="cAux">
       <span>点缀</span><input type="color" id="cAccent">
       <label style="font-size:11px;color:var(--dim);margin-left:auto;"><input type="checkbox" id="transparentBg"> 透明底</label>
+    </div>
+  </details>
+
+  <details class="sec" open>
+    <summary>导入图形</summary>
+    <div class="row">
+      <button id="btnImport" style="flex:1;" title="整张图当作一个纹样单元">＋ 导入图形</button>
+      <button id="btnImportTile" style="flex:1;" title="从一整张连续纹样大图里，自动识别最小重复单元再裁出来">🔁 提取重复单元</button>
+      <input type="file" id="importFile" accept="image/png,image/svg+xml,image/jpeg,image/webp" multiple style="display:none;">
+      <input type="file" id="importFileTile" accept="image/png,image/jpeg,image/webp" multiple style="display:none;">
+    </div>
+    <div class="note" id="importNote">「导入图形」= 整图当一个单元；「提取重复单元」= 从连续纹样大图里自动找最小重复块。都会去透明边、存进「我的纹样」。</div>
+    <div class="row" style="margin-top:6px;">
+      <label style="font-size:12px;color:var(--dim);display:flex;align-items:center;gap:4px;flex:none;white-space:nowrap;">
+        <input type="checkbox" id="rmBg"> 去纯色背景</label>
+      <input type="range" id="bgTol" min="10" max="120" value="42" style="flex:1;" title="容差：越大去得越多、也越容易误伤图案边缘">
+      <span class="val" id="bgTolV" style="width:auto;">42</span>
     </div>
   </details>
 
