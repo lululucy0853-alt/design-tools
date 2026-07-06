@@ -521,7 +521,7 @@ function render(forceTransparent, skipView){
   const s=state.size;                       // 元素像素大小
   const baseScale=s/100;                    // 纹样单元 100 → 目标大小
   const dd=(state.density-1)/9;             // 0..1
-  const spacing=s*(3.2-2.05*dd);            // 密度→间距
+  const spacing=s*(3.2-2.2*dd);            // 密度→间距；density=10 → spacing=s（单元紧贴无间距）
   const jPos=state.jPos/100, jRot=state.jRot, jScale=state.jScale/100;
   const jitR=()=> (rng()*2-1)*jRot + state.spin;
   const jitS=()=> 1+(rng()*2-1)*jScale;
