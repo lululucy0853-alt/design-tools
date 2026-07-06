@@ -279,16 +279,16 @@ const MOTIFS={
         return s+'</g>';}},
     {id:'haibo', name:'海波纹', draw:(P,k)=>'<g '+P.stroke(k,5)+'><path d="M-48,24 a48,48 0 0 1 96,0"/><path d="M-36,24 a36,36 0 0 1 72,0"/><path d="M-24,24 a24,24 0 0 1 48,0"/><path d="M-12,24 a12,12 0 0 1 24,0"/></g>'},
     {id:'meihua', name:'梅花', draw:(P,k)=>{let s='<g>';for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;s+='<circle cx="'+(Math.cos(a)*17).toFixed(1)+'" cy="'+(Math.sin(a)*17).toFixed(1)+'" r="14" '+P.fill(k)+'/>';}return s+'<circle r="7" '+P.fill('accent')+'/></g>';}},
-    {id:'qiulu', name:'毬路纹', seamless:true, draw:(P,k)=>{
-      let s='';
-      // 中心海棠花(四曲花头)
-      for(let a=0;a<4;a++){ s+='<path fill="none" '+P.stroke(k,P.lineW)+' transform="rotate('+(a*90)+')" d="M0,0 C-16,-13 -16,-33 0,-33 C16,-33 16,-13 0,0 Z"/>'; }  // 中心四叶草
-      // 四角四叶花(双圆相交式)：平铺后每个网格交点由四个 tile 的角拼成完整
-      const corners=[[-50,-50],[50,-50],[-50,50],[50,50]];
-      for(const c of corners){ for(let a=0;a<4;a++){
-        s+='<path fill="none" '+P.stroke(k,P.lineW)+' transform="translate('+c[0]+','+c[1]+') rotate('+(a*90)+')" d="M0,0 Q8,-9 0,-19 Q-8,-9 0,0 Z"/>';
-      } }
-      return s;}},
+    {id:'qiulu', name:'毬路纹', seamless:true,
+      draw:(P,k)=>{let s='';for(let a=0;a<4;a++){ s+='<path fill="none" '+P.stroke(k,P.lineW)+' transform="rotate('+(a*90)+')" d="M0,0 C-16,-13 -16,-33 0,-33 C16,-33 16,-13 0,0 Z"/>'; }return s;},   // 单朵四叶草
+      tileDraw:(P,k)=>{
+        let s='';
+        for(let a=0;a<4;a++){ s+='<path fill="none" '+P.stroke(k,P.lineW)+' transform="rotate('+(a*90)+')" d="M0,0 C-16,-13 -16,-33 0,-33 C16,-33 16,-13 0,0 Z"/>'; }
+        const corners=[[-50,-50],[50,-50],[-50,50],[50,50]];
+        for(const c of corners){ for(let a=0;a<4;a++){
+          s+='<path fill="none" '+P.stroke(k,P.lineW)+' transform="translate('+c[0]+','+c[1]+') rotate('+(a*90)+')" d="M0,0 Q8,-9 0,-19 Q-8,-9 0,0 Z"/>';
+        } }
+        return s;}},
   ]},
   modern:{name:'现代简约', list:[
     {id:'dot', name:'圆点', seamless:true, draw:(P,k)=>'<circle r="30" '+P.fill(k)+'/>', tileDraw:(P,k)=>{const c=['main','aux','accent','aux'];let s='',i=0;for(const cx of [-25,25])for(const cy of [-25,25]){s+='<circle cx="'+cx+'" cy="'+cy+'" r="25" '+P.fill(c[i++])+'/>';}return s;}},
@@ -415,18 +415,20 @@ const MOTIFS={
       return s;}},
   ]},
   japanese:{name:'日式和风', list:[
-    {id:'seigaiha', name:'青海波', seamless:true, draw:(P,k)=>{
-      let s=''; const R=25;
-      for(let cy=-50; cy<=50; cy+=R){                       // 行距=半径 → 下行盖住上行下半，叠瓦
-        const odd=(Math.round(cy/R)&1)!==0, off=odd?R:0;    // 奇行水平错位半个
-        for(let cx=-100+off; cx<=100; cx+=2*R){
-          s+='<path fill="'+P.bg+'" d="M'+(cx-R)+','+cy+' A'+R+','+R+' 0 0 1 '+(cx+R)+','+cy+' Z"/>';  // 底色遮罩半圆
-          for(const r of [23,15,7]){                        // 同心弧
-            s+='<path fill="none" '+P.stroke(k,P.lineW)+' d="M'+(cx-r)+','+cy+' A'+r+','+r+' 0 0 1 '+(cx+r)+','+cy+'"/>';
+    {id:'seigaiha', name:'青海波', seamless:true,
+      draw:(P,k)=>{let s='';for(const r of [40,26,12]){s+='<path fill="none" '+P.stroke(k,P.lineW)+' d="M'+(-r)+',20 A'+r+','+r+' 0 0 1 '+r+',20"/>';}return s;},   // 单个扇贝
+      tileDraw:(P,k)=>{
+        let s=''; const R=25;
+        for(let cy=-50; cy<=50; cy+=R){                       // 行距=半径 → 下行盖住上行下半，叠瓦
+          const odd=(Math.round(cy/R)&1)!==0, off=odd?R:0;    // 奇行水平错位半个
+          for(let cx=-100+off; cx<=100; cx+=2*R){
+            s+='<path fill="'+P.bg+'" d="M'+(cx-R)+','+cy+' A'+R+','+R+' 0 0 1 '+(cx+R)+','+cy+' Z"/>';  // 底色遮罩半圆
+            for(const r of [23,15,7]){                        // 同心弧
+              s+='<path fill="none" '+P.stroke(k,P.lineW)+' d="M'+(cx-r)+','+cy+' A'+r+','+r+' 0 0 1 '+(cx+r)+','+cy+'"/>';
+            }
           }
         }
-      }
-      return s;}},
+        return s;}},
     {id:'asanoha', name:'麻叶', draw:(P,k)=>{let s='<g '+P.stroke(k,3.5)+' stroke-linejoin="round">';
       const pts=[];for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3;pts.push([Math.cos(a)*40,Math.sin(a)*40]);}
       s+='<polygon points="'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')+'"/>';
@@ -436,17 +438,22 @@ const MOTIFS={
     {id:'sakura', name:'樱花', draw:(P,k)=>{let s='<g '+P.fill(k)+'>';
       for(let i=0;i<5;i++){s+='<path transform="rotate('+(i*72)+')" d="M0,-12 C10,-18 10,-34 3,-40 L0,-36 L-3,-40 C-10,-34 -10,-18 0,-12 Z"/>';}
       return s+'</g><circle r="6" '+P.fill('accent')+'/>';}},
-    {id:'shippo', name:'七宝', seamless:true, draw:(P,k)=>{
-      let s='<g '+P.stroke(k,P.lineW)+'>';
-      if(P.detail==='outline'){                                  // 仅轮廓：花瓣四叶（不画整圆）
-        for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){
-          for(let a=0;a<4;a++){ s+='<path fill="none" transform="translate('+cx+','+cy+') rotate('+(a*90)+')" d="M0,0 Q13,-13 0,-25 Q-13,-13 0,0 Z"/>'; }
+    {id:'shippo', name:'七宝', seamless:true,
+      draw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
+        if(P.detail==='outline'){ for(let a=0;a<4;a++){ s+='<path fill="none" transform="rotate('+(a*90)+')" d="M0,0 Q13,-13 0,-25 Q-13,-13 0,0 Z"/>'; } }   // 单朵四叶
+        else { s+='<circle r="22" fill="none"/>'; for(let i=0;i<4;i++){const a=i*Math.PI/2;s+='<circle cx="'+(Math.cos(a)*22).toFixed(1)+'" cy="'+(Math.sin(a)*22).toFixed(1)+'" r="22" fill="none"/>';} }   // 单朵七宝5圆
+        return s+'</g>';},
+      tileDraw:(P,k)=>{
+        let s='<g '+P.stroke(k,P.lineW)+'>';
+        if(P.detail==='outline'){                                  // 仅轮廓：花瓣四叶（不画整圆）
+          for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){
+            for(let a=0;a<4;a++){ s+='<path fill="none" transform="translate('+cx+','+cy+') rotate('+(a*90)+')" d="M0,0 Q13,-13 0,-25 Q-13,-13 0,0 Z"/>'; }
+          }
+        } else {                                                   // 完整结构：七宝繋ぎ交叠圆
+          const r=35.36;
+          for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){ s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none"/>'; }
         }
-      } else {                                                   // 完整结构：七宝繋ぎ交叠圆（圆心网格50、半径50/√2）
-        const r=35.36;
-        for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){ s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none"/>'; }
-      }
-      return s+'</g>';}},
+        return s+'</g>';}},
     {id:'uroko', name:'鳞纹', seamless:true, tw:100, th:86.6,
       draw:(P,k)=>'<polygon points="0,-38 34,20 -34,20" fill="none" '+P.stroke(k,P.lineW)+'/>',   // 单片鳞
       tileDraw:(P,k)=>{const h=86.6;                                                              // 三角鳞网格密铺
@@ -461,18 +468,24 @@ const MOTIFS={
       return s+'</g><circle r="8" '+P.fill('accent')+'/>';}},
   ]},
   texture:{name:'底纹/线纹', list:[
-    {id:'slash', name:'斜杠纹', seamless:true, draw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
-      for(const b of [-100,-75,-50,-25,0,25,50,75,100]){ s+='<line x1="-60" y1="'+(-60+b)+'" x2="60" y2="'+(60+b)+'"/>'; }
-      return s+'</g>';}},
-    {id:'contour', name:'等高线纹', seamless:true, draw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
-      for(const y0 of [-50,-25,0,25,50]){ let d='M-50,'+y0.toFixed(1);
-        for(let x=-45;x<=50;x+=5){ const y=y0+8*Math.sin(2*Math.PI*x/100); d+=' L'+x+','+y.toFixed(1); }
-        s+='<path d="'+d+'"/>'; }
-      return s+'</g>';}},
-    {id:'grid', name:'网格纹', seamless:true, draw:(P,k)=>'<g '+P.stroke(k,P.lineW)+'>'
-      +'<rect x="-50" y="-50" width="100" height="100"/>'
-      +'<line x1="0" y1="-50" x2="0" y2="50"/><line x1="-50" y1="0" x2="50" y2="0"/></g>'
-      +'<rect x="-4" y="-4" width="8" height="8" '+P.fill('accent')+'/>'},
+    {id:'slash', name:'斜杠纹', seamless:true,
+      draw:(P,k)=>'<line x1="-30" y1="30" x2="30" y2="-30" '+P.stroke(k,P.lineW)+'/>',   // 单斜线
+      tileDraw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
+        for(const b of [-100,-75,-50,-25,0,25,50,75,100]){ s+='<line x1="-60" y1="'+(-60+b)+'" x2="60" y2="'+(60+b)+'"/>'; }
+        return s+'</g>';}},
+    {id:'contour', name:'等高线纹', seamless:true,
+      draw:(P,k)=>{let d='M-40,0';for(let x=-40;x<=40;x+=5){d+=' L'+x+','+(10*Math.sin(2*Math.PI*x/80)).toFixed(1);}return '<path fill="none" '+P.stroke(k,P.lineW)+' d="'+d+'"/>';},   // 单波线
+      tileDraw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
+        for(const y0 of [-50,-25,0,25,50]){ let d='M-50,'+y0.toFixed(1);
+          for(let x=-45;x<=50;x+=5){ const y=y0+8*Math.sin(2*Math.PI*x/100); d+=' L'+x+','+y.toFixed(1); }
+          s+='<path d="'+d+'"/>'; }
+        return s+'</g>';}},
+    {id:'grid', name:'网格纹', seamless:true,
+      draw:(P,k)=>'<rect x="-28" y="-28" width="56" height="56" fill="none" '+P.stroke(k,P.lineW)+'/><rect x="-4" y="-4" width="8" height="8" '+P.fill('accent')+'/>',   // 单方框
+      tileDraw:(P,k)=>'<g '+P.stroke(k,P.lineW)+'>'
+        +'<rect x="-50" y="-50" width="100" height="100"/>'
+        +'<line x1="0" y1="-50" x2="0" y2="50"/><line x1="-50" y1="0" x2="50" y2="0"/></g>'
+        +'<rect x="-4" y="-4" width="8" height="8" '+P.fill('accent')+'/>'},
   ]},
 };
 
