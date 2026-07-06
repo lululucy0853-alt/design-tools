@@ -268,7 +268,14 @@ const MOTIFS={
       s+='<path d="M-24,20 L-4,20"/>';                                 // 下短云带
       s+='</g>';
       return s;}},
-    {id:'tongqian', name:'铜钱', draw:(P,k)=>'<g><path fill-rule="evenodd" '+P.fill(k)+' d="M0,-40 A40,40 0 1,0 0,40 A40,40 0 1,0 0,-40 Z M-12,-12 L12,-12 L12,12 L-12,12 Z"/><circle r="32" '+P.stroke('accent',2.5)+'/></g>'},
+    {id:'tongqian', name:'铜钱', seamless:true, draw:(P,k)=>{
+      const r=35.36;
+      let s='<g '+P.stroke(k,P.lineW)+'>';
+      for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){          // 连钱：圆交叠 + 方孔
+        s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none"/>';
+        s+='<rect x="'+(cx-7)+'" y="'+(cy-7)+'" width="14" height="14" fill="none"/>';
+      }
+      return s+'</g>';}},
     {id:'haibo', name:'海波纹', draw:(P,k)=>'<g '+P.stroke(k,5)+'><path d="M-48,24 a48,48 0 0 1 96,0"/><path d="M-36,24 a36,36 0 0 1 72,0"/><path d="M-24,24 a24,24 0 0 1 48,0"/><path d="M-12,24 a12,12 0 0 1 24,0"/></g>'},
     {id:'meihua', name:'梅花', draw:(P,k)=>{let s='<g>';for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;s+='<circle cx="'+(Math.cos(a)*17).toFixed(1)+'" cy="'+(Math.sin(a)*17).toFixed(1)+'" r="14" '+P.fill(k)+'/>';}return s+'<circle r="7" '+P.fill('accent')+'/></g>';}},
     {id:'qiulu', name:'毬路纹', seamless:true, draw:(P,k)=>{
@@ -286,9 +293,18 @@ const MOTIFS={
     {id:'dot', name:'圆点', seamless:true, draw:(P,k)=>'<circle r="30" '+P.fill(k)+'/>'},
     {id:'ring', name:'圆环', seamless:true, draw:(P,k)=>'<circle r="30" fill="none" '+P.stroke(k,P.lineW)+'/>'},
     {id:'line', name:'线条', seamless:true, draw:(P,k)=>'<rect x="-50" y="-5" width="100" height="10" '+P.fill(k)+'/>'},
-    {id:'tri', name:'三角', draw:(P,k)=>'<polygon points="0,-34 36,28 -36,28" '+P.fill(k)+'/>'},
+    {id:'tri', name:'三角', seamless:true, tw:100, th:86.6, draw:(P,k)=>{
+      const H='43.30';
+      return '<path '+P.fill(k)+' d="M0,-'+H+' L-50,'+H+' L50,'+H+' Z"/>'          // 正三角(主色)
+        +'<path '+P.fill('aux')+' d="M-100,-'+H+' L0,-'+H+' L-50,'+H+' Z"/>'       // 左倒三角(辅色,跨边界)
+        +'<path '+P.fill('aux')+' d="M0,-'+H+' L100,-'+H+' L50,'+H+' Z"/>';}},     // 右倒三角(辅色,跨边界)
     {id:'cross', name:'十字', seamless:true, draw:(P,k)=>'<path '+P.fill(k)+' d="M-6,-50 L6,-50 L6,-6 L50,-6 L50,6 L6,6 L6,50 L-6,50 L-6,6 L-50,6 L-50,-6 L-6,-6 Z"/>'},
-    {id:'semi', name:'半圆', draw:(P,k)=>'<path '+P.fill(k)+' d="M-34,17 a34,34 0 0 1 68,0 Z"/>'},
+    {id:'semi', name:'半圆', seamless:true, draw:(P,k)=>{
+      const R=50;
+      let s='<g fill="none" '+P.stroke(k,P.lineW)+'>';
+      for(let cy=-50;cy<=50;cy+=50){ const odd=(Math.round(cy/50)&1)!==0, off=odd?50:0;
+        for(let cx=-100+off;cx<=100;cx+=100){ s+='<path d="M'+(cx-R)+','+cy+' A'+R+','+R+' 0 0 1 '+(cx+R)+','+cy+'"/>'; } }
+      return s+'</g>';}},
   ]},
   tech:{name:'科技纹样', list:[
     {id:'hex', name:'六边形', seamless:true, tw:100, th:57.735, draw:(P,k)=>{
@@ -423,8 +439,12 @@ const MOTIFS={
         for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){ s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none"/>'; }
       }
       return s+'</g>';}},
-    {id:'uroko', name:'鳞纹', draw:(P,k)=>'<g><polygon points="0,-38 34,20 -34,20" '+P.fill(k)+'/>'
-      +'<polygon points="0,-20 17,11 -17,11" '+P.stroke('accent',3)+'/></g>'},
+    {id:'uroko', name:'鳞纹', seamless:true, tw:100, th:86.6, draw:(P,k)=>{
+      const h=86.6;
+      let s='<g fill="none" '+P.stroke(k,P.lineW)+'>';
+      s+='<path d="M0,'+(-h/2)+' L-50,'+(h/2)+' L50,'+(h/2)+' Z"/>';        // 正三角鳞
+      s+='<path d="M-50,'+(-h/2)+' L50,'+(-h/2)+' L0,'+(h/2)+' Z"/>';       // 倒三角鳞
+      return s+'</g>';}},
     {id:'kiku', name:'菊花', draw:(P,k)=>{let s='<g '+P.fill(k)+'>';const N=12;
       for(let i=0;i<N;i++){s+='<ellipse transform="rotate('+(i*360/N)+')" cx="0" cy="-28" rx="6" ry="14"/>';}
       s+='</g><g '+P.fill('aux')+'>';
