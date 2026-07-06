@@ -232,10 +232,11 @@ function makePaint(mat,colors,outline,lineW){
   };
   const S=(k,w)=>{
     const c=colors[k];
-    if(mat==='sketch') return 'fill="none" stroke="'+c+'" stroke-width="'+w+'" stroke-linecap="round"';
-    if(mat==='stitch') return 'fill="none" stroke="'+c+'" stroke-width="'+w+'" stroke-dasharray="'+(w*1.6)+' '+(w*1.1)+'" stroke-linecap="round"';
-    if(mat==='gold')   return 'fill="none" stroke="url(#goldGrad)" stroke-width="'+w+'"';
-    return 'fill="none" stroke="'+c+'" stroke-width="'+w+'"';
+    const sw = outline ? lineW : w;   // 线框模式：全屏线条统一由「线条粗细」控制，覆盖各纹样局部写死的线宽
+    if(mat==='sketch') return 'fill="none" stroke="'+c+'" stroke-width="'+sw+'" stroke-linecap="round"';
+    if(mat==='stitch') return 'fill="none" stroke="'+c+'" stroke-width="'+sw+'" stroke-dasharray="'+(sw*1.6)+' '+(sw*1.1)+'" stroke-linecap="round"';
+    if(mat==='gold')   return 'fill="none" stroke="url(#goldGrad)" stroke-width="'+sw+'"';
+    return 'fill="none" stroke="'+c+'" stroke-width="'+sw+'"';
   };
   return {fill:F, stroke:S, lineW:lineW};
 }
@@ -390,15 +391,15 @@ const MOTIFS={
       return s+'</g><circle r="8" '+P.fill('accent')+'/>';}},
   ]},
   texture:{name:'底纹/线纹', list:[
-    {id:'slash', name:'斜杠纹', draw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
+    {id:'slash', name:'斜杠纹', seamless:true, draw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
       for(const b of [-100,-75,-50,-25,0,25,50,75,100]){ s+='<line x1="-60" y1="'+(-60+b)+'" x2="60" y2="'+(60+b)+'"/>'; }
       return s+'</g>';}},
-    {id:'contour', name:'等高线纹', draw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
+    {id:'contour', name:'等高线纹', seamless:true, draw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
       for(const y0 of [-50,-25,0,25,50]){ let d='M-50,'+y0.toFixed(1);
         for(let x=-45;x<=50;x+=5){ const y=y0+8*Math.sin(2*Math.PI*x/100); d+=' L'+x+','+y.toFixed(1); }
         s+='<path d="'+d+'"/>'; }
       return s+'</g>';}},
-    {id:'grid', name:'网格纹', draw:(P,k)=>'<g '+P.stroke(k,P.lineW)+'>'
+    {id:'grid', name:'网格纹', seamless:true, draw:(P,k)=>'<g '+P.stroke(k,P.lineW)+'>'
       +'<rect x="-50" y="-50" width="100" height="100"/>'
       +'<line x1="0" y1="-50" x2="0" y2="50"/><line x1="-50" y1="0" x2="50" y2="0"/></g>'
       +'<rect x="-4" y="-4" width="8" height="8" '+P.fill('accent')+'/>'},
@@ -506,7 +507,14 @@ function render(forceTransparent, skipView){
   let body='';
 
   /* ---- 各组合形式 ---- */
-  if(state.arr==='tile' || state.arr==='linear'){
+  if(state.arr==='tile' && motifDef.seamless){
+    // 无缝底纹：单元本身周期匹配 → 直接做 pattern 平铺；patternTransform 旋转任意角度都无限延展无缝
+    const ts=s;
+    defs+='<pattern id="tileP" width="'+ts+'" height="'+ts+'" patternUnits="userSpaceOnUse" patternTransform="rotate('+state.spin+')">'
+      +'<g transform="translate('+(ts/2)+','+(ts/2)+') scale('+baseScale+')">'+draw('main')+'</g></pattern>';
+    body='<rect width="'+W+'" height="'+H+'" fill="url(#tileP)"/>';
+  }
+  else if(state.arr==='tile' || state.arr==='linear'){
     const K = state.arr==='tile' ? 4 : 6;
     const tileW=spacing*K;
     const tileH= state.arr==='tile' ? spacing*K : H;
