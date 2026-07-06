@@ -290,8 +290,8 @@ const MOTIFS={
       return s;}},
   ]},
   modern:{name:'现代简约', list:[
-    {id:'dot', name:'圆点', seamless:true, draw:(P,k)=>'<circle r="30" '+P.fill(k)+'/>', tileDraw:(P,k)=>'<circle r="50" '+P.fill(k)+'/>'},
-    {id:'ring', name:'圆环', seamless:true, draw:(P,k)=>'<circle r="30" fill="none" '+P.stroke(k,P.lineW)+'/>', tileDraw:(P,k)=>'<circle r="50" fill="none" '+P.stroke(k,P.lineW)+'/>'},
+    {id:'dot', name:'圆点', seamless:true, draw:(P,k)=>'<circle r="30" '+P.fill(k)+'/>', tileDraw:(P,k)=>{const c=['main','aux','accent','aux'];let s='',i=0;for(const cx of [-25,25])for(const cy of [-25,25]){s+='<circle cx="'+cx+'" cy="'+cy+'" r="25" '+P.fill(c[i++])+'/>';}return s;}},
+    {id:'ring', name:'圆环', seamless:true, draw:(P,k)=>'<circle r="30" fill="none" '+P.stroke(k,P.lineW)+'/>', tileDraw:(P,k)=>{const c=['main','aux','accent','aux'];let s='',i=0;for(const cx of [-25,25])for(const cy of [-25,25]){s+='<circle cx="'+cx+'" cy="'+cy+'" r="25" fill="none" '+P.stroke(c[i++],P.lineW)+'/>';}return s;}},
     {id:'line', name:'线条', seamless:true, draw:(P,k)=>'<rect x="-40" y="-5" width="80" height="10" rx="5" '+P.fill(k)+'/>', tileDraw:(P,k)=>'<rect x="-50" y="-5" width="100" height="10" '+P.fill(k)+'/>'},
     {id:'tri', name:'三角', seamless:true, tw:100, th:86.6,
       draw:(P,k)=>'<polygon points="0,-34 36,28 -36,28" '+P.fill(k)+'/>',          // 单个三角(密度<最大)
