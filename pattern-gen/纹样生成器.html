@@ -410,9 +410,11 @@ const MOTIFS={
     {id:'sakura', name:'樱花', draw:(P,k)=>{let s='<g '+P.fill(k)+'>';
       for(let i=0;i<5;i++){s+='<path transform="rotate('+(i*72)+')" d="M0,-12 C10,-18 10,-34 3,-40 L0,-36 L-3,-40 C-10,-34 -10,-18 0,-12 Z"/>';}
       return s+'</g><circle r="6" '+P.fill('accent')+'/>';}},
-    {id:'shippo', name:'七宝', draw:(P,k)=>{let s='<g '+P.stroke(k,4)+'><circle r="22"/>';
-      for(let i=0;i<4;i++){const a=i*Math.PI/2;s+='<circle cx="'+(Math.cos(a)*22).toFixed(1)+'" cy="'+(Math.sin(a)*22).toFixed(1)+'" r="22"/>';}
-      return s+'</g><circle r="4.5" '+P.fill('accent')+'/>';}},
+    {id:'shippo', name:'七宝', seamless:true, draw:(P,k)=>{
+      const r=35.36;   // = 50/√2：圆心网格间距 50，相邻相交成四叶、对角相切 → 七宝繋ぎ无缝
+      let s='<g '+P.stroke(k,P.lineW)+'>';
+      for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){ s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none"/>'; }
+      return s+'</g>';}},
     {id:'uroko', name:'鳞纹', draw:(P,k)=>'<g><polygon points="0,-38 34,20 -34,20" '+P.fill(k)+'/>'
       +'<polygon points="0,-20 17,11 -17,11" '+P.stroke('accent',3)+'/></g>'},
     {id:'kiku', name:'菊花', draw:(P,k)=>{let s='<g '+P.fill(k)+'>';const N=12;
