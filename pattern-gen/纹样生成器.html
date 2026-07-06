@@ -268,14 +268,15 @@ const MOTIFS={
       s+='<path d="M-24,20 L-4,20"/>';                                 // 下短云带
       s+='</g>';
       return s;}},
-    {id:'tongqian', name:'铜钱', seamless:true, draw:(P,k)=>{
-      const r=35.36;
-      let s='<g '+P.stroke(k,P.lineW)+'>';
-      for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){          // 连钱：圆交叠 + 方孔
-        s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none"/>';
-        s+='<rect x="'+(cx-7)+'" y="'+(cy-7)+'" width="14" height="14" fill="none"/>';
-      }
-      return s+'</g>';}},
+    {id:'tongqian', name:'铜钱', seamless:true,
+      draw:(P,k)=>'<g '+P.stroke(k,P.lineW)+'><circle r="35" fill="none"/><rect x="-9" y="-9" width="18" height="18" fill="none"/></g>',   // 单枚铜钱
+      tileDraw:(P,k)=>{const r=35.36;                                                                                                     // 连钱：圆交叠 + 方孔
+        let s='<g '+P.stroke(k,P.lineW)+'>';
+        for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){
+          s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none"/>';
+          s+='<rect x="'+(cx-7)+'" y="'+(cy-7)+'" width="14" height="14" fill="none"/>';
+        }
+        return s+'</g>';}},
     {id:'haibo', name:'海波纹', draw:(P,k)=>'<g '+P.stroke(k,5)+'><path d="M-48,24 a48,48 0 0 1 96,0"/><path d="M-36,24 a36,36 0 0 1 72,0"/><path d="M-24,24 a24,24 0 0 1 48,0"/><path d="M-12,24 a12,12 0 0 1 24,0"/></g>'},
     {id:'meihua', name:'梅花', draw:(P,k)=>{let s='<g>';for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;s+='<circle cx="'+(Math.cos(a)*17).toFixed(1)+'" cy="'+(Math.sin(a)*17).toFixed(1)+'" r="14" '+P.fill(k)+'/>';}return s+'<circle r="7" '+P.fill('accent')+'/></g>';}},
     {id:'qiulu', name:'毬路纹', seamless:true, draw:(P,k)=>{
@@ -309,18 +310,23 @@ const MOTIFS={
         return s+'</g>';}},
   ]},
   tech:{name:'科技纹样', list:[
-    {id:'hex', name:'六边形', seamless:true, tw:100, th:57.735, draw:(P,k)=>{
-      const R=33.333, th=57.735;
-      const hexP=(cx,cy)=>{let p='';for(let a=0;a<6;a++){const ang=a*Math.PI/3;p+=(a?'L':'M')+(cx+R*Math.cos(ang)).toFixed(2)+','+(cy+R*Math.sin(ang)).toFixed(2);}return p+'Z';};
-      let s='<g '+P.stroke(k,P.lineW)+'>';                          // 平顶六边形蜂窝：共边密铺
-      s+='<path fill="none" d="'+hexP(-25,0)+'"/>';
-      s+='<path fill="none" d="'+hexP(25,th/2)+'"/>';
-      s+='<path fill="none" d="'+hexP(25,-th/2)+'"/></g>';
-      s+='<circle cx="-25" cy="0" r="3.5" '+P.fill('accent')+'/><circle cx="25" cy="'+(th/2)+'" r="3.5" '+P.fill('accent')+'/><circle cx="25" cy="'+(-th/2)+'" r="3.5" '+P.fill('accent')+'/>';
-      return s;}},
+    {id:'hex', name:'六边形', seamless:true, tw:100, th:57.735,
+      draw:(P,k)=>{const R=33.333;                                    // 单个六边形
+        const hexP=(cx,cy)=>{let p='';for(let a=0;a<6;a++){const ang=a*Math.PI/3;p+=(a?'L':'M')+(cx+R*Math.cos(ang)).toFixed(2)+','+(cy+R*Math.sin(ang)).toFixed(2);}return p+'Z';};
+        return '<path fill="none" '+P.stroke(k,P.lineW)+' d="'+hexP(0,0)+'"/><circle r="3.5" '+P.fill('accent')+'/>';},
+      tileDraw:(P,k)=>{const R=33.333, th=57.735;                     // 平顶六边形蜂窝：共边密铺
+        const hexP=(cx,cy)=>{let p='';for(let a=0;a<6;a++){const ang=a*Math.PI/3;p+=(a?'L':'M')+(cx+R*Math.cos(ang)).toFixed(2)+','+(cy+R*Math.sin(ang)).toFixed(2);}return p+'Z';};
+        let s='<g '+P.stroke(k,P.lineW)+'>';
+        s+='<path fill="none" d="'+hexP(-25,0)+'"/>';
+        s+='<path fill="none" d="'+hexP(25,th/2)+'"/>';
+        s+='<path fill="none" d="'+hexP(25,-th/2)+'"/></g>';
+        s+='<circle cx="-25" cy="0" r="3.5" '+P.fill('accent')+'/><circle cx="25" cy="'+(th/2)+'" r="3.5" '+P.fill('accent')+'/><circle cx="25" cy="'+(-th/2)+'" r="3.5" '+P.fill('accent')+'/>';
+        return s;}},
     {id:'circuit', name:'电路', draw:(P,k)=>'<g><path '+P.stroke(k,5)+' d="M-34,-22 L2,-22 L2,14 L34,14"/><circle cx="-34" cy="-22" r="6" '+P.fill('accent')+'/><circle cx="34" cy="14" r="6" '+P.fill('accent')+'/></g>'},
     {id:'hud', name:'HUD角标', draw:(P,k)=>'<g><g '+P.stroke(k,6)+'><path d="M-36,-16 L-36,-36 L-16,-36"/><path d="M16,-36 L36,-36 L36,-16"/><path d="M36,16 L36,36 L16,36"/><path d="M-16,36 L-36,36 L-36,16"/></g><circle r="5" '+P.fill('accent')+'/></g>'},
-    {id:'dots9', name:'点阵', seamless:true, draw:(P,k)=>{let s='';for(const cx of [-25,25])for(const cy of [-25,25]){s+='<circle cx="'+cx+'" cy="'+cy+'" r="6" '+P.fill(k)+'/>';}return s;}},
+    {id:'dots9', name:'点阵', seamless:true,
+      draw:(P,k)=>{let s='<g>';for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){s+='<circle cx="'+(i*16)+'" cy="'+(j*16)+'" r="4" '+P.fill(k)+'/>';}return s+'</g>';},   // 单簇 3×3 点
+      tileDraw:(P,k)=>{let s='';for(const cx of [-25,25])for(const cy of [-25,25]){s+='<circle cx="'+cx+'" cy="'+cy+'" r="6" '+P.fill(k)+'/>';}return s;}},   // 满点阵
     {id:'chip', name:'芯片', draw:(P,k)=>{let s='<g><rect x="-24" y="-24" width="48" height="48" rx="5" '+P.fill(k)+'/>';for(const o of [-14,0,14]){s+='<line x1="'+o+'" y1="-24" x2="'+o+'" y2="-36" '+P.stroke(k,4)+'/><line x1="'+o+'" y1="24" x2="'+o+'" y2="36" '+P.stroke(k,4)+'/><line x1="-24" y1="'+o+'" x2="-36" y2="'+o+'" '+P.stroke(k,4)+'/><line x1="24" y1="'+o+'" x2="36" y2="'+o+'" '+P.stroke(k,4)+'/>';}return s+'<rect x="-11" y="-11" width="22" height="22" rx="3" '+P.stroke('accent',3)+'/></g>';}},
   ]},
   cartoon:{name:'卡通纹样', list:[
@@ -441,12 +447,13 @@ const MOTIFS={
         for(const cx of [-50,0,50]) for(const cy of [-50,0,50]){ s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none"/>'; }
       }
       return s+'</g>';}},
-    {id:'uroko', name:'鳞纹', seamless:true, tw:100, th:86.6, draw:(P,k)=>{
-      const h=86.6;
-      let s='<g fill="none" '+P.stroke(k,P.lineW)+'>';
-      s+='<path d="M0,'+(-h/2)+' L-50,'+(h/2)+' L50,'+(h/2)+' Z"/>';        // 正三角鳞
-      s+='<path d="M-50,'+(-h/2)+' L50,'+(-h/2)+' L0,'+(h/2)+' Z"/>';       // 倒三角鳞
-      return s+'</g>';}},
+    {id:'uroko', name:'鳞纹', seamless:true, tw:100, th:86.6,
+      draw:(P,k)=>'<polygon points="0,-38 34,20 -34,20" fill="none" '+P.stroke(k,P.lineW)+'/>',   // 单片鳞
+      tileDraw:(P,k)=>{const h=86.6;                                                              // 三角鳞网格密铺
+        let s='<g fill="none" '+P.stroke(k,P.lineW)+'>';
+        s+='<path d="M0,'+(-h/2)+' L-50,'+(h/2)+' L50,'+(h/2)+' Z"/>';
+        s+='<path d="M-50,'+(-h/2)+' L50,'+(-h/2)+' L0,'+(h/2)+' Z"/>';
+        return s+'</g>';}},
     {id:'kiku', name:'菊花', draw:(P,k)=>{let s='<g '+P.fill(k)+'>';const N=12;
       for(let i=0;i<N;i++){s+='<ellipse transform="rotate('+(i*360/N)+')" cx="0" cy="-28" rx="6" ry="14"/>';}
       s+='</g><g '+P.fill('aux')+'>';
