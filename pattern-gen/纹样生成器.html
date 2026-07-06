@@ -289,7 +289,15 @@ const MOTIFS={
     {id:'semi', name:'半圆', draw:(P,k)=>'<path '+P.fill(k)+' d="M-34,17 a34,34 0 0 1 68,0 Z"/>'},
   ]},
   tech:{name:'科技纹样', list:[
-    {id:'hex', name:'六边形', draw:(P,k)=>'<g><polygon points="'+hexPoints(36)+'" '+P.stroke(k,6)+'/><circle r="4.5" '+P.fill('accent')+'/></g>'},
+    {id:'hex', name:'六边形', seamless:true, tw:100, th:57.735, draw:(P,k)=>{
+      const R=33.333, th=57.735;
+      const hexP=(cx,cy)=>{let p='';for(let a=0;a<6;a++){const ang=a*Math.PI/3;p+=(a?'L':'M')+(cx+R*Math.cos(ang)).toFixed(2)+','+(cy+R*Math.sin(ang)).toFixed(2);}return p+'Z';};
+      let s='<g '+P.stroke(k,P.lineW)+'>';                          // 平顶六边形蜂窝：共边密铺
+      s+='<path fill="none" d="'+hexP(-25,0)+'"/>';
+      s+='<path fill="none" d="'+hexP(25,th/2)+'"/>';
+      s+='<path fill="none" d="'+hexP(25,-th/2)+'"/></g>';
+      s+='<circle cx="-25" cy="0" r="3.5" '+P.fill('accent')+'/><circle cx="25" cy="'+(th/2)+'" r="3.5" '+P.fill('accent')+'/><circle cx="25" cy="'+(-th/2)+'" r="3.5" '+P.fill('accent')+'/>';
+      return s;}},
     {id:'circuit', name:'电路', draw:(P,k)=>'<g><path '+P.stroke(k,5)+' d="M-34,-22 L2,-22 L2,14 L34,14"/><circle cx="-34" cy="-22" r="6" '+P.fill('accent')+'/><circle cx="34" cy="14" r="6" '+P.fill('accent')+'/></g>'},
     {id:'hud', name:'HUD角标', draw:(P,k)=>'<g><g '+P.stroke(k,6)+'><path d="M-36,-16 L-36,-36 L-16,-36"/><path d="M16,-36 L36,-36 L36,-16"/><path d="M36,16 L36,36 L16,36"/><path d="M-16,36 L-36,36 L-36,16"/></g><circle r="5" '+P.fill('accent')+'/></g>'},
     {id:'dots9', name:'点阵', draw:(P,k)=>{let s='<g>';for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){s+='<circle cx="'+(i*22)+'" cy="'+(j*22)+'" r="4.5" '+P.fill((i+j)%2===0?k:'accent')+'/>';}return s+'</g>';}},
@@ -532,9 +540,11 @@ function render(forceTransparent, skipView){
   /* ---- 各组合形式 ---- */
   if(state.arr==='tile' && motifDef.seamless){
     // 无缝底纹：单元本身周期匹配 → 直接做 pattern 平铺；patternTransform 旋转任意角度都无限延展无缝
-    const ts=s;
-    defs+='<pattern id="tileP" width="'+ts+'" height="'+ts+'" patternUnits="userSpaceOnUse" patternTransform="rotate('+state.spin+')">'
-      +'<g transform="translate('+(ts/2)+','+(ts/2)+') scale('+baseScale+')">'+draw('main')+'</g></pattern>';
+    // motif 可声明 tw/th（单元坐标下的 tile 宽高，默认 100×100 正方形）→ 支持蜂窝等矩形周期
+    const tw=(motifDef.tw||100), th=(motifDef.th||100);
+    const tsW=s*tw/100, tsH=s*th/100;
+    defs+='<pattern id="tileP" width="'+tsW+'" height="'+tsH+'" patternUnits="userSpaceOnUse" patternTransform="rotate('+state.spin+')">'
+      +'<g transform="translate('+(tsW/2)+','+(tsH/2)+') scale('+baseScale+')">'+draw('main')+'</g></pattern>';
     body='<rect width="'+W+'" height="'+H+'" fill="url(#tileP)"/>';
   }
   else if(state.arr==='tile' || state.arr==='linear'){
