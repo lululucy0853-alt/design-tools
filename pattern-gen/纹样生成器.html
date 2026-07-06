@@ -575,9 +575,12 @@ function render(forceTransparent, skipView){
   if(state.arr==='tile' && useSeamless){
     const tw=(motifDef.tw||100), th=(motifDef.th||100);
     const tsW=s*tw/100, tsH=s*th/100;
-    const tileContent = motifDef.tileDraw ? motifDef.tileDraw(P,'main') : draw('main');
-    defs+='<pattern id="tileP" width="'+tsW+'" height="'+tsH+'" patternUnits="userSpaceOnUse" patternTransform="rotate('+state.spin+')">'
-      +'<g transform="translate('+(tsW/2)+','+(tsH/2)+') scale('+baseScale+')">'+tileContent+'</g></pattern>';
+    const tfn = motifDef.tileDraw ? (c)=>motifDef.tileDraw(P,c) : (c)=>motifDef.draw(P,c);
+    const cols=['main','aux','accent','aux']; let content='', ci=0;   // 2×2 超级单元：四格按主/辅/点缀循环上色 → 密铺也有配色
+    for(let i=0;i<2;i++)for(let j=0;j<2;j++){
+      content+='<g transform="translate('+(i*tsW)+','+(j*tsH)+')"><g transform="translate('+(tsW/2)+','+(tsH/2)+') scale('+baseScale+')">'+tfn(cols[ci++])+'</g></g>';
+    }
+    defs+='<pattern id="tileP" width="'+(2*tsW)+'" height="'+(2*tsH)+'" patternUnits="userSpaceOnUse" patternTransform="rotate('+state.spin+')">'+content+'</pattern>';
     body='<rect width="'+W+'" height="'+H+'" fill="url(#tileP)"/>';
   }
   else if(state.arr==='tile' || state.arr==='linear'){
