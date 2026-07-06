@@ -414,7 +414,7 @@ const MOTIFS={
       s+='<g transform="translate(22,13) rotate(180)">'+leaf+'</g>';
       return s;}},
   ]},
-  japanese:{name:'日式和风', list:[
+  japanese:{name:'和风纹样', list:[
     {id:'seigaiha', name:'青海波', seamless:true,
       draw:(P,k)=>{let s='';for(const r of [40,26,12]){s+='<path fill="none" '+P.stroke(k,P.lineW)+' d="M'+(-r)+',20 A'+r+','+r+' 0 0 1 '+r+',20"/>';}return s;},   // 单个扇贝
       tileDraw:(P,k)=>{
@@ -591,7 +591,7 @@ function render(forceTransparent, skipView){
 
   /* ---- 各组合形式 ---- */
   // 无缝：有 tileDraw 的纹样仅在密度最大(10)时密铺无缝，密度降低回落到离散摆放（单个图案分开）；无 tileDraw 的底纹一直无缝
-  const useSeamless = motifDef.seamless && (!motifDef.tileDraw || state.density>=10);
+  const useSeamless = state.density>=10;   // 密度满 → 所有纹样密铺(有 tileDraw 用密铺版,否则图案本身规律满铺);密度低 → 离散单个
   if(state.arr==='tile' && useSeamless){
     const tw=(motifDef.tw||100), th=(motifDef.th||100);
     const tsW=s*tw/100, tsH=s*th/100;
