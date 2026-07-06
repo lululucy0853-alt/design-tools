@@ -269,6 +269,16 @@ const MOTIFS={
     {id:'tongqian', name:'铜钱', draw:(P,k)=>'<g><path fill-rule="evenodd" '+P.fill(k)+' d="M0,-40 A40,40 0 1,0 0,40 A40,40 0 1,0 0,-40 Z M-12,-12 L12,-12 L12,12 L-12,12 Z"/><circle r="32" '+P.stroke('accent',2.5)+'/></g>'},
     {id:'haibo', name:'海波纹', draw:(P,k)=>'<g '+P.stroke(k,5)+'><path d="M-48,24 a48,48 0 0 1 96,0"/><path d="M-36,24 a36,36 0 0 1 72,0"/><path d="M-24,24 a24,24 0 0 1 48,0"/><path d="M-12,24 a12,12 0 0 1 24,0"/></g>'},
     {id:'meihua', name:'梅花', draw:(P,k)=>{let s='<g>';for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;s+='<circle cx="'+(Math.cos(a)*17).toFixed(1)+'" cy="'+(Math.sin(a)*17).toFixed(1)+'" r="14" '+P.fill(k)+'/>';}return s+'<circle r="7" '+P.fill('accent')+'/></g>';}},
+    {id:'qiulu', name:'毬路纹', seamless:true, draw:(P,k)=>{
+      let s='';
+      // 中心海棠花(四曲花头)
+      s+='<path fill="none" '+P.stroke(k,P.lineW)+' d="M0,-32 Q26,-26 32,0 Q26,26 0,32 Q-26,26 -32,0 Q-26,-26 0,-32 Z"/>';
+      // 四角四叶花(双圆相交式)：平铺后每个网格交点由四个 tile 的角拼成完整
+      const corners=[[-50,-50],[50,-50],[-50,50],[50,50]];
+      for(const c of corners){ for(let a=0;a<4;a++){
+        s+='<path fill="none" '+P.stroke(k,P.lineW)+' transform="translate('+c[0]+','+c[1]+') rotate('+(a*90)+')" d="M0,0 Q8,-9 0,-19 Q-8,-9 0,0 Z"/>';
+      } }
+      return s;}},
   ]},
   modern:{name:'现代简约', list:[
     {id:'dot', name:'圆点', draw:(P,k)=>'<circle r="30" '+P.fill(k)+'/>'},
