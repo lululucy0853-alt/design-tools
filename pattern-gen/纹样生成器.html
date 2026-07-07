@@ -270,13 +270,19 @@ const MOTIFS={
                +' M'+x(13)+','+y(-18)+' L'+x(25)+','+y(-18)+' L'+x(25)+','+y(18)+' L'+x(-25)+','+y(18);};
         for(const yc of [-25,25]) for(const x0 of [-25,25]){ s+='<path d="'+key(x0,yc)+'"/>'; }
         return s+'</g>';}},
-    {id:'xiangyun', name:'祥云', draw:(P,k)=>{
+    {id:'xiangyun', name:'祥云', seamless:true,
+      draw:(P,k)=>{
       let s='<g '+P.stroke(k,8)+' stroke-linecap="round" stroke-linejoin="round">';   // 粗圆头带=扁平流动云条
       s+='<path d="M-42,-4 C-24,-4 -14,-11 0,-9 C9,-7.5 12,-4 19,-4 C31,-4 33,-19 20,-19 C10,-19 12,-7 22,-7"/>';  // 主云带(起伏) + 右端大卷如意头
       s+='<path d="M-32,10 C-20,10 -10,5 2,8 C8,9.5 11,10 15,10"/>';   // 中云带(错落起伏)
       s+='<path d="M-24,20 L-4,20"/>';                                 // 下短云带
       s+='</g>';
-      return s;}},
+      return s;},
+      tileDraw:(P,k)=>{ let s='<g fill="none" stroke-linecap="round" stroke-linejoin="round" '+P.stroke(k,P.lineW)+'>';   // 连绵祥云:横向云带+每周期如意卷头、成行错位
+        for(const [yc,ph] of [[-25,0],[25,Math.PI]]){
+          let d='M-50,'+yc; for(let x=-48;x<=50;x+=2){ d+=' L'+x+','+(yc+7*Math.sin(2*Math.PI*x/50+ph)).toFixed(1); } s+='<path d="'+d+'"/>';
+          for(const cx of [-25,25]){ s+='<path d="M'+cx+','+(yc-7)+' q13,-3 13,-13 q0,-9 -9,-9 q-7,0 -5,7"/>'; } }
+        return s+'</g>';}},
     {id:'tongqian', name:'铜钱', seamless:true,
       draw:(P,k)=>'<g '+P.stroke(k,P.lineW)+'><circle r="35" fill="none"/><rect x="-9" y="-9" width="18" height="18" fill="none"/></g>',   // 单枚铜钱
       tileDraw:(P,k)=>{const r=35.36;                                                                                                     // 连钱：圆交叠 + 方孔
@@ -346,10 +352,17 @@ const MOTIFS={
         s+='<path d="M-50,0 H-25 V-25 H0 V-50"/><path d="M0,50 V25 H25 V0 H50"/></g>';
         for(const n of [[-25,0],[0,-25],[0,25],[25,0]]) s+='<circle cx="'+n[0]+'" cy="'+n[1]+'" r="5" '+P.fill('accent')+'/>';
         return s;}},
-    {id:'hud', name:'HUD角标', draw:(P,k)=>'<g><g '+P.stroke(k,6)+'><path d="M-36,-16 L-36,-36 L-16,-36"/><path d="M16,-36 L36,-36 L36,-16"/><path d="M36,16 L36,36 L16,36"/><path d="M-16,36 L-36,36 L-36,16"/></g><circle r="5" '+P.fill('accent')+'/></g>'},
+    {id:'hud', name:'HUD角标', seamless:true,
+      draw:(P,k)=>'<g><g '+P.stroke(k,6)+'><path d="M-36,-16 L-36,-36 L-16,-36"/><path d="M16,-36 L36,-36 L36,-16"/><path d="M36,16 L36,36 L16,36"/><path d="M-16,36 L-36,36 L-36,16"/></g><circle r="5" '+P.fill('accent')+'/></g>',   // 单个角标(密度<最大)
+      tileDraw:(P,k)=>{ const g=9, N=[-50,0,50]; let s='<g fill="none" stroke-linecap="round" '+P.stroke(k,P.lineW)+'>';   // 连续框网格:50格、节点处留缺口成角标 + 中心准星
+        for(const y of N) for(const x of N){ if(x<50) s+='<path d="M'+(x+g)+','+y+' H'+(x+50-g)+'"/>'; }
+        for(const x of N) for(const y of N){ if(y<50) s+='<path d="M'+x+','+(y+g)+' V'+(y+50-g)+'"/>'; }
+        s+='</g>';
+        for(const cx of [-25,25]) for(const cy of [-25,25]) s+='<circle cx="'+cx+'" cy="'+cy+'" r="3.5" '+P.fill('accent')+'/>';
+        return s;}},
     {id:'dots9', name:'点阵', seamless:true,
       draw:(P,k)=>{let s='<g>';for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){s+='<circle cx="'+(i*16)+'" cy="'+(j*16)+'" r="4" '+P.fill(k)+'/>';}return s+'</g>';},   // 单簇 3×3 点
-      tileDraw:(P,k)=>{let s='';for(const cx of [-25,25])for(const cy of [-25,25]){s+='<circle cx="'+cx+'" cy="'+cy+'" r="6" '+P.fill(k)+'/>';}return s;}},   // 满点阵
+      tileDraw:(P,k)=>{let s='';for(const cx of [-40,-20,0,20,40])for(const cy of [-40,-20,0,20,40]){s+='<circle cx="'+cx+'" cy="'+cy+'" r="5" '+P.fill(k)+'/>';}return s;}},   // 满点阵(加密5×5)
     {id:'chip', name:'芯片', draw:(P,k)=>{let s='<g><rect x="-24" y="-24" width="48" height="48" rx="5" '+P.fill(k)+'/>';for(const o of [-14,0,14]){s+='<line x1="'+o+'" y1="-24" x2="'+o+'" y2="-36" '+P.stroke(k,4)+'/><line x1="'+o+'" y1="24" x2="'+o+'" y2="36" '+P.stroke(k,4)+'/><line x1="-24" y1="'+o+'" x2="-36" y2="'+o+'" '+P.stroke(k,4)+'/><line x1="24" y1="'+o+'" x2="36" y2="'+o+'" '+P.stroke(k,4)+'/>';}return s+'<rect x="-11" y="-11" width="22" height="22" rx="3" '+P.stroke('accent',3)+'/></g>';}},
   ]},
   cartoon:{name:'卡通纹样', list:[
@@ -366,11 +379,20 @@ const MOTIFS={
       +'<path d="M2,-6 C18,-20 34,-10 26,8 C24,-2 14,-4 2,4 Z"/>'
       +'<path d="M-5,0 C-5,18 -8,30 0,44 C8,30 5,18 5,0 Z"/>'
       +'<path d="M-22,6 Q0,0 22,6 Q0,18 -22,6 Z"/></g>'},
-    {id:'acanthus', name:'莨苕卷草', draw:(P,k)=>'<g '+P.stroke(k,5)+' stroke-linecap="round">'
+    {id:'acanthus', name:'莨苕卷草', seamless:true,
+      draw:(P,k)=>'<g '+P.stroke(k,5)+' stroke-linecap="round">'
       +'<path d="M-40,24 C-40,-16 -6,-32 6,-6 C14,10 -6,20 -12,6 C-15,-1 -6,-4 -2,2"/>'
       +'<path d="M6,-6 C18,-22 40,-16 40,10"/>'
       +'<path d="M-40,24 C-30,10 -18,10 -8,20"/></g>'
-      +'<circle cx="-12" cy="6" r="3.5" '+P.fill('accent')+'/><circle cx="40" cy="10" r="3.5" '+P.fill('accent')+'/>'},
+      +'<circle cx="-12" cy="6" r="3.5" '+P.fill('accent')+'/><circle cx="40" cy="10" r="3.5" '+P.fill('accent')+'/>',   // 单枝莨苕(密度<最大)
+      tileDraw:(P,k)=>{ let s='<g fill="none" stroke-linecap="round" stroke-linejoin="round" '+P.stroke(k,P.lineW)+'>';   // 连绵莨苕:正弦茎+叶卷+节点、成行错位
+        const st=(yc,ph,A)=>{ let d='M-50,'+(yc+A*Math.sin(ph)).toFixed(1); for(let x=-48;x<=50;x+=2){ d+=' L'+x+','+(yc+A*Math.sin(2*Math.PI*x/100+ph)).toFixed(1); } return '<path d="'+d+'"/>'; };
+        for(const [yc,ph] of [[-25,0],[25,Math.PI]]){ s+=st(yc,ph,12);
+          for(const cx of [-25,25]){ const cy=yc+12*Math.sin(2*Math.PI*cx/100+ph), up=(Math.cos(2*Math.PI*cx/100+ph)>=0)?-1:1;
+            s+='<path d="M'+cx+','+cy.toFixed(1)+' c-9,'+(6*up)+' -9,'+(18*up)+' 2,'+(20*up)+' c8,'+(2*up)+' 8,'+(-8*up)+' 0,'+(-12*up)+'"/>'; } }
+        s+='</g>';
+        for(const [yc,ph] of [[-25,0],[25,Math.PI]]) for(const cx of [0,-50,50]){ const cy=yc+12*Math.sin(2*Math.PI*cx/100+ph); s+='<circle cx="'+cx+'" cy="'+cy.toFixed(1)+'" r="3" '+P.fill('accent')+'/>'; }
+        return s;}},
     {id:'shield', name:'盾徽', draw:(P,k)=>'<g><path '+P.fill(k)+' d="M-30,-34 L30,-34 L30,6 C30,30 14,40 0,46 C-14,40 -30,30 -30,6 Z"/>'
       +'<path '+P.stroke('accent',3)+' d="M-22,-26 L22,-26 L22,4 C22,22 10,30 0,35 C-10,30 -22,22 -22,4 Z"/>'
       +'<path '+P.stroke('accent',3.5)+' d="M0,-20 L0,28 M-16,-6 L16,-6"/></g>'},
@@ -379,10 +401,17 @@ const MOTIFS={
       +'<rect x="-34" y="16" width="68" height="14" rx="3"/></g>'
       +'<g '+P.fill('accent')+'><circle cx="-30" cy="-20" r="4"/><circle cx="0" cy="-28" r="4.5"/>'
       +'<circle cx="30" cy="-20" r="4"/><circle cx="0" cy="23" r="4"/></g>'},
-    {id:'gotharch', name:'哥特尖拱', draw:(P,k)=>'<g '+P.stroke(k,6)+' stroke-linejoin="round">'
+    {id:'gotharch', name:'哥特尖拱', seamless:true,
+      draw:(P,k)=>'<g '+P.stroke(k,6)+' stroke-linejoin="round">'
       +'<path d="M-28,42 L-28,-6 Q-28,-40 0,-40 Q28,-40 28,-6 L28,42"/>'
       +'<path '+P.stroke('accent',3)+' d="M-15,42 L-15,-4 Q-15,-24 0,-24 Q15,-24 15,-4 L15,42"/></g>'
-      +'<circle cx="0" cy="-31" r="4" '+P.fill('accent')+'/>'},
+      +'<circle cx="0" cy="-31" r="4" '+P.fill('accent')+'/>',   // 单座尖拱(密度<最大)
+      tileDraw:(P,k)=>{ let s='<g fill="none" stroke-linejoin="round" '+P.stroke(k,P.lineW)+'>';   // 连成拱廊:一排排尖拱+竖梃,上下成层
+        const arch=(cx)=>'M'+(cx-25)+',50 Q'+(cx-25)+',-12 '+cx+',-32 Q'+(cx+25)+',-12 '+(cx+25)+',50';
+        s+='<path d="'+arch(-25)+'"/><path d="'+arch(25)+'"/>';
+        s+='<path d="M-50,-50 V50 M0,-50 V50 M50,-50 V50"/></g>';
+        for(const cx of [-25,25]) s+='<path fill="none" '+P.stroke('accent',Math.max(2,P.lineW-2))+' stroke-linejoin="round" d="M'+(cx-13)+',50 Q'+(cx-13)+',-2 '+cx+',-18 Q'+(cx+13)+',-2 '+(cx+13)+',50"/>';
+        return s;}},
     {id:'rosewindow', name:'玫瑰窗', draw:(P,k)=>{let s='<g '+P.stroke(k,4)+'><circle r="38"/><circle r="14"/>';
       for(let i=0;i<8;i++){const a=i*Math.PI/4, x=Math.cos(a), y=Math.sin(a);
         s+='<line x1="'+(x*14).toFixed(1)+'" y1="'+(y*14).toFixed(1)+'" x2="'+(x*38).toFixed(1)+'" y2="'+(y*38).toFixed(1)+'"/>';
@@ -418,9 +447,16 @@ const MOTIFS={
       return s+'</g><circle r="4.5" '+P.fill('accent')+'/>';}},
   ]},
   vine:{name:'藤蔓花草', list:[
-    {id:'scroll', name:'卷草', draw:(P,k)=>'<g '+P.stroke(k,5)+' stroke-linecap="round">'
+    {id:'scroll', name:'卷草', seamless:true,
+      draw:(P,k)=>'<g '+P.stroke(k,5)+' stroke-linecap="round">'
       +'<path d="M-40,34 C-40,-16 6,-24 6,10 C6,28 -12,26 -8,10 C-6,2 2,4 4,12"/></g>'
-      +'<circle cx="-8" cy="12" r="3.5" '+P.fill('accent')+'/>'},
+      +'<circle cx="-8" cy="12" r="3.5" '+P.fill('accent')+'/>',   // 单枝卷草(密度<最大)
+      tileDraw:(P,k)=>{ let s='<g fill="none" stroke-linecap="round" stroke-linejoin="round" '+P.stroke(k,P.lineW)+'>';   // 连绵卷草:正弦茎+波峰内卷卷须、成行错位
+        const st=(yc,ph,A)=>{ let d='M-50,'+(yc+A*Math.sin(ph)).toFixed(1); for(let x=-48;x<=50;x+=2){ d+=' L'+x+','+(yc+A*Math.sin(2*Math.PI*x/100+ph)).toFixed(1); } return '<path d="'+d+'"/>'; };
+        for(const [yc,ph] of [[-25,0],[25,Math.PI]]){ s+=st(yc,ph,13);
+          for(const cx of [-25,25]){ const cy=yc+13*Math.sin(2*Math.PI*cx/100+ph), up=(Math.cos(2*Math.PI*cx/100+ph)>=0)?-1:1;
+            s+='<path d="M'+cx+','+cy.toFixed(1)+' q10,'+(12*up)+' 0,'+(20*up)+' q-8,'+(6*up)+' -9,'+(-2*up)+'"/>'; } }
+        return s+'</g>';}},
     {id:'leafvine', name:'叶蔓', draw:(P,k)=>{let s='<g '+P.stroke(k,4)+' stroke-linecap="round"><path d="M-42,20 Q-10,-30 42,-20"/></g>';
       const leaf='<path '+P.fill(k)+' d="M0,0 Q9,-8 0,-22 Q-9,-8 0,0 Z"/>';
       s+='<g transform="translate(-20,3) rotate(-30)">'+leaf+'</g>';
