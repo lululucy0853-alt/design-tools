@@ -372,11 +372,11 @@ const MOTIFS={
     {id:'chip', name:'芯片', draw:(P,k)=>{let s='<g><rect x="-24" y="-24" width="48" height="48" rx="5" '+P.fill(k)+'/>';for(const o of [-14,0,14]){s+='<line x1="'+o+'" y1="-24" x2="'+o+'" y2="-36" '+P.stroke(k,4)+'/><line x1="'+o+'" y1="24" x2="'+o+'" y2="36" '+P.stroke(k,4)+'/><line x1="-24" y1="'+o+'" x2="-36" y2="'+o+'" '+P.stroke(k,4)+'/><line x1="24" y1="'+o+'" x2="36" y2="'+o+'" '+P.stroke(k,4)+'/>';}return s+'<rect x="-11" y="-11" width="22" height="22" rx="3" '+P.stroke('accent',3)+'/></g>';}},
   ]},
   cartoon:{name:'卡通纹样', list:[
-    {id:'star', name:'星星', draw:(P,k)=>'<path '+P.fill(k)+' d="'+starPath(5,36,15)+'"/>'},
-    {id:'heart', name:'爱心', draw:(P,k)=>'<path '+P.fill(k)+' d="M0,28 C-30,8 -34,-16 -18,-24 C-8,-29 -1,-22 0,-16 C1,-22 8,-29 18,-24 C34,-16 30,8 0,28 Z"/>'},
-    {id:'sparkle', name:'闪光', draw:(P,k)=>'<g><path '+P.fill(k)+' d="M0,-38 C3,-11 11,-3 38,0 C11,3 3,11 0,38 C-3,11 -11,3 -38,0 C-11,-3 -3,-11 0,-38 Z"/><circle cx="20" cy="-20" r="4" '+P.fill('accent')+'/></g>'},
-    {id:'cloud', name:'云朵', draw:(P,k)=>'<g><circle cx="-16" cy="4" r="14" '+P.fill(k)+'/><circle cx="2" cy="-7" r="18" '+P.fill(k)+'/><circle cx="20" cy="4" r="12" '+P.fill(k)+'/><rect x="-28" y="8" width="56" height="10" rx="5" '+P.fill(k)+'/></g>'},
-    {id:'bubble', name:'泡泡', draw:(P,k)=>'<g><circle r="28" '+P.fill(k)+'/><circle r="28" '+P.stroke('aux',2.5)+'/><circle cx="-10" cy="-11" r="6" '+P.fill('accent')+'/></g>'},
+    {id:'star', name:'星星', dense:true, draw:(P,k)=>'<path '+P.fill(k)+' d="'+starPath(5,36,15)+'"/>'},
+    {id:'heart', name:'爱心', dense:true, draw:(P,k)=>'<path '+P.fill(k)+' d="M0,28 C-30,8 -34,-16 -18,-24 C-8,-29 -1,-22 0,-16 C1,-22 8,-29 18,-24 C34,-16 30,8 0,28 Z"/>'},
+    {id:'sparkle', name:'闪光', dense:true, draw:(P,k)=>'<g><path '+P.fill(k)+' d="M0,-38 C3,-11 11,-3 38,0 C11,3 3,11 0,38 C-3,11 -11,3 -38,0 C-11,-3 -3,-11 0,-38 Z"/><circle cx="20" cy="-20" r="4" '+P.fill('accent')+'/></g>'},
+    {id:'cloud', name:'云朵', dense:true, draw:(P,k)=>'<g><circle cx="-16" cy="4" r="14" '+P.fill(k)+'/><circle cx="2" cy="-7" r="18" '+P.fill(k)+'/><circle cx="20" cy="4" r="12" '+P.fill(k)+'/><rect x="-28" y="8" width="56" height="10" rx="5" '+P.fill(k)+'/></g>'},
+    {id:'bubble', name:'泡泡', dense:true, draw:(P,k)=>'<g><circle r="28" '+P.fill(k)+'/><circle r="28" '+P.stroke('aux',2.5)+'/><circle cx="-10" cy="-11" r="6" '+P.fill('accent')+'/></g>'},
   ]},
   euro:{name:'欧式/西幻', list:[
     {id:'fleurdelis', name:'鸢尾百合', draw:(P,k)=>'<g '+P.fill(k)+'>'
@@ -407,17 +407,10 @@ const MOTIFS={
       +'<rect x="-34" y="16" width="68" height="14" rx="3"/></g>'
       +'<g '+P.fill('accent')+'><circle cx="-30" cy="-20" r="4"/><circle cx="0" cy="-28" r="4.5"/>'
       +'<circle cx="30" cy="-20" r="4"/><circle cx="0" cy="23" r="4"/></g>'},
-    {id:'gotharch', name:'哥特尖拱', seamless:true,
-      draw:(P,k)=>'<g '+P.stroke(k,6)+' stroke-linejoin="round">'
+    {id:'gotharch', name:'哥特尖拱', draw:(P,k)=>'<g '+P.stroke(k,6)+' stroke-linejoin="round">'
       +'<path d="M-28,42 L-28,-6 Q-28,-40 0,-40 Q28,-40 28,-6 L28,42"/>'
       +'<path '+P.stroke('accent',3)+' d="M-15,42 L-15,-4 Q-15,-24 0,-24 Q15,-24 15,-4 L15,42"/></g>'
-      +'<circle cx="0" cy="-31" r="4" '+P.fill('accent')+'/>',   // 单座尖拱(密度<最大)
-      tileDraw:(P,k)=>{ let s='<g fill="none" stroke-linejoin="round" '+P.stroke(k,P.lineW)+'>';   // 连成拱廊:一排排尖拱+竖梃,上下成层
-        const arch=(cx)=>'M'+(cx-25)+',50 Q'+(cx-25)+',-12 '+cx+',-32 Q'+(cx+25)+',-12 '+(cx+25)+',50';
-        s+='<path d="'+arch(-25)+'"/><path d="'+arch(25)+'"/>';
-        s+='<path d="M-50,-50 V50 M0,-50 V50 M50,-50 V50"/></g>';
-        for(const cx of [-25,25]) s+='<path fill="none" '+P.stroke('accent',Math.max(2,P.lineW-2))+' stroke-linejoin="round" d="M'+(cx-13)+',50 Q'+(cx-13)+',-2 '+cx+',-18 Q'+(cx+13)+',-2 '+(cx+13)+',50"/>';
-        return s;}},
+      +'<circle cx="0" cy="-31" r="4" '+P.fill('accent')+'/>'},
     {id:'rosewindow', name:'玫瑰窗', draw:(P,k)=>{let s='<g '+P.stroke(k,4)+'><circle r="38"/><circle r="14"/>';
       for(let i=0;i<8;i++){const a=i*Math.PI/4, x=Math.cos(a), y=Math.sin(a);
         s+='<line x1="'+(x*14).toFixed(1)+'" y1="'+(y*14).toFixed(1)+'" x2="'+(x*38).toFixed(1)+'" y2="'+(y*38).toFixed(1)+'"/>';
@@ -425,14 +418,14 @@ const MOTIFS={
       return s+'</g><circle r="5" '+P.fill('accent')+'/>';}},
   ]},
   celtic:{name:'凯尔特结', list:[
-    {id:'triquetra', name:'三叶结', draw:(P,k)=>{let s='<g '+P.stroke(k,5)+'>';
+    {id:'triquetra', name:'三叶结', dense:true, draw:(P,k)=>{let s='<g '+P.stroke(k,5)+'>';
       for(let i=0;i<3;i++){const a=-Math.PI/2+i*Math.PI*2/3, cx=Math.cos(a)*16, cy=Math.sin(a)*16;
         s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="22"/>';}
       return s+'</g><circle r="5" '+P.fill('accent')+'/>';}},
-    {id:'solomon', name:'所罗门结', draw:(P,k)=>'<g '+P.stroke(k,5)+'>'
+    {id:'solomon', name:'所罗门结', dense:true, draw:(P,k)=>'<g '+P.stroke(k,5)+'>'
       +'<rect x="-30" y="-30" width="60" height="60" rx="16"/>'
       +'<rect x="-30" y="-30" width="60" height="60" rx="16" transform="rotate(45)"/></g>'},
-    {id:'triskele', name:'三螺旋', draw:(P,k)=>{let s='<g '+P.fill(k)+'>';
+    {id:'triskele', name:'三螺旋', dense:true, draw:(P,k)=>{let s='<g '+P.fill(k)+'>';
       for(let i=0;i<3;i++){s+='<path transform="rotate('+(i*120)+')" d="M0,-3 C-2,-22 8,-36 22,-30 C31,-26 27,-14 15,-13 C7,-12 2,-8 0,-3 Z"/>';}
       return s+'</g><circle r="4.5" '+P.fill('accent')+'/>';}},
     {id:'plait', name:'编织带', seamless:true,
@@ -444,11 +437,11 @@ const MOTIFS={
           for(let x=-48;x<=50;x+=2){ d+=' L'+x+','+(yc+13*Math.sin(2*Math.PI*x/50+ph)).toFixed(1); } return d; };
         for(const yc of [-25,25]){ s+='<path d="'+strand(yc,0)+'"/><path d="'+strand(yc,Math.PI)+'"/>'; }
         return s+'</g>';}},
-    {id:'celticcross', name:'凯尔特十字', draw:(P,k)=>'<g>'
+    {id:'celticcross', name:'凯尔特十字', dense:true, draw:(P,k)=>'<g>'
       +'<circle r="20" '+P.stroke(k,6)+'/>'
       +'<path '+P.stroke(k,8)+' stroke-linecap="round" d="M0,-40 L0,40 M-40,0 L40,0"/>'
       +'<circle r="5" '+P.fill('accent')+'/></g>'},
-    {id:'ringknot', name:'四瓣结', draw:(P,k)=>{let s='<g '+P.stroke(k,5)+'>';
+    {id:'ringknot', name:'四瓣结', dense:true, draw:(P,k)=>{let s='<g '+P.stroke(k,5)+'>';
       for(let i=0;i<4;i++){s+='<path transform="rotate('+(i*90)+')" d="M0,-6 C-16,-16 -16,-40 0,-40 C16,-40 16,-16 0,-6"/>';}
       return s+'</g><circle r="4.5" '+P.fill('accent')+'/>';}},
   ]},
@@ -463,23 +456,23 @@ const MOTIFS={
           for(const cx of [-25,25]){ const cy=yc+13*Math.sin(2*Math.PI*cx/100+ph), up=(Math.cos(2*Math.PI*cx/100+ph)>=0)?-1:1;
             s+='<path d="M'+cx+','+cy.toFixed(1)+' q10,'+(12*up)+' 0,'+(20*up)+' q-8,'+(6*up)+' -9,'+(-2*up)+'"/>'; } }
         return s+'</g>';}},
-    {id:'leafvine', name:'叶蔓', draw:(P,k)=>{let s='<g '+P.stroke(k,4)+' stroke-linecap="round"><path d="M-42,20 Q-10,-30 42,-20"/></g>';
+    {id:'leafvine', name:'叶蔓', dense:true, draw:(P,k)=>{let s='<g '+P.stroke(k,4)+' stroke-linecap="round"><path d="M-42,20 Q-10,-30 42,-20"/></g>';
       const leaf='<path '+P.fill(k)+' d="M0,0 Q9,-8 0,-22 Q-9,-8 0,0 Z"/>';
       s+='<g transform="translate(-20,3) rotate(-30)">'+leaf+'</g>';
       s+='<g transform="translate(4,-12) rotate(20)">'+leaf+'</g>';
       s+='<g transform="translate(26,-16) rotate(60)">'+leaf+'</g>';
       return s;}},
-    {id:'ivy', name:'常春藤', draw:(P,k)=>{const ivy='<path '+P.fill(k)+' d="M0,10 C-8,2 -22,4 -22,-10 C-22,-18 -12,-18 -8,-10 C-12,-22 -6,-32 0,-34 C6,-32 12,-22 8,-10 C12,-18 22,-18 22,-10 C22,4 8,2 0,10 Z"/>';
+    {id:'ivy', name:'常春藤', dense:true, draw:(P,k)=>{const ivy='<path '+P.fill(k)+' d="M0,10 C-8,2 -22,4 -22,-10 C-22,-18 -12,-18 -8,-10 C-12,-22 -6,-32 0,-34 C6,-32 12,-22 8,-10 C12,-18 22,-18 22,-10 C22,4 8,2 0,10 Z"/>';
       let s='<g '+P.stroke(k,4)+'><path d="M0,44 Q-12,20 0,6"/></g>';
       s+='<g transform="translate(0,-4)">'+ivy+'</g>';
       return s;}},
-    {id:'budvine', name:'花苞藤', draw:(P,k)=>'<g '+P.stroke(k,5)+' stroke-linecap="round"><path d="M-38,36 C-38,-4 0,-8 0,-28"/></g>'
+    {id:'budvine', name:'花苞藤', dense:true, draw:(P,k)=>'<g '+P.stroke(k,5)+' stroke-linecap="round"><path d="M-38,36 C-38,-4 0,-8 0,-28"/></g>'
       +'<circle cx="0" cy="-34" r="8" '+P.fill('accent')+'/>'
       +'<path '+P.fill(k)+' d="M-8,-28 Q0,-22 8,-28 Q0,-38 -8,-28 Z"/>'},
-    {id:'cornervine', name:'角花', draw:(P,k)=>'<g '+P.stroke(k,5)+' stroke-linecap="round">'
+    {id:'cornervine', name:'角花', dense:true, draw:(P,k)=>'<g '+P.stroke(k,5)+' stroke-linecap="round">'
       +'<path d="M-40,-40 C-40,10 10,-40 40,-40"/><path d="M-40,-40 C10,-40 -40,10 -40,40"/></g>'
       +'<circle cx="0" cy="0" r="5" '+P.fill('accent')+'/>'},
-    {id:'wavevine', name:'波浪藤', draw:(P,k)=>{let s='<g '+P.stroke(k,4)+' stroke-linecap="round"><path d="M-44,0 Q-22,-24 0,0 Q22,24 44,0"/></g>';
+    {id:'wavevine', name:'波浪藤', dense:true, draw:(P,k)=>{let s='<g '+P.stroke(k,4)+' stroke-linecap="round"><path d="M-44,0 Q-22,-24 0,0 Q22,24 44,0"/></g>';
       const leaf='<path '+P.fill(k)+' d="M0,0 Q7,-6 0,-18 Q-7,-6 0,0 Z"/>';
       s+='<g transform="translate(-22,-13)">'+leaf+'</g>';
       s+='<g transform="translate(22,13) rotate(180)">'+leaf+'</g>';
@@ -517,7 +510,7 @@ const MOTIFS={
         for(let row=-2;row<=2;row++){ const cy=row*dy, off=(row&1)?dx/2:0;
           for(let col=-2;col<=2;col++){ s+=hex(col*dx+off,cy); } }
         return s+'</g>';}},
-    {id:'sakura', name:'樱花', draw:(P,k)=>{let s='<g '+P.fill(k)+'>';
+    {id:'sakura', name:'樱花', dense:true, draw:(P,k)=>{let s='<g '+P.fill(k)+'>';
       for(let i=0;i<5;i++){s+='<path transform="rotate('+(i*72)+')" d="M0,-12 C10,-18 10,-34 3,-40 L0,-36 L-3,-40 C-10,-34 -10,-18 0,-12 Z"/>';}
       return s+'</g><circle r="6" '+P.fill('accent')+'/>';}},
     {id:'shippo', name:'七宝', seamless:true,
@@ -678,7 +671,11 @@ function render(forceTransparent, skipView){
     const tw=(motifDef.tw||100), th=(motifDef.th||100);
     const tsW=s*tw/100, tsH=s*th/100;
     // 无 tileDraw 的图标：用「draw 半错位密铺」(中心+四角错位)填满、连成片；有 tileDraw 的用自带密铺版
-    const halfDrop=(c)=>{ let g='<g transform="scale(0.9)">'+motifDef.draw(P,c)+'</g>';
+    const halfDrop=(c)=>{
+      if(motifDef.dense){ const sc=motifDef.denseScale||0.82; let g='';   // 密排:半错位间距50、缩小咬合(给小/中尺寸填满连片)
+        for(const p of [[-50,-50],[0,-50],[50,-50],[-25,0],[25,0],[-50,50],[0,50],[50,50]]) g+='<g transform="translate('+p[0]+','+p[1]+') scale('+sc+')">'+motifDef.draw(P,c)+'</g>';
+        return g; }
+      let g='<g transform="scale(0.9)">'+motifDef.draw(P,c)+'</g>';   // 默认:中心+四角错位
       for(const o of [[-50,-50],[50,-50],[-50,50],[50,50]]) g+='<g transform="translate('+o[0]+','+o[1]+') scale(0.9)">'+motifDef.draw(P,c)+'</g>';
       return g;};
     const tfn = motifDef.tileDraw ? (c)=>motifDef.tileDraw(P,c) : halfDrop;
