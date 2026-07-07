@@ -301,7 +301,13 @@ const MOTIFS={
             for(const r of [23,15,7]){ s+='<path fill="none" '+P.stroke(k,P.lineW)+' d="M'+(cx-r)+','+cy+' A'+r+','+r+' 0 0 1 '+(cx+r)+','+cy+'"/>'; }
           } }
         return s;}},
-    {id:'meihua', name:'梅花', draw:(P,k)=>{let s='<g>';for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;s+='<circle cx="'+(Math.cos(a)*17).toFixed(1)+'" cy="'+(Math.sin(a)*17).toFixed(1)+'" r="14" '+P.fill(k)+'/>';}return s+'<circle r="7" '+P.fill('accent')+'/></g>';}},
+    {id:'meihua', name:'梅花', seamless:true,
+      draw:(P,k)=>{let s='<g>';for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;s+='<circle cx="'+(Math.cos(a)*17).toFixed(1)+'" cy="'+(Math.sin(a)*17).toFixed(1)+'" r="14" '+P.fill(k)+'/>';}return s+'<circle r="7" '+P.fill('accent')+'/></g>';},   // 单朵梅花(密度<最大)
+      tileDraw:(P,k)=>{ const bloss=(cx,cy)=>{ let g='<g transform="translate('+cx+','+cy+') scale(0.85)">';   // 花瓣圆咬合成连片梅花锦:半错位、间距50
+          for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;g+='<circle cx="'+(Math.cos(a)*17).toFixed(1)+'" cy="'+(Math.sin(a)*17).toFixed(1)+'" r="14" '+P.fill(k)+'/>';}
+          return g+'<circle r="7" '+P.fill('accent')+'/></g>'; };
+        let s=''; for(const p of [[-50,-50],[0,-50],[50,-50],[-25,0],[25,0],[-50,50],[0,50],[50,50]]) s+=bloss(p[0],p[1]);
+        return s;}},
     {id:'qiulu', name:'毬路纹', seamless:true,
       draw:(P,k)=>{let s='';for(let a=0;a<4;a++){ s+='<path fill="none" '+P.stroke(k,P.lineW)+' transform="rotate('+(a*90)+')" d="M0,0 C-16,-13 -16,-33 0,-33 C16,-33 16,-13 0,0 Z"/>'; }return s;},   // 单朵四叶草
       tileDraw:(P,k)=>{
