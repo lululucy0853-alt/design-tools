@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Tools · 设计工具集</title>
+<meta name="description" content="零安装、离线、单文件的游戏 UI 设计小工具集：参数化纹样生成器、透视校准器、切图工具。Zero-install offline single-file design helpers for game-UI work.">
+<style>
+  :root{
+    --bg:#17181c; --panel:#202127; --panel-2:#26282f;
+    --ink:#e8e6e1; --muted:#9a9890; --line:#33363e;
+    --gold:#c9a227; --gold-soft:rgba(201,162,39,.14);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+    min-height:100vh; display:flex; flex-direction:column;
+  }
+  a{color:inherit; text-decoration:none}
+  .wrap{width:100%; max-width:960px; margin:0 auto; padding:0 24px; flex:1 0 auto}
+
+  header{text-align:center; padding:72px 0 40px}
+  .eyebrow{
+    display:inline-block; font-size:12px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--gold); border:1px solid var(--gold-soft); background:var(--gold-soft);
+    padding:5px 14px; border-radius:999px; margin-bottom:22px;
+  }
+  h1{font-size:clamp(30px,6vw,46px); margin:0 0 12px; font-weight:700; letter-spacing:.01em}
+  h1 .en{color:var(--gold)}
+  .lede{color:var(--muted); font-size:16px; max-width:560px; margin:0 auto}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:20px; padding:8px 0 24px}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:26px 24px 22px; display:flex; flex-direction:column; min-height:230px;
+    transition:transform .16s ease, border-color .16s ease, background .16s ease;
+  }
+  .card:hover{transform:translateY(-4px); border-color:var(--gold); background:var(--panel-2)}
+  .ico{font-size:30px; line-height:1; margin-bottom:16px}
+  .card h2{margin:0 0 2px; font-size:20px; font-weight:650}
+  .card .sub{color:var(--gold); font-size:12.5px; letter-spacing:.04em; margin-bottom:12px}
+  .card p{margin:0 0 20px; color:var(--muted); font-size:14px; flex:1 0 auto}
+  .btn{
+    align-self:flex-start; color:var(--gold); font-size:14px; font-weight:600;
+    border:1px solid var(--gold); border-radius:9px; padding:8px 16px;
+    transition:background .16s ease, color .16s ease;
+  }
+  .card:hover .btn{background:var(--gold); color:#17181c}
+  .btn.ghost{color:var(--muted); border-color:var(--line)}
+  .card:hover .btn.ghost{background:transparent; color:var(--ink); border-color:var(--muted)}
+
+  .note{
+    text-align:center; color:var(--muted); font-size:13px; margin:8px auto 0; max-width:620px;
+    border-top:1px solid var(--line); padding-top:22px;
+  }
+  footer{text-align:center; color:var(--muted); font-size:12.5px; padding:34px 0 40px}
+  footer a{color:var(--gold)}
+  .dot{opacity:.5; margin:0 8px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="eyebrow">Zero-install · Offline · Single-file</span>
+      <h1>设计工具集 <span class="en">Design Tools</span></h1>
+      <p class="lede">面向游戏 UI 的零安装、离线、单文件小工具 —— 打开即用，图片与数据全程留在你的浏览器，绝不上传。</p>
+    </header>
+
+    <main class="grid">
+      <a class="card" href="pattern-gen/%E7%BA%B9%E6%A0%B7%E7%94%9F%E6%88%90%E5%99%A8.html">
+        <div class="ico">🎨</div>
+        <h2>纹样生成器</h2>
+        <div class="sub">Pattern Generator</div>
+        <p>参数化装饰纹样生成器，原生 SVG 矢量输出。多种纹样族 × 排列（无缝平铺 / 线性 / 放射 / 透视地面）× 材质 × 配色，一键导出透明底 SVG / PNG。</p>
+        <span class="btn">打开工具 →</span>
+      </a>
+
+      <a class="card" href="perspective/%E9%80%8F%E8%A7%86%E6%A0%A1%E5%87%86%E5%99%A8.html">
+        <div class="ico">🧭</div>
+        <h2>透视校准器</h2>
+        <div class="sub">Perspective Calibrator</div>
+        <p>把 UI 截图贴到平面上，旋转到任意俯视 / 倾斜角度，数学正确的单平面透视（CSS 3D）。俯仰 / 偏航 / 翻滚可调，一键导出透明底透视 PNG。</p>
+        <span class="btn">打开工具 →</span>
+      </a>
+
+      <!-- 切图工具是独立仓库 → 独立站点；此处链到其源码仓库，部署后可改成 live 网址 -->
+      <a class="card" href="https://github.com/lululucy0853-alt/sprite-cutout" target="_blank" rel="noopener">
+        <div class="ico">✂️</div>
+        <h2>切图工具</h2>
+        <div class="sub">Sprite Cutout · 独立仓库</div>
+        <p>批量裁切透明边 + 9-slice 九宫格切图，零安装单文件浏览器工具。独立开源仓库，点击前往。</p>
+        <span class="btn ghost">前往仓库 →</span>
+      </a>
+    </main>
+
+    <p class="note">📄 md2pdf、capture 等命令行小脚本随源码附带，需本地运行时（Node / Python），不在本页展示。详见 README。</p>
+  </div>
+
+  <footer>
+    <a href="https://github.com/lululucy0853-alt/design-tools" target="_blank" rel="noopener">GitHub</a>
+    <span class="dot">·</span>MIT License<span class="dot">·</span>100% 客户端，数据不上传<span class="dot">·</span>© 2026 wanglu
+  </footer>
+</body>
+</html>

@@ -10,6 +10,14 @@
 
 ---
 
+## 🌐 Use it online
+
+**Live → https://lululucy0853-alt.github.io/design-tools/**
+
+Open the link, pick a tool, and use it right in your browser — no install, no setup. Everything runs client-side and offline.
+
+---
+
 ## 🧰 Tools
 
 ### 🎨 Pattern Generator · `pattern-gen/纹样生成器.html`
@@ -32,6 +40,15 @@ Transparent-edge trimming + 9-slice is split into its own open-source repo:
 ## 🚀 Quick start
 
 The two design tools are single self-contained HTML files: **double-click to open in a browser** (Chrome / Edge recommended). No install, no build, no server. → Full guide: **[docs/USAGE.md](docs/USAGE.md)**
+
+## 🛫 Deploy your own
+
+Everything hosted here is static, single-file, zero-dependency — put it on any static host in a minute.
+
+- **Cloudflare Pages** (recommended): dashboard → *Workers & Pages → Create → Pages → Connect to Git* → pick this repo → **Build command: _(none)_**, **Output directory: `/`**. Add a custom domain in the same dashboard.
+- **GitHub Pages**: repo **Settings → Pages → Source: _Deploy from a branch_ → `main` / `(root)`**. It goes live at `https://<user>.github.io/design-tools/`.
+
+`index.html` is a landing page that links the browser tools. `md2pdf/` and `capture` are local command-line scripts (Node / Python) — they need a local runtime and are **not** part of the hosted site.
 
 ## 🔒 Privacy
 
