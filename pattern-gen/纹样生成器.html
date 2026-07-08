@@ -94,6 +94,10 @@
     <div class="row"><label>旋转抖动</label><input type="range" id="pJRot" min="0" max="180" value="0"><span class="val" id="vJRot"></span></div>
     <div class="row"><label>大小抖动</label><input type="range" id="pJScale" min="0" max="60" value="0"><span class="val" id="vJScale"></span></div>
     <div class="row"><label>随机种子</label><input type="number" id="pSeed" value="42" style="flex:1;"><button id="btnDice" title="随机换一个种子">🎲</button></div>
+    <div class="row"><label>灭点X</label><input type="range" id="pVpx" min="0" max="100" value="50" title="仅「透视地面」：消失点水平位置(50=居中)"><span class="val" id="vVpx"></span></div>
+    <div class="row"><label>地平线</label><input type="range" id="pHorizon" min="2" max="80" value="14" title="仅「透视地面」：地平线离顶部的高度%。值越小→地平线越高、地面越长、纵深空间越大"><span class="val" id="vHorizon"></span></div>
+    <div class="row"><label>纵深</label><input type="range" id="pDepth" min="2" max="24" value="9" title="仅「透视地面」：世界铺到多远。越大→远处越密越小(纵深强但看不清)；越小→远处越大越疏越清晰(透视变平)"><span class="val" id="vDepth"></span></div>
+    <div class="note">灭点X / 地平线 / 纵深 仅对「透视地面」生效。远处看不清 → 调小「纵深」；纵深感更强 → 调大「纵深」或调小「地平线」。</div>
   </details>
 
   <details class="sec" open>
@@ -111,7 +115,8 @@
       <label style="font-size:11px;color:var(--dim);margin-left:auto;"><input type="checkbox" id="transparentBg"> 透明底</label>
     </div>
     <label style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--dim);">
-      <input type="checkbox" id="monoMode"> 纯色（地形等高线：全线用主色，不分层三色）</label>
+      <input type="checkbox" id="monoMode"> 纯色（整幅只用一种颜色）
+      <input type="color" id="monoColor" title="纯色专用颜色" style="margin-left:auto;"></label>
   </details>
 
   <details class="sec" open>
@@ -259,13 +264,49 @@ function hexPoints(R){
   for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3; pts.push((Math.cos(a)*R).toFixed(2)+','+(Math.sin(a)*R).toFixed(2));}
   return pts.join(' ');
 }
-/* 高度场:每项 sin(k·(整数波数)) 叠加,多尺度(低频大丘+高频细节)→ 陡处等高线密、缓处疏,天然疏密不均;相位由 seed 决定 → 换种子换地形。
-   periodic=true:整数波数 + k=2π/scale,对周期 scale 严格无缝(tile 用);periodic=false:同式但 scale=特征尺度(整幅画布连续地形用) */
+/* 螺旋卷云(如意卷):从外向内绕 turns 圈、半径收敛 → 平滑卷头。祥云等用 */
+function cloudCurl(cx,cy,r0,turns,dir,a0){
+  let d='', n=Math.max(12,Math.round(turns*16));
+  for(let i=0;i<=n;i++){ const t=i/n, ang=a0+dir*turns*6.28318*t, rr=r0*(1-0.72*t);
+    d+=(i?'L':'M')+(cx+Math.cos(ang)*rr).toFixed(1)+','+(cy+Math.sin(ang)*rr).toFixed(1); }
+  return d;
+}
+/* 高度场:sin(k·(整数波数·坐标)) 叠加。整数波数 + k=2π/scale → 对周期 scale 严格无缝(tile 用);整幅画布用同式(scale=特征尺度)。
+   换种子换风格(不只换位置):每个 seed 随机一套「波结构」——
+     · 粗糙度指数 rough:振幅按频率的衰减快慢,大=平缓大丘、小=多脊粗糙;
+     · 频率选择:从候选整数波数里随机取舍 + 每项随机增益 → 不同频率组合;
+     · 域扭曲 warp:半数种子叠加周期性坐标扭曲(旋涡/褶皱),扭曲子场也用整数波数 → 周期性不破、依旧无缝。 */
 function makeField(seed,scale){
-  const rng=mulberry32((seed|0)||1), k=2*Math.PI/scale, W=[];
-  for(const ab of [[1,0],[0,1],[1,1],[1,-1],[2,1],[1,2],[2,-1],[2,2],[3,1],[1,3],[3,-2],[3,2]])
-    W.push([ab[0],ab[1], 1/Math.pow(Math.hypot(ab[0],ab[1]),1.35), rng()*6.28318]);
-  return (x,y)=>{let h=0;for(const w of W)h+=w[2]*Math.sin(k*(w[0]*x+w[1]*y)+w[3]);return h;};
+  const rng=mulberry32((seed|0)||1), k=2*Math.PI/scale;
+  const rough = 0.85 + rng()*1.25;                                   // 0.85(糙/多脊)~2.1(平缓大丘)
+  const warpAmt = rng()<0.5 ? 0 : (0.12+rng()*0.45)*scale/(2*Math.PI); // 半数种子加域扭曲
+  const pool=[[1,0],[0,1],[1,1],[1,-1],[2,0],[0,2],[2,1],[1,2],[2,-1],[2,2],[3,0],[3,1],[1,3],[3,-2],[3,2],[4,1],[1,4],[4,-1]];
+  const W=[];
+  for(const ab of pool){
+    if(rng()<0.35) continue;                                        // 随机丢弃部分频率
+    W.push([ab[0],ab[1], (0.6+rng()*0.8)/Math.pow(Math.hypot(ab[0],ab[1]),rough), rng()*6.28318]);
+  }
+  if(W.length<3){ W.length=0; for(const ab of [[1,0],[0,1],[1,1]]) W.push([ab[0],ab[1],1/Math.hypot(ab[0],ab[1]),rng()*6.28318]); }
+  // 域扭曲子场(整数波数 → 周期无缝):x/y 各一套
+  const wx=[[1,0,rng()*6.28],[0,1,rng()*6.28],[1,1,rng()*6.28]];
+  const wy=[[0,1,rng()*6.28],[1,0,rng()*6.28],[1,-1,rng()*6.28]];
+  const warp=(comp,x,y)=>{let s=0;for(const w of comp)s+=Math.sin(k*(w[0]*x+w[1]*y)+w[2]);return s;};
+  return (x,y)=>{
+    let X=x,Y=y;
+    if(warpAmt){ X+=warpAmt*warp(wx,x,y); Y+=warpAmt*warp(wy,x,y); }
+    let h=0;for(const w of W)h+=w[2]*Math.sin(k*(w[0]*X+w[1]*Y)+w[3]);
+    return h;
+  };
+}
+/* 随机无缝波形(等高线纹用):整数波数正弦叠加 → 周期 100 严格无缝;相位/振幅/谐波由 seed 定 → 换种子换一批等高线样式。 */
+function contourWave(seed){
+  const rng=mulberry32((seed|0)||1), terms=[];
+  const nHarm=2+Math.floor(rng()*3);                 // 2~4 个谐波叠加
+  for(let i=0;i<nHarm;i++){
+    const n=1+Math.floor(rng()*4);                   // 整数波数 1~4 → 周期 100/n,在 ±50 上整数个周期 → 无缝
+    terms.push([n, (4+rng()*8)/(1+i*0.6), rng()*6.28318]);   // 高次谐波振幅递减
+  }
+  return (x)=>{ let y=0; for(const t of terms) y+=t[1]*Math.sin(2*Math.PI*t[0]*x/100+t[2]); return y; };
 }
 /* Chaikin 圆角:cuts 次;closed=true 首尾环绕(开放链锁死首尾端点) */
 function chaikin(pts,closed,cuts){
@@ -334,15 +375,28 @@ function contourTile(strokeAttr,x0,y0,L,nLevels,N,seed){
   const cs=contourCore(field,x0,y0,L,L,step,levels);
   return '<g '+strokeAttr+' stroke-linejoin="round" stroke-linecap="round">'+cs.map(pathD).join('')+'</g>';
 }
-/* 整幅画布连续地形:一张大场铺满 W×H(不重复!),按海拔分层上色。featScale=地形尺度(元素大小)、nLevels=等高线疏密(密度)、seed=形状 */
-function contourField(colors,lineW,W,H,seed,featScale,nLevels,mono){
-  const field=makeField(seed,featScale), step=Math.max(6,featScale/22);
+/* 整幅画布连续地形几何(只算一次,缓存):一张大场铺满 W×H(不重复!),marching squares → 等值线。
+   与颜色/线宽/纯色无关 → 缓存键只含 seed/featScale/nLevels/W/H;拖颜色、线宽、纯色时命中缓存、不重算(根治卡顿)。
+   采样上限:step 同时受 featScale 与「每轴 ≤MAXN 格」约束 → 小元素尺寸不会把网格炸到 170×170。 */
+let _fieldCache={key:'',cs:null};
+function contourFieldGeom(W,H,seed,featScale,nLevels){
+  const key=seed+'|'+featScale.toFixed(2)+'|'+nLevels+'|'+W+'x'+H;
+  if(_fieldCache.key===key) return _fieldCache.cs;
+  const MAXN=56;                                                  // 每轴采样格数上限 → 封顶算力
+  const field=makeField(seed,featScale), step=Math.max(featScale/22, W/MAXN, H/MAXN);
   let mn=1e9,mx=-1e9; for(let x=0;x<=W;x+=step*2)for(let y=0;y<=H;y+=step*2){const v=field(x,y);if(v<mn)mn=v;if(v>mx)mx=v;}
   const levels=[]; for(let t=1;t<=nLevels;t++) levels.push(mn+(mx-mn)*t/(nLevels+1));
   const cs=contourCore(field,0,0,W,H,step,levels);
-  const ck=['main','aux','accent'];   // 分层:相邻等高线循环三色;纯色:全用主色
+  _fieldCache={key,cs};
+  return cs;
+}
+/* 上色(轻量,随时可重跑):分层三色循环;纯色=全线用 monoColor */
+function contourField(colors,lineW,W,H,seed,featScale,nLevels,mono){
+  const cs=contourFieldGeom(W,H,seed,featScale,nLevels);
+  const ck=['main','aux','accent'];
+  const mc=colors.monoColor||colors.main;
   let s='<g fill="none" stroke-linejoin="round" stroke-linecap="round" stroke-width="'+lineW+'">';
-  for(const c of cs) s+='<g stroke="'+colors[mono?'main':ck[c.li%3]]+'">'+pathD(c)+'</g>';
+  for(const c of cs) s+='<g stroke="'+(mono?mc:colors[ck[c.li%3]])+'">'+pathD(c)+'</g>';
   return s+'</g>';
 }
 
@@ -358,18 +412,22 @@ const MOTIFS={
                +' M'+x(13)+','+y(-18)+' L'+x(25)+','+y(-18)+' L'+x(25)+','+y(18)+' L'+x(-25)+','+y(18);};
         for(const yc of [-25,25]) for(const x0 of [-25,25]){ s+='<path d="'+key(x0,yc)+'"/>'; }
         return s+'</g>';}},
-    {id:'xiangyun', name:'祥云', seamless:true,
+    {id:'xiangyun', name:'祥云', seamless:true,   // 如意卷云:两端螺旋卷 + 中脊拱起 + 拖尾云气
       draw:(P,k)=>{
-      let s='<g '+P.stroke(k,8)+' stroke-linecap="round" stroke-linejoin="round">';   // 粗圆头带=扁平流动云条
-      s+='<path d="M-42,-4 C-24,-4 -14,-11 0,-9 C9,-7.5 12,-4 19,-4 C31,-4 33,-19 20,-19 C10,-19 12,-7 22,-7"/>';  // 主云带(起伏) + 右端大卷如意头
-      s+='<path d="M-32,10 C-20,10 -10,5 2,8 C8,9.5 11,10 15,10"/>';   // 中云带(错落起伏)
-      s+='<path d="M-24,20 L-4,20"/>';                                 // 下短云带
-      s+='</g>';
-      return s;},
-      tileDraw:(P,k)=>{ let s='<g fill="none" stroke-linecap="round" stroke-linejoin="round" '+P.stroke(k,P.lineW)+'>';   // 连绵祥云:横向云带+每周期如意卷头、成行错位
-        for(const [yc,ph] of [[-25,0],[25,Math.PI]]){
-          let d='M-50,'+yc; for(let x=-48;x<=50;x+=2){ d+=' L'+x+','+(yc+7*Math.sin(2*Math.PI*x/50+ph)).toFixed(1); } s+='<path d="'+d+'"/>';
-          for(const cx of [-25,25]){ s+='<path d="M'+cx+','+(yc-7)+' q13,-3 13,-13 q0,-9 -9,-9 q-7,0 -5,7"/>'; } }
+        let s='<g fill="none" '+P.stroke(k,P.lineW||6)+' stroke-linecap="round" stroke-linejoin="round">';
+        s+='<path d="M-28,3 C-30,-13 -12,-20 0,-11 C12,-20 30,-13 28,3"/>';   // 中间双拱云脊(如意心)
+        s+='<path d="'+cloudCurl(-28,3,11,0.95,1,-1.4)+'"/>';                  // 左卷
+        s+='<path d="'+cloudCurl(28,3,11,0.95,-1,-1.74)+'"/>';                 // 右卷
+        s+='<path d="M-24,15 C-6,10 8,11 26,15"/>';                            // 拖尾云气(上)
+        s+='<path d="M-14,24 C0,20 8,21 18,23"/>';                             // 拖尾云气(下)
+        s+='</g>';
+        s+='<circle r="3" cx="0" cy="-6" '+P.fill('accent')+'/>';             // 如意心点缀
+        return s;},
+      tileDraw:(P,k)=>{ let s='<g fill="none" stroke-linecap="round" stroke-linejoin="round" '+P.stroke(k,P.lineW)+'>';   // 连绵卷云带:波脊 + 每周期如意卷 + 双行错位
+        for(const [yc,ph,dir] of [[-25,0,1],[25,Math.PI,-1]]){
+          let d='M-50,'+(yc+6*Math.sin(ph)).toFixed(1); for(let x=-48;x<=50;x+=2){ d+=' L'+x+','+(yc+6*Math.sin(2*Math.PI*x/50+ph)).toFixed(1); } s+='<path d="'+d+'"/>';   // 无缝波脊
+          for(const cx of [-25,25]){ s+='<path d="'+cloudCurl(cx,yc-3,8,0.9,dir,-1.4)+'"/>'; }   // 周期如意卷
+        }
         return s+'</g>';}},
     {id:'tongqian', name:'铜钱', seamless:true,
       draw:(P,k)=>'<g '+P.stroke(k,P.lineW)+'><circle r="35" fill="none"/><rect x="-9" y="-9" width="18" height="18" fill="none"/></g>',   // 单枚铜钱
@@ -636,11 +694,11 @@ const MOTIFS={
       tileDraw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
         for(const b of [-100,-75,-50,-25,0,25,50,75,100]){ s+='<line x1="-60" y1="'+(-60+b)+'" x2="60" y2="'+(60+b)+'"/>'; }
         return s+'</g>';}},
-    {id:'contour', name:'等高线纹', seamless:true,
-      draw:(P,k)=>{let d='M-40,0';for(let x=-40;x<=40;x+=5){d+=' L'+x+','+(10*Math.sin(2*Math.PI*x/80)).toFixed(1);}return '<path fill="none" '+P.stroke(k,P.lineW)+' d="'+d+'"/>';},   // 单波线
-      tileDraw:(P,k)=>{let s='<g '+P.stroke(k,P.lineW)+'>';
-        for(const y0 of [-50,-25,0,25,50]){ let d='M-50,'+y0.toFixed(1);
-          for(let x=-45;x<=50;x+=5){ const y=y0+8*Math.sin(2*Math.PI*x/100); d+=' L'+x+','+y.toFixed(1); }
+    {id:'contour', name:'等高线纹', seamless:true,   // 波形随种子变 → 🎲 骰子换一批等高线样式(整数波数保证无缝)
+      draw:(P,k)=>{const w=contourWave(P.seed||1); let d='M-40,'+w(-40).toFixed(1);for(let x=-40;x<=40;x+=4){d+=' L'+x+','+w(x).toFixed(1);}return '<path fill="none" '+P.stroke(k,P.lineW)+' d="'+d+'"/>';},   // 单波线
+      tileDraw:(P,k)=>{const w=contourWave(P.seed||1); let s='<g fill="none" '+P.stroke(k,P.lineW)+' stroke-linecap="round" stroke-linejoin="round">';
+        for(const y0 of [-50,-25,0,25,50]){ let d='M-50,'+(y0+w(-50)).toFixed(1);
+          for(let x=-46;x<=50;x+=4){ d+=' L'+x+','+(y0+w(x)).toFixed(1); }
           s+='<path d="'+d+'"/>'; }
         return s+'</g>';}},
     {id:'terrain', name:'地形等高线', seamless:true, field:true,   // field:始终无缝整片;密度=等高线疏密(层数)、种子=地形形状
@@ -673,8 +731,9 @@ const ARRANGEMENTS=[
 const state={
   family:'cn', motif:'xiangyun', arr:'tile', mat:'flat',
   palette:0, bg:'#F6EFE3', main:'#B23A2B', aux:'#274A59', accent:'#C9A227',
-  transparent:false, outline:false, wireOutline:false, mono:false, spin:0, lineW:5,
+  transparent:false, outline:false, wireOutline:false, mono:false, monoColor:'#B23A2B', spin:0, lineW:5,
   size:88, density:5, jPos:0, jRot:0, jScale:0, seed:42,
+  vpx:50, horizon:14, depth:9,   // 透视地面:灭点水平位置% / 地平线高度% / 最远深度
   W:1024, H:1024,
 };
 
@@ -736,7 +795,10 @@ function render(forceTransparent, skipView){
   const transp = forceTransparent || state.transparent;   // 导出可强制透明而不动预览
   const {W,H}=state;
   const rng=mulberry32(state.seed);
-  const colors={main:state.main, aux:state.aux, accent:state.accent};
+  // 纯色:三色统一为 monoColor → 整幅只用一种颜色(对所有纹样生效,不止地形);地形分支另读 colors.monoColor
+  const colors = state.mono
+    ? {main:state.monoColor, aux:state.monoColor, accent:state.monoColor, monoColor:state.monoColor}
+    : {main:state.main, aux:state.aux, accent:state.accent, monoColor:state.monoColor};
   const P=makePaint(state.mat,colors,state.outline,state.lineW,state.bg,state.wireOutline?'outline':'full');
   P.seed=state.seed; P.density=state.density;   // 供地形等高线等纹样读取(随机地形 / 层数随密度)
   // 防崩：族或纹样找不到（自定义被删/存储清空）就回退到内置第一个
@@ -762,8 +824,8 @@ function render(forceTransparent, skipView){
   const useSeamless = state.density>=10;   // 密度满 → 所有纹样密铺(有 tileDraw 用密铺版,否则图案本身规律满铺);密度低 → 离散单个
   if(motifDef.field && (state.arr==='tile'||state.arr==='planar'||state.arr==='grad')){
     // 地形场:整幅画布画一张连续地形(不重复铺!)。密度=等高线疏密、元素大小=地形尺度、种子=形状
-    const nLev=2+Math.round((state.density||5)*1.5);
-    const featScale=state.size*4;
+    const nLev=2+Math.round((state.density||5)*1.1);            // 层数=疏密(3~13);上限防碎片过多卡顿
+    const featScale=Math.max(state.size*4, 240);                 // 特征尺度下限240:太小→碎片爆炸(卡+视觉乱)
     body=contourField(colors, state.lineW, W, H, state.seed, featScale, nLev, state.mono);
   }
   else if(state.arr==='tile' && useSeamless){
@@ -854,23 +916,102 @@ function render(forceTransparent, skipView){
     body+=instance(draw('main'), W/2, H/2, baseScale*0.95, 0);
   }
   else if(state.arr==='ground'){
-    // 透视地面(终末地登录界面式):一张固定的 2D 世界网格做透视投影 —— 行近疏远密、列向地平线消失点会聚、近大远小、近处不透明远处淡出
-    const yH=H*0.15;                      // 地平线高度(越小地平线越靠上)
-    const near=1, far=9;                  // 深度范围
-    const rows=Math.round(16+state.density*3);
-    const invN=1/near, invF=1/far;
-    const K=Math.ceil(W/(2*spacing))+2;   // 固定世界列索引 ±K:近处(persp=1)刚好铺满全宽,远处自动聚拢
-    for(let r=0;r<rows;r++){
-      const p=1 - (r/(rows-1))*0.985;         // 近(1)→远(~0.015):行在屏幕上均匀分布 → 铺满整片地面(否则近处被 1/z 拉出大空隙)
-      const persp=invF + p*(invN-invF);       // 透视因子 near/z:近=1、远=invF
-      const sy=yH + (H-yH)*p;                  // 屏幕纵向均匀铺满(地平线→底部)
-      const sc=baseScale*persp*0.7*jitS();     // 近大远小
-      if(sc<baseScale*0.03) continue;
-      const colSp=spacing*persp;              // 列间距:近宽远窄 → 同一列 k 在远处 x 更靠中心 = 向消失点会聚
-      for(let k=-K;k<=K;k++){
-        const x=W/2 + k*colSp + (rng()*2-1)*colSp*0.25*jPos;
-        if(x<-30 || x>W+30) continue;          // 裁掉屏幕外(近处两端超出的列)
-        body+='<g opacity="'+(0.3+0.7*p).toFixed(2)+'">'+instance(draw(pickColorKey(rng)),x,sy,sc,jitR())+'</g>';
+    // 透视地面(终末地登录界面式):世界平面(u 横向 / 纵深)→ 屏幕透视投影。
+    // 消失点(vpX, yH)可调(灭点X / 地平线滑块);近处铺满全宽、向消失点会聚、近疏远密、远处淡出。
+    // 屏幕行距按 persp 压缩(近疏远密):vGap=du·(0.42+0.58·persp) → 近处方格、越远行越挤 = 铺满整片地板不留大空当。
+    // 网格/HUD → 连续会聚网格线(HUD 另加节点角标点);六边形 → 世界坐标蜂窝(相邻共享顶点、无缝);
+    // 电路 → 逐格 tile 连片;点/环/铜钱/泡泡/芯片 → 方阵均匀铺满(大小钳位不重叠);斜杠/等高线/地形 → 连续投影;其它 → 散布。
+    const far=Math.max(2,Math.min(24,state.depth||9)), invF=1/far, Uw=W*0.62;   // 最远深度(可调):越大远处越密越小、纵深越强
+    const yH=H*Math.max(0.02,Math.min(0.8,state.horizon/100));   // 地平线高度(可调)
+    const vpX=W*Math.max(0,Math.min(1,state.vpx/100));           // 消失点水平位置(可调)
+    const dens=state.density, lw=state.lineW, id=motifDef.id, isField=!!motifDef.field;
+    const monoCol=state.mono?state.monoColor:null, cvg=['main','aux','accent'];
+    const perspOf=(sy)=>(sy-yH)/(H-yH);                          // 屏幕 y → persp(1=近底、0=地平线)
+    // 斜透视:近处(persp=1)锚定居中不动、远处收敛到 vpX → 调灭点是「切变」而非整块平移
+    const off0=W/2-vpX, sxP=(u,p)=>vpX + (u+off0)*p;             // 世界横坐标 u + 透视因子 p → 屏幕 x
+    const sxOf=(u,z)=>sxP(u,1/z), syOf=(z)=>yH + (H-yH)*((1/z)-invF)/(1-invF);
+    const P2=(u,z)=>sxOf(u,z).toFixed(1)+','+syOf(z).toFixed(1);
+    // 通用「行扫描」:从屏幕底 H 往地平线走,行距随 persp 压缩(近疏远密),回调每行画内容
+    // c0=近地平线行距系数,挂到纵深:纵深大→远处行更密(纵深强)、纵深小→远处行更疏更清晰
+    const c0=Math.max(0.06,Math.min(0.75, 3.8/far));
+    const scanRows=(du,minCell,cb)=>{ let sy=H, guard=0;
+      while(sy>yH+1 && guard++<900){ const p=perspOf(sy); if(du*p>=minCell) cb(sy,p); sy-=du*(c0+(1-c0)*p); } };
+
+    if(id==='grid'||id==='hud'){                                 // 网格 / HUD:纵向会聚线 + 横向近疏远密线 → 近处正方格(HUD 再叠节点角标点)
+      const cols=Math.round(6+dens*1.6), du=Uw/cols, pTop=0.045, syTop=yH+(H-yH)*pTop;
+      let s='<g fill="none" stroke="'+(monoCol||colors.main)+'" stroke-width="'+lw+'" stroke-linecap="round">';
+      for(let k=-cols;k<=cols;k++)                              // 纵向会聚线(近端居中锚定、远端收敛到 vpX)
+        s+='<line x1="'+sxP(k*du,1).toFixed(1)+'" y1="'+H+'" x2="'+sxP(k*du,pTop).toFixed(1)+'" y2="'+syTop.toFixed(1)+'"/>';
+      const rowsA=[];
+      scanRows(du,1.2,(sy,p)=>{ rowsA.push([sy,p]); s+='<line x1="'+sxP(-cols*du,p).toFixed(1)+'" y1="'+sy.toFixed(1)+'" x2="'+sxP(cols*du,p).toFixed(1)+'" y2="'+sy.toFixed(1)+'"/>'; });
+      s+='</g>';
+      if(id==='hud'){ let acc='<g fill="'+(monoCol||colors.accent)+'">';   // 节点角标点(近大远小)
+        for(const rp of rowsA) for(let k=-cols;k<=cols;k++){ const cx=sxP(k*du,rp[1]); if(cx<-20||cx>W+20) continue;
+          acc+='<circle cx="'+cx.toFixed(1)+'" cy="'+rp[0].toFixed(1)+'" r="'+Math.max(1.3,3*rp[1]).toFixed(1)+'"/>'; }
+        s+=acc+'</g>'; }
+      body=s;
+    }
+    else if(id==='hex'){                                         // 六边形蜂窝地面:世界坐标 hex 格点,投影 6 顶点 → 真透视(向消失点会聚、近疏远密、相邻共享顶点)
+      const R=Uw/(7+dens*1.1), dx=Math.sqrt(3)*R, dy=1.5*R, Dw=2200;   // pointy-top:列距√3R、行距1.5R、奇行错半
+      const zOf=w=>1+(far-1)*w/Dw, sxW=(u,w)=>sxP(u,1/zOf(w));
+      const syW=w=>{const z=zOf(w);return yH+(H-yH)*((1/z)-invF)/(1-invF);};
+      let s='<g fill="none" stroke="'+(monoCol||colors.main)+'" stroke-width="'+lw+'" stroke-linejoin="round">', prevSy=H;
+      for(let j=0;j<2000;j++){ const w=j*dy; if(w>Dw) break; const sy0=syW(w); if(j>0 && (prevSy-sy0)<1.2) break; prevSy=sy0;
+        const z=zOf(w), off=(j&1)?dx/2:0, kMax=Math.ceil((W/2*z)/dx)+2;
+        for(let k=-kMax;k<=kMax;k++){ const cu=k*dx+off, cx=sxW(cu,w); if(cx<-60||cx>W+60) continue;
+          let d='M'; for(let a=0;a<6;a++){ const ang=Math.PI/6+a*Math.PI/3, vw=w+R*Math.sin(ang); d+=(a?'L':'')+sxW(cu+R*Math.cos(ang),vw).toFixed(1)+','+syW(vw).toFixed(1); }
+          s+='<path d="'+d+'Z"/>'; }
+      }
+      body=s+'</g>';
+    }
+    else if(id==='circuit'){                                     // 电路:逐格 tile 单元随透视缩放,连成整片走线地面
+      const cols=Math.round(4+dens*1.2), du=Uw/cols; let s='', ci=0;
+      scanRows(du,2,(sy,p)=>{ const sc=du/100*p;
+        for(let k=-cols;k<=cols;k++){ const sx=sxP(k*du,p); if(sx<-40||sx>W+40) continue;
+          const col=monoCol?'main':cvg[((k%3)+3+ci)%3];
+          s+='<g opacity="'+(0.3+0.7*p).toFixed(2)+'"><g transform="translate('+sx.toFixed(1)+','+sy.toFixed(1)+') scale('+sc.toFixed(3)+')">'+motifDef.tileDraw(P,col)+'</g></g>'; }
+        ci++; });
+      body=s;
+    }
+    else if(id==='dot'||id==='ring'||id==='dots9'||id==='tongqian'||id==='bubble'||id==='chip'){   // 点/环/铜钱/泡泡/芯片 → 方阵均匀铺满
+      const cols=Math.round(6+dens*2.2), du=Uw/cols;
+      const fill=Math.max(0.3,Math.min(1.5,state.size/88));     // 大小随元素大小,钳位 ≤1.5 → 不会重叠
+      let s='';
+      scanRows(du,1.5,(sy,p)=>{ const sc=du/100*p*fill, opa=(0.28+0.72*p).toFixed(2);
+        for(let k=-cols;k<=cols;k++){ const sx=sxP(k*du,p); if(sx<-30||sx>W+30) continue;
+          s+='<g opacity="'+opa+'">'+instance(draw(monoCol?'main':pickColorKey(rng)),sx,sy,sc,0)+'</g>'; } });
+      body=s;
+    }
+    else if(id==='slash'){                                      // 透视斜线地板:一族世界斜线,会聚到地平线上的偏移消失点
+      const n=Math.round(10+dens*2), du=(2.2*Uw)/n;
+      let s='<g fill="none" stroke="'+(monoCol||colors.main)+'" stroke-width="'+lw+'" stroke-linecap="round">';
+      for(let k=-2;k<=n+2;k++){ const u0=-1.1*Uw + k*du;
+        s+='<line x1="'+sxOf(u0,1).toFixed(1)+'" y1="'+syOf(1).toFixed(1)+'" x2="'+sxOf(u0+1.3*Uw,far).toFixed(1)+'" y2="'+syOf(far).toFixed(1)+'"/>'; }
+      body=s+'</g>';
+    }
+    else if(id==='contour' || isField){                        // 等高线 / 地形等高线 → 世界地板等值线,逐点透视投影(整片连续、近疏远密)
+      const Dw=1500, seg=2*Uw/36, field=makeField(state.seed||1, Uw*0.85);
+      let mn=1e9,mx=-1e9; for(let u=-Uw;u<=Uw;u+=seg*2)for(let yw=0;yw<=Dw;yw+=seg*2){const v=field(u,yw);if(v<mn)mn=v;if(v>mx)mx=v;}
+      const nLev=3+Math.round(dens*1.1), levels=[]; for(let t=1;t<=nLev;t++) levels.push(mn+(mx-mn)*t/(nLev+1));
+      const cs=contourCore(field,-Uw,0,2*Uw,Dw,seg,levels);
+      const zc=yw=>1+(far-1)*(yw/Dw), ck=['main','aux','accent'];
+      let s='<g fill="none" stroke-width="'+lw+'" stroke-linecap="round" stroke-linejoin="round">';
+      for(const c of cs){ let d='M'; c.pts.forEach((pt,ix)=>{ d+=(ix?' L':'')+P2(pt[0],zc(pt[1])); });
+        s+='<path stroke="'+(monoCol||colors[ck[c.li%3]])+'" d="'+d+(c.closed?' Z':'')+'"/>'; }
+      body=s+'</g>';
+    }
+    else {                                                     // 其它离散图案 → 透视散布(落叶式)
+      const rows=Math.round(16+dens*3);
+      const K=Math.ceil(W/(2*spacing))+2;
+      for(let r=0;r<rows;r++){
+        const p=1 - (r/(rows-1))*0.985, persp=invF + p*(1-invF), sy=yH + (H-yH)*p, sc=baseScale*persp*0.7*jitS();
+        if(sc<baseScale*0.03) continue;
+        const colSp=spacing*persp;
+        for(let k=-K;k<=K;k++){
+          const x=sxP(k*spacing,persp) + (rng()*2-1)*colSp*0.25*jPos;
+          if(x<-30 || x>W+30) continue;
+          body+='<g opacity="'+(0.3+0.7*p).toFixed(2)+'">'+instance(draw(pickColorKey(rng)),x,sy,sc,jitR())+'</g>';
+        }
       }
     }
   }
@@ -1020,6 +1161,7 @@ for(const [id,k] of [['cBg','bg'],['cMain','main'],['cAux','aux'],['cAccent','ac
 document.getElementById('transparentBg').onchange=(e)=>{state.transparent=e.target.checked; render();};
 document.getElementById('outlineMode').onchange=(e)=>{state.outline=e.target.checked; render();};
 document.getElementById('monoMode').onchange=(e)=>{state.mono=e.target.checked; render();};
+document.getElementById('monoColor').oninput=(e)=>{state.monoColor=e.target.value; if(state.mono) render();};
 document.getElementById('wireOutlineMode').onchange=(e)=>{state.wireOutline=e.target.checked; render();};
 
 function bindRange(id,key,valId){
@@ -1035,6 +1177,9 @@ bindRange('pJRot','jRot','vJRot');
 bindRange('pJScale','jScale','vJScale');
 bindRange('pSpin','spin','vSpin');
 bindRange('pLineW','lineW','vLineW');
+bindRange('pVpx','vpx','vVpx');
+bindRange('pHorizon','horizon','vHorizon');
+bindRange('pDepth','depth','vDepth');
 document.getElementById('pSeed').onchange=(e)=>{state.seed=+e.target.value||0; render();};
 document.getElementById('btnDice').onclick=()=>{
   state.seed=Math.floor(Math.random()*99999);
@@ -1280,7 +1425,7 @@ function rebuildPresetSel(){
 }
 function syncControls(){   // 把 state 写回所有控件（加载预设时用）
   for(const [id,k,vid] of [['pSize','size','vSize'],['pSpin','spin','vSpin'],['pLineW','lineW','vLineW'],['pDensity','density','vDensity'],
-      ['pJPos','jPos','vJPos'],['pJRot','jRot','vJRot'],['pJScale','jScale','vJScale']]){
+      ['pJPos','jPos','vJPos'],['pJRot','jRot','vJRot'],['pJScale','jScale','vJScale'],['pVpx','vpx','vVpx'],['pHorizon','horizon','vHorizon'],['pDepth','depth','vDepth']]){
     document.getElementById(id).value=state[k]; document.getElementById(vid).textContent=state[k];
   }
   document.getElementById('pSeed').value=state.seed;
@@ -1288,6 +1433,7 @@ function syncControls(){   // 把 state 写回所有控件（加载预设时用�
   document.getElementById('transparentBg').checked=state.transparent;
   document.getElementById('outlineMode').checked=state.outline;
   document.getElementById('monoMode').checked=state.mono;
+  document.getElementById('monoColor').value=state.monoColor||'#B23A2B';
   const sizeSel=document.getElementById('sizeSel'), val=state.W+','+state.H;
   const has=[...sizeSel.options].some(o=>o.value===val);
   sizeSel.value = has ? val : 'custom';
@@ -1324,6 +1470,7 @@ rebuildCustomFamily();
 rebuildPresetSel();
 rebuildPaletteSel();
 applyPalette(0);
+document.getElementById('monoColor').value=state.monoColor;
 refreshChips();
 render();
 </script>
