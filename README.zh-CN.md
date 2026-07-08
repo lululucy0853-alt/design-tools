@@ -10,6 +10,14 @@
 
 ---
 
+## 🌐 在线使用
+
+**在线地址 → https://lululucy0853-alt.github.io/design-tools/**
+
+打开链接、挑一个工具、直接在浏览器里用 —— 免安装、免配置,全程本地运行、离线可用。
+
+---
+
 ## 🧰 工具
 
 ### 🎨 纹样生成器 · `pattern-gen/纹样生成器.html`
@@ -32,6 +40,15 @@ Markdown → 带中文字体的 PDF(表格 / 代码块正常显示),经一个 HT
 ## 🚀 快速开始
 
 两个设计工具是单个自包含 HTML 文件:**双击用浏览器打开**(推荐 Chrome / Edge)。无需安装 / 构建 / 服务器。 → 完整使用文档:**[docs/USAGE.zh-CN.md](docs/USAGE.zh-CN.md)**
+
+## 🛫 自己部署
+
+这里托管的东西全是静态、单文件、零依赖 —— 放到任意静态托管上一分钟搞定。
+
+- **Cloudflare Pages**(推荐):后台 → *Workers & Pages → Create → Pages → 连接 Git* → 选这个仓库 → **构建命令:_留空_**,**输出目录:`/`**。在同一后台加自定义域名即可。
+- **GitHub Pages**:仓库 **Settings → Pages → Source:_Deploy from a branch_ → `main` / `(root)`**,上线地址 `https://<用户名>.github.io/design-tools/`。
+
+`index.html` 是落地页,链到各浏览器工具。`md2pdf/` 与 `capture` 是本地命令行脚本(Node / Python),需本地运行时,**不**属于托管站点。
 
 ## 🔒 隐私
 
