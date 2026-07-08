@@ -204,6 +204,7 @@ function shade(hex,f){ // f>0 变亮, f<0 变暗
 
 /* ================= 配色预设 ================= */
 const PALETTES=[
+  {name:'看形·白／灰',      bg:'#808080', main:'#FFFFFF', aux:'#FFFFFF', accent:'#FFFFFF'},
   {name:'朱砂描金（国风）', bg:'#F6EFE3', main:'#B23A2B', aux:'#274A59', accent:'#C9A227'},
   {name:'青花（国风）',     bg:'#F4F7F7', main:'#1D4E89', aux:'#6FA3C7', accent:'#E0B44B'},
   {name:'墨玉（国风）',     bg:'#22261F', main:'#8FA98B', aux:'#5C6B57', accent:'#D8C08A'},
@@ -411,23 +412,6 @@ const MOTIFS={
                +' L'+x(-1)+','+y(6)+' L'+x(-1)+','+y(-6)+' L'+x(1)+','+y(-6)
                +' M'+x(13)+','+y(-18)+' L'+x(25)+','+y(-18)+' L'+x(25)+','+y(18)+' L'+x(-25)+','+y(18);};
         for(const yc of [-25,25]) for(const x0 of [-25,25]){ s+='<path d="'+key(x0,yc)+'"/>'; }
-        return s+'</g>';}},
-    {id:'xiangyun', name:'祥云', seamless:true,   // 如意卷云:两端螺旋卷 + 中脊拱起 + 拖尾云气
-      draw:(P,k)=>{
-        let s='<g fill="none" '+P.stroke(k,P.lineW||6)+' stroke-linecap="round" stroke-linejoin="round">';
-        s+='<path d="M-28,3 C-30,-13 -12,-20 0,-11 C12,-20 30,-13 28,3"/>';   // 中间双拱云脊(如意心)
-        s+='<path d="'+cloudCurl(-28,3,11,0.95,1,-1.4)+'"/>';                  // 左卷
-        s+='<path d="'+cloudCurl(28,3,11,0.95,-1,-1.74)+'"/>';                 // 右卷
-        s+='<path d="M-24,15 C-6,10 8,11 26,15"/>';                            // 拖尾云气(上)
-        s+='<path d="M-14,24 C0,20 8,21 18,23"/>';                             // 拖尾云气(下)
-        s+='</g>';
-        s+='<circle r="3" cx="0" cy="-6" '+P.fill('accent')+'/>';             // 如意心点缀
-        return s;},
-      tileDraw:(P,k)=>{ let s='<g fill="none" stroke-linecap="round" stroke-linejoin="round" '+P.stroke(k,P.lineW)+'>';   // 连绵卷云带:波脊 + 每周期如意卷 + 双行错位
-        for(const [yc,ph,dir] of [[-25,0,1],[25,Math.PI,-1]]){
-          let d='M-50,'+(yc+6*Math.sin(ph)).toFixed(1); for(let x=-48;x<=50;x+=2){ d+=' L'+x+','+(yc+6*Math.sin(2*Math.PI*x/50+ph)).toFixed(1); } s+='<path d="'+d+'"/>';   // 无缝波脊
-          for(const cx of [-25,25]){ s+='<path d="'+cloudCurl(cx,yc-3,8,0.9,dir,-1.4)+'"/>'; }   // 周期如意卷
-        }
         return s+'</g>';}},
     {id:'tongqian', name:'铜钱', seamless:true,
       draw:(P,k)=>'<g '+P.stroke(k,P.lineW)+'><circle r="35" fill="none"/><rect x="-9" y="-9" width="18" height="18" fill="none"/></g>',   // 单枚铜钱
@@ -729,9 +713,9 @@ const ARRANGEMENTS=[
 
 /* ================= 状态 ================= */
 const state={
-  family:'cn', motif:'xiangyun', arr:'tile', mat:'flat',
-  palette:0, bg:'#F6EFE3', main:'#B23A2B', aux:'#274A59', accent:'#C9A227',
-  transparent:false, outline:false, wireOutline:false, mono:false, monoColor:'#B23A2B', spin:0, lineW:5,
+  family:'modern', motif:'dot', arr:'tile', mat:'flat',
+  palette:0, bg:'#808080', main:'#FFFFFF', aux:'#FFFFFF', accent:'#FFFFFF',   // 初始:白纹样 + 灰底,便于看清纹样形状
+  transparent:false, outline:false, wireOutline:false, mono:false, monoColor:'#FFFFFF', spin:0, lineW:5,
   size:88, density:5, jPos:0, jRot:0, jScale:0, seed:42,
   vpx:50, horizon:14, depth:9,   // 透视地面:灭点水平位置% / 地平线高度% / 最远深度
   W:1024, H:1024,
@@ -803,7 +787,7 @@ function render(forceTransparent, skipView){
   P.seed=state.seed; P.density=state.density;   // 供地形等高线等纹样读取(随机地形 / 层数随密度)
   // 防崩：族或纹样找不到（自定义被删/存储清空）就回退到内置第一个
   let fam0=MOTIFS[state.family];
-  if(!fam0 || !fam0.list.length){ state.family='cn'; state.motif='xiangyun'; fam0=MOTIFS.cn; }
+  if(!fam0 || !fam0.list.length){ state.family='modern'; state.motif='dot'; fam0=MOTIFS.modern; }
   let motifDef=fam0.list.find(m=>m.id===state.motif);
   if(!motifDef){ motifDef=fam0.list[0]; state.motif=motifDef.id; }
   const draw=(k)=>motifDef.draw(P,k);
@@ -1115,8 +1099,10 @@ function chips(elId,items,cur,onPick,onDelete){
     el.appendChild(b);
   }
 }
+const FAM_ORDER=['modern','cn','tech','cartoon','euro','celtic','vine','japanese','texture'];   // 族显示顺序:现代简约排第一
 function refreshChips(){
-  chips('familyChips',Object.entries(MOTIFS).map(([id,f])=>({id,name:f.name})),state.family,(id)=>{
+  const famIds=[...FAM_ORDER.filter(id=>MOTIFS[id]), ...Object.keys(MOTIFS).filter(id=>!FAM_ORDER.includes(id))];   // 按序 + 末尾追加(如「我的纹样」)
+  chips('familyChips',famIds.map(id=>({id,name:MOTIFS[id].name})),state.family,(id)=>{
     state.family=id;
     const first=MOTIFS[id].list[0];
     state.motif=first?first.id:null;
@@ -1388,7 +1374,7 @@ function deleteCustomMotif(id){
   rebuildCustomFamily();
   if(state.family==='custom' && !MOTIFS.custom.list.some(m=>m.id===state.motif)){
     const f=MOTIFS.custom.list[0];
-    if(f){ state.motif=f.id; } else { state.family='cn'; state.motif='xiangyun'; }
+    if(f){ state.motif=f.id; } else { state.family='modern'; state.motif='dot'; }
   }
   refreshChips(); render();
 }
