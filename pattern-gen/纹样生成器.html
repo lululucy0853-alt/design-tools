@@ -452,6 +452,7 @@ const MOTIFS={
   modern:{name:'现代简约', list:[
     {id:'dot', name:'圆点', seamless:true, draw:(P,k)=>'<circle r="30" '+P.fill(k)+'/>', tileDraw:(P,k)=>{const c=['main','aux','accent','aux'];let s='',i=0;for(const cx of [-25,25])for(const cy of [-25,25]){s+='<circle cx="'+cx+'" cy="'+cy+'" r="25" '+P.fill(c[i++])+'/>';}return s;}},
     {id:'ring', name:'圆环', seamless:true, draw:(P,k)=>'<circle r="30" fill="none" '+P.stroke(k,P.lineW)+'/>', tileDraw:(P,k)=>{const c=['main','aux','accent','aux'];let s='',i=0;for(const cx of [-25,25])for(const cy of [-25,25]){s+='<circle cx="'+cx+'" cy="'+cy+'" r="25" fill="none" '+P.stroke(c[i++],P.lineW)+'/>';}return s;}},
+    {id:'square', name:'方形', seamless:true, draw:(P,k)=>'<rect x="-30" y="-30" width="60" height="60" '+P.fill(k)+'/>', tileDraw:(P,k)=>{const c=['main','aux','accent','aux'];let s='',i=0;for(const cx of [-25,25])for(const cy of [-25,25]){s+='<rect x="'+(cx-25)+'" y="'+(cy-25)+'" width="50" height="50" '+P.fill(c[i++])+'/>';}return s;}},
     {id:'line', name:'线条', seamless:true, draw:(P,k)=>'<rect x="-40" y="-5" width="80" height="10" rx="5" '+P.fill(k)+'/>', tileDraw:(P,k)=>'<rect x="-50" y="-5" width="100" height="10" '+P.fill(k)+'/>'},
     {id:'tri', name:'三角', seamless:true, tw:100, th:86.6,
       draw:(P,k)=>'<polygon points="0,-34 36,28 -36,28" '+P.fill(k)+'/>',          // 单个三角(密度<最大)
@@ -957,7 +958,7 @@ function render(forceTransparent, skipView){
         ci++; });
       body=s;
     }
-    else if(id==='dot'||id==='ring'||id==='dots9'||id==='tongqian'||id==='bubble'||id==='chip'){   // 点/环/铜钱/泡泡/芯片 → 方阵均匀铺满
+    else if(id==='dot'||id==='ring'||id==='dots9'||id==='tongqian'||id==='bubble'||id==='chip'||id==='square'){   // 点/环/铜钱/泡泡/芯片/方形 → 方阵均匀铺满
       const cols=Math.round(6+dens*2.2), du=Uw/cols;
       const fill=Math.max(0.3,Math.min(1.5,state.size/88));     // 大小随元素大小,钳位 ≤1.5 → 不会重叠
       let s='';
