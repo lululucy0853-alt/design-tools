@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>透视校准器</title>
+<style>
+  :root{--bg:#17181c;--panel:#1f2127;--panel2:#26292f;--line:#33363e;--text:#e8e6e1;--dim:#9a9890;--acc:#c9a227;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font:14px/1.6 "Microsoft YaHei",system-ui,sans-serif;display:flex;height:100vh;overflow:hidden;}
+  #panel{width:290px;min-width:290px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:16px 14px 40px;}
+  h1{font-size:15px;letter-spacing:2px;margin-bottom:2px;}
+  .sub{font-size:11px;color:var(--dim);margin-bottom:14px;}
+  .sec{font-size:11px;color:var(--dim);letter-spacing:1px;margin:14px 0 6px;border-top:1px solid var(--line);padding-top:10px;}
+  .row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+  .row label{font-size:12px;color:var(--dim);width:70px;flex:none;}
+  .row input[type=range]{flex:1;accent-color:var(--acc);}
+  .row .val{width:46px;text-align:right;font-size:11px;color:var(--dim);}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+  .chip{padding:4px 9px;border:1px solid var(--line);border-radius:4px;background:var(--panel2);color:var(--text);font-size:12px;cursor:pointer;}
+  .chip:hover{border-color:var(--acc);color:var(--acc);}
+  button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;width:100%;margin-bottom:6px;}
+  button:hover{border-color:var(--acc);color:var(--acc);}
+  button.primary{background:var(--acc);color:#17181c;border-color:var(--acc);font-weight:bold;}
+  button.primary:hover{filter:brightness(1.1);color:#17181c;}
+  .note{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.5;}
+  label.ck{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim);cursor:pointer;margin-bottom:6px;}
+  #stage{flex:1;position:relative;overflow:hidden;background:#34373d;display:flex;align-items:center;justify-content:center;cursor:grab;}
+  #stage.grab{cursor:grabbing;}
+  #scene{perspective:900px;}
+  #plane{transform-style:preserve-3d;position:relative;}
+  #content{position:relative;z-index:2;}
+  #content img{display:block;max-width:520px;max-height:68vh;box-shadow:0 22px 60px rgba(0,0,0,.55);}
+  #sampleUI{width:460px;height:300px;border-radius:14px;overflow:hidden;box-shadow:0 22px 60px rgba(0,0,0,.55);
+    background:linear-gradient(135deg,#20304a,#101827);color:#dfe7f2;font-family:system-ui;}
+  #sampleUI .top{height:52px;background:#0d1422;display:flex;align-items:center;padding:0 18px;gap:12px;font-size:15px;letter-spacing:2px;}
+  #sampleUI .dot{width:10px;height:10px;border-radius:50%;background:#35e0d6;}
+  #sampleUI .cards{display:flex;gap:12px;padding:18px;}
+  #sampleUI .card{flex:1;height:120px;border-radius:10px;background:#1b2740;border:1px solid #33507a;}
+  #sampleUI .card:nth-child(2){background:#233a5e;}
+  #sampleUI .big{margin:0 18px;height:58px;border-radius:10px;background:#3d77ff;display:flex;align-items:center;justify-content:center;font-size:18px;letter-spacing:4px;color:#fff;font-weight:bold;}
+  /* 界面自身透视网格(读界面透视) */
+  #grid{position:absolute;inset:0;pointer-events:none;display:none;z-index:3;
+    background-image:linear-gradient(#c9a227aa 1px,transparent 1px),linear-gradient(90deg,#c9a227aa 1px,transparent 1px);
+    background-size:calc(100%/8) calc(100%/6);}
+  #plane.showgrid #grid{display:block;}
+  /* 地面网格(衬托空间) */
+  #ground{position:absolute;left:50%;top:50%;width:1100px;height:820px;z-index:1;
+    transform:translate(-50%,-50%) translateZ(-2px);
+    background-image:linear-gradient(#8ea3c355 1px,transparent 1px),linear-gradient(90deg,#8ea3c355 1px,transparent 1px);
+    background-size:56px 56px;
+    -webkit-mask-image:radial-gradient(ellipse 60% 60% at 50% 50%,#000 35%,transparent 78%);
+            mask-image:radial-gradient(ellipse 60% 60% at 50% 50%,#000 35%,transparent 78%);display:none;}
+  #plane.showground #ground{display:block;}
+  #hud{position:absolute;left:12px;bottom:10px;font-size:11px;color:#cfd3da;background:#0008;padding:5px 9px;border-radius:6px;font-family:ui-monospace,monospace;}
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>透视校准器</h1>
+  <div class="sub">界面贴平面 · 任意角度 · 真实透视(拖舞台旋转)</div>
+
+  <div class="sec">载入界面图</div>
+  <button id="btnUpload">＋ 选一张界面截图</button>
+  <input type="file" id="file" accept="image/*" style="display:none;">
+  <div class="note">不选图就用内置示例界面。载入后自动摆成斜俯视,拖右侧可转任意角。</div>
+
+  <div class="sec">角度</div>
+  <div class="row"><label>俯仰 X</label><input type="range" id="rx" min="-90" max="90" value="52"><span class="val" id="vrx"></span></div>
+  <div class="row"><label>左右 Y</label><input type="range" id="ry" min="-90" max="90" value="-20"><span class="val" id="vry"></span></div>
+  <div class="row"><label>旋转 Z</label><input type="range" id="rz" min="-45" max="45" value="0"><span class="val" id="vrz"></span></div>
+  <div class="sec">透视 / 缩放</div>
+  <div class="row"><label>透视强度</label><input type="range" id="persp" min="300" max="2400" value="900"><span class="val" id="vpersp"></span></div>
+  <div class="row"><label>缩放</label><input type="range" id="scale" min="40" max="160" value="100"><span class="val" id="vscale"></span></div>
+
+  <div class="sec">快捷视角</div>
+  <div class="chips" id="presets"></div>
+  <label class="ck"><input type="checkbox" id="groundck" checked> 地面网格(衬托空间)</label>
+  <label class="ck"><input type="checkbox" id="gridck"> 界面透视网格(读透视)</label>
+  <button id="reset">复位</button>
+
+  <div class="sec">导出</div>
+  <button class="primary" id="export">导出透视 PNG(透明底)</button>
+  <div class="note">导出 = 把载入的界面图按当前角度渲染成透明底 PNG(比系统截图更干净、可直接叠进 PS)。示例界面无原图,请用系统截图。</div>
+</div>
+
+<div id="stage">
+  <div id="scene">
+    <div id="plane" class="showground">
+      <div id="ground"></div>
+      <div id="content">
+        <div id="sampleUI">
+          <div class="top"><span class="dot"></span>终端 · TERMINAL</div>
+          <div class="cards"><div class="card"></div><div class="card"></div><div class="card"></div></div>
+          <div class="big">开始 / START</div>
+        </div>
+        <img id="img" style="display:none;">
+      </div>
+      <div id="grid"></div>
+    </div>
+  </div>
+  <div id="hud"></div>
+</div>
+
+<script>
+const S={rx:52,ry:-20,rz:0,persp:900,scale:100};
+const $=id=>document.getElementById(id);
+const plane=$('plane'),scene=$('scene');
+let hasImg=false;
+function apply(){
+  scene.style.perspective=S.persp+'px';
+  plane.style.transform='rotateX('+S.rx+'deg) rotateY('+S.ry+'deg) rotateZ('+S.rz+'deg) scale('+(S.scale/100)+')';
+  for(const k of ['rx','ry','rz','persp','scale']) $(k).value=S[k];
+  $('vrx').textContent=S.rx+'°';$('vry').textContent=S.ry+'°';$('vrz').textContent=S.rz+'°';
+  $('vpersp').textContent=S.persp;$('vscale').textContent=S.scale+'%';
+  $('hud').textContent='X俯仰 '+S.rx+'°  Y左右 '+S.ry+'°  Z旋转 '+S.rz+'°  透视 '+S.persp;
+}
+for(const k of ['rx','ry','rz','persp','scale']) $(k).oninput=e=>{S[k]=+e.target.value;apply();};
+let drag=false,px=0,py=0; const st=$('stage');
+st.addEventListener('mousedown',e=>{drag=true;px=e.clientX;py=e.clientY;st.classList.add('grab');});
+window.addEventListener('mouseup',()=>{drag=false;st.classList.remove('grab');});
+window.addEventListener('mousemove',e=>{if(!drag)return;
+  S.ry=Math.max(-90,Math.min(90,Math.round(S.ry+(e.clientX-px)*0.4)));
+  S.rx=Math.max(-90,Math.min(90,Math.round(S.rx-(e.clientY-py)*0.4)));
+  px=e.clientX;py=e.clientY;apply();});
+const PRE=[['平视',{rx:0,ry:0,rz:0}],['俯视',{rx:62,ry:0,rz:0}],['斜俯视',{rx:52,ry:-20,rz:0}],['仰视',{rx:-40,ry:0,rz:0}],['侧斜',{rx:20,ry:-42,rz:0}]];
+for(const [name,v] of PRE){const b=document.createElement('span');b.className='chip';b.textContent=name;b.onclick=()=>{Object.assign(S,v);apply();};$('presets').appendChild(b);}
+$('reset').onclick=()=>{Object.assign(S,{rx:52,ry:-20,rz:0,persp:900,scale:100});apply();};
+$('groundck').onchange=e=>plane.classList.toggle('showground',e.target.checked);
+$('gridck').onchange=e=>plane.classList.toggle('showgrid',e.target.checked);
+$('btnUpload').onclick=()=>$('file').click();
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{$('img').src=r.result;$('img').style.display='block';$('sampleUI').style.display='none';hasImg=true;
+    Object.assign(S,{rx:52,ry:-20,rz:0,scale:100});apply();};   // 载入自动摆成斜俯视
+  r.readAsDataURL(f);};
+
+/* ===== 透视投影 + 导出 ===== */
+// 平面中心坐标(cx,cy,z=0)→ 屏幕坐标(与 CSS rotateX/Y/Z + perspective 一致)
+function proj(cx,cy){
+  const rx=S.rx*Math.PI/180,ry=S.ry*Math.PI/180,rz=S.rz*Math.PI/180,s=S.scale/100,D=S.persp;
+  let x=cx*s,y=cy*s,z=0;
+  let x1=x*Math.cos(rz)-y*Math.sin(rz),y1=x*Math.sin(rz)+y*Math.cos(rz);   // rotateZ
+  let x2=x1*Math.cos(ry)+z*Math.sin(ry),z2=-x1*Math.sin(ry)+z*Math.cos(ry),y2=y1;   // rotateY
+  let y3=y2*Math.cos(rx)-z2*Math.sin(rx),z3=y2*Math.sin(rx)+z2*Math.cos(rx),x3=x2;   // rotateX
+  const f=D/(D-z3);
+  return [x3*f,y3*f];
+}
+// 把源三角形(图像像素)仿射映射到目标三角形并裁剪绘制
+function drawTri(ctx,img,sx0,sy0,sx1,sy1,sx2,sy2,dx0,dy0,dx1,dy1,dx2,dy2){
+  ctx.save();ctx.beginPath();ctx.moveTo(dx0,dy0);ctx.lineTo(dx1,dy1);ctx.lineTo(dx2,dy2);ctx.closePath();ctx.clip();
+  const den=sx0*(sy2-sy1)-sx1*sy2+sx2*sy1+(sx1-sx2)*sy0;
+  if(Math.abs(den)<1e-6){ctx.restore();return;}
+  const a=-(sy0*(dx2-dx1)-sy1*dx2+sy2*dx1+(sy1-sy2)*dx0)/den;
+  const b=(sy1*dy2+sy0*(dy1-dy2)-sy2*dy1+(sy2-sy1)*dy0)/den;
+  const c=(sx0*(dx2-dx1)-sx1*dx2+sx2*dx1+(sx1-sx2)*dx0)/den;
+  const d=-(sx1*dy2+sx0*(dy1-dy2)-sx2*dy1+(sx2-sx1)*dy0)/den;
+  const e=(sx0*(sy2*dx1-sy1*dx2)+sy0*(sx1*dx2-sx2*dx1)+(sx2*sy1-sx1*sy2)*dx0)/den;
+  const g=(sx0*(sy2*dy1-sy1*dy2)+sy0*(sx1*dy2-sx2*dy1)+(sx2*sy1-sx1*sy2)*dy0)/den;
+  ctx.transform(a,b,c,d,e,g);ctx.drawImage(img,0,0);ctx.restore();
+}
+// 渲染当前角度的透视图到 canvas(N×N 细分近似透视纹理)
+function renderWarp(scaleUp){
+  const img=$('img'); const w=img.naturalWidth,h=img.naturalHeight; if(!w||!h) return null;
+  const N=28, pts=[];
+  let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+  for(let j=0;j<=N;j++){pts[j]=[];for(let i=0;i<=N;i++){
+    const px=(i/N-0.5)*w, py=(j/N-0.5)*h; const p=proj(px,py); pts[j][i]=p;
+    if(p[0]<minx)minx=p[0];if(p[0]>maxx)maxx=p[0];if(p[1]<miny)miny=p[1];if(p[1]>maxy)maxy=p[1];}}
+  const su=scaleUp||1.5, pad=8;
+  const ow=Math.ceil((maxx-minx)*su)+pad*2, oh=Math.ceil((maxy-miny)*su)+pad*2;
+  const cv=document.createElement('canvas');cv.width=ow;cv.height=oh;const ctx=cv.getContext('2d');
+  const X=v=>(v-minx)*su+pad, Y=v=>(v-miny)*su+pad;
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+    const sx0=i/N*w,sy0=j/N*h, sx1=(i+1)/N*w,sy1=j/N*h, sx2=i/N*w,sy2=(j+1)/N*h, sx3=(i+1)/N*w,sy3=(j+1)/N*h;
+    const a=pts[j][i],b=pts[j][i+1],c=pts[j+1][i],d=pts[j+1][i+1];
+    drawTri(ctx,img, sx0,sy0,sx1,sy1,sx2,sy2, X(a[0]),Y(a[1]),X(b[0]),Y(b[1]),X(c[0]),Y(c[1]));
+    drawTri(ctx,img, sx1,sy1,sx3,sy3,sx2,sy2, X(b[0]),Y(b[1]),X(d[0]),Y(d[1]),X(c[0]),Y(c[1]));
+  }
+  return cv;
+}
+$('export').onclick=()=>{
+  if(!hasImg){alert('示例界面没有原图 —— 载入你自己的界面截图后再导出,或对示例用系统截图(Win+Shift+S)。');return;}
+  const cv=renderWarp(1.6); if(!cv)return;
+  cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='透视稿_X'+S.rx+'_Y'+S.ry+'.png';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);},'image/png');
+};
+apply();
+</script>
+</body>
+</html>
