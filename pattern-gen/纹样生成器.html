@@ -110,6 +110,8 @@
       <span>点缀</span><input type="color" id="cAccent">
       <label style="font-size:11px;color:var(--dim);margin-left:auto;"><input type="checkbox" id="transparentBg"> 透明底</label>
     </div>
+    <label style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--dim);">
+      <input type="checkbox" id="monoMode"> 纯色（地形等高线：全线用主色，不分层三色）</label>
   </details>
 
   <details class="sec" open>
@@ -256,6 +258,92 @@ function hexPoints(R){
   let pts=[];
   for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3; pts.push((Math.cos(a)*R).toFixed(2)+','+(Math.sin(a)*R).toFixed(2));}
   return pts.join(' ');
+}
+/* 高度场:每项 sin(k·(整数波数)) 叠加,多尺度(低频大丘+高频细节)→ 陡处等高线密、缓处疏,天然疏密不均;相位由 seed 决定 → 换种子换地形。
+   periodic=true:整数波数 + k=2π/scale,对周期 scale 严格无缝(tile 用);periodic=false:同式但 scale=特征尺度(整幅画布连续地形用) */
+function makeField(seed,scale){
+  const rng=mulberry32((seed|0)||1), k=2*Math.PI/scale, W=[];
+  for(const ab of [[1,0],[0,1],[1,1],[1,-1],[2,1],[1,2],[2,-1],[2,2],[3,1],[1,3],[3,-2],[3,2]])
+    W.push([ab[0],ab[1], 1/Math.pow(Math.hypot(ab[0],ab[1]),1.35), rng()*6.28318]);
+  return (x,y)=>{let h=0;for(const w of W)h+=w[2]*Math.sin(k*(w[0]*x+w[1]*y)+w[3]);return h;};
+}
+/* Chaikin 圆角:cuts 次;closed=true 首尾环绕(开放链锁死首尾端点) */
+function chaikin(pts,closed,cuts){
+  for(let it=0;it<cuts;it++){
+    const out=[], m=pts.length;
+    if(!closed) out.push(pts[0]);
+    const lim=closed?m:m-1;
+    for(let i=0;i<lim;i++){const p=pts[i],q=pts[(i+1)%m];
+      out.push([p[0]*0.75+q[0]*0.25,p[1]*0.75+q[1]*0.25]);
+      out.push([p[0]*0.25+q[0]*0.75,p[1]*0.25+q[1]*0.75]);}
+    if(!closed) out.push(pts[m-1]);
+    pts=out;
+  }
+  return pts;
+}
+/* 共享核心:在 [x0,x0+w]×[y0,y0+h] 上对每条等值线做 marching squares → 缝合成链 → Chaikin 平滑。
+   返回 [{li:层序号, pts:点数组, closed}](格式/上色交给调用方) */
+function contourCore(field,x0,y0,w,h,step,levels){
+  const NX=Math.round(w/step), NY=Math.round(h/step), G=[];
+  for(let i=0;i<=NX;i++){G[i]=[];for(let j=0;j<=NY;j++)G[i][j]=field(x0+i*step,y0+j*step);}
+  const key=p=>p[0].toFixed(2)+','+p[1].toFixed(2), res=[];
+  for(let li=0;li<levels.length;li++){ const lv=levels[li], segs=[];
+    for(let i=0;i<NX;i++)for(let j=0;j<NY;j++){
+      const tl=G[i][j],tr=G[i+1][j],br=G[i+1][j+1],bl=G[i][j+1];
+      let idx=0;if(tl>lv)idx|=8;if(tr>lv)idx|=4;if(br>lv)idx|=2;if(bl>lv)idx|=1;
+      if(idx===0||idx===15)continue;
+      const X=x0+i*step,Y=y0+j*step,ip=(a,b)=>(lv-a)/(b-a);
+      const T=[X+step*ip(tl,tr),Y],R=[X+step,Y+step*ip(tr,br)],B=[X+step*ip(bl,br),Y+step],Lf=[X,Y+step*ip(tl,bl)];
+      const add=(a,b)=>segs.push([a,b]);
+      switch(idx){
+        case 1:case 14:add(Lf,B);break;   case 2:case 13:add(B,R);break;
+        case 3:case 12:add(Lf,R);break;   case 4:case 11:add(T,R);break;
+        case 5:add(Lf,T);add(B,R);break;  case 6:case 9:add(T,B);break;
+        case 7:case 8:add(Lf,T);break;    case 10:add(Lf,B);add(T,R);break;
+      }
+    }
+    const ends=new Map(), used=new Array(segs.length).fill(false);
+    segs.forEach((sg,ix)=>{for(const p of sg){const kk=key(p);(ends.get(kk)||ends.set(kk,[]).get(kk)).push(ix);}});
+    for(let s0=0;s0<segs.length;s0++){
+      if(used[s0])continue; used[s0]=true;
+      let chain=[segs[s0][0],segs[s0][1]];
+      const grow=(atEnd)=>{ while(true){
+        const tip=atEnd?chain[chain.length-1]:chain[0];
+        const cand=(ends.get(key(tip))||[]).filter(i=>!used[i]);
+        if(!cand.length)break;
+        const ni=cand[0]; used[ni]=true;
+        const sg=segs[ni], o=key(sg[0])===key(tip)?sg[1]:sg[0];
+        atEnd?chain.push(o):chain.unshift(o);
+      }};
+      grow(true); grow(false);
+      let closed=key(chain[0])===key(chain[chain.length-1]);
+      if(closed) chain.pop();
+      let pts=chain;
+      if(pts.length>3) pts=chaikin(pts,closed,2);
+      res.push({li,pts,closed});
+    }
+  }
+  return res;
+}
+const pathD=c=>'<path d="M'+c.pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L')+(c.closed?' Z':'')+'"/>';
+/* 无缝 tile 版(单色):周期场,采样恰好覆盖一个周期 → 平铺无缝(用于 focus/center 等把地形块当元素时) */
+function contourTile(strokeAttr,x0,y0,L,nLevels,N,seed){
+  const field=makeField(seed,L), step=L/N;
+  let mn=1e9,mx=-1e9; for(let i=0;i<=N;i++)for(let j=0;j<=N;j++){const v=field(x0+i*step,y0+j*step);if(v<mn)mn=v;if(v>mx)mx=v;}
+  const levels=[]; for(let t=1;t<=nLevels;t++) levels.push(mn+(mx-mn)*t/(nLevels+1));
+  const cs=contourCore(field,x0,y0,L,L,step,levels);
+  return '<g '+strokeAttr+' stroke-linejoin="round" stroke-linecap="round">'+cs.map(pathD).join('')+'</g>';
+}
+/* 整幅画布连续地形:一张大场铺满 W×H(不重复!),按海拔分层上色。featScale=地形尺度(元素大小)、nLevels=等高线疏密(密度)、seed=形状 */
+function contourField(colors,lineW,W,H,seed,featScale,nLevels,mono){
+  const field=makeField(seed,featScale), step=Math.max(6,featScale/22);
+  let mn=1e9,mx=-1e9; for(let x=0;x<=W;x+=step*2)for(let y=0;y<=H;y+=step*2){const v=field(x,y);if(v<mn)mn=v;if(v>mx)mx=v;}
+  const levels=[]; for(let t=1;t<=nLevels;t++) levels.push(mn+(mx-mn)*t/(nLevels+1));
+  const cs=contourCore(field,0,0,W,H,step,levels);
+  const ck=['main','aux','accent'];   // 分层:相邻等高线循环三色;纯色:全用主色
+  let s='<g fill="none" stroke-linejoin="round" stroke-linecap="round" stroke-width="'+lineW+'">';
+  for(const c of cs) s+='<g stroke="'+colors[mono?'main':ck[c.li%3]]+'">'+pathD(c)+'</g>';
+  return s+'</g>';
 }
 
 const MOTIFS={
@@ -555,6 +643,9 @@ const MOTIFS={
           for(let x=-45;x<=50;x+=5){ const y=y0+8*Math.sin(2*Math.PI*x/100); d+=' L'+x+','+y.toFixed(1); }
           s+='<path d="'+d+'"/>'; }
         return s+'</g>';}},
+    {id:'terrain', name:'地形等高线', seamless:true, field:true,   // field:始终无缝整片;密度=等高线疏密(层数)、种子=地形形状
+      draw:(P,k)=>contourTile(P.stroke(k,P.lineW),-50,-50,100, 2+Math.round((P.density||5)*1.5), 28, P.seed||1),
+      tileDraw:(P,k)=>contourTile(P.stroke(k,P.lineW),-50,-50,100, 2+Math.round((P.density||5)*1.5), 28, P.seed||1)},   // 密度1→线疏(4层)…密度10→线密(17层);地形随种子🎲
     {id:'grid', name:'网格纹', seamless:true,
       draw:(P,k)=>'<rect x="-28" y="-28" width="56" height="56" fill="none" '+P.stroke(k,P.lineW)+'/><rect x="-4" y="-4" width="8" height="8" '+P.fill('accent')+'/>',   // 单方框
       tileDraw:(P,k)=>'<g '+P.stroke(k,P.lineW)+'>'
@@ -572,6 +663,7 @@ const ARRANGEMENTS=[
   {id:'diffuse', name:'扩散'},
   {id:'ring',    name:'环状'},
   {id:'planar',  name:'面化'},
+  {id:'ground',  name:'透视地面'},
   {id:'grad',    name:'渐变'},
   {id:'edge',    name:'边缘'},
   {id:'center',  name:'单张放大'},
@@ -581,7 +673,7 @@ const ARRANGEMENTS=[
 const state={
   family:'cn', motif:'xiangyun', arr:'tile', mat:'flat',
   palette:0, bg:'#F6EFE3', main:'#B23A2B', aux:'#274A59', accent:'#C9A227',
-  transparent:false, outline:false, wireOutline:false, spin:0, lineW:5,
+  transparent:false, outline:false, wireOutline:false, mono:false, spin:0, lineW:5,
   size:88, density:5, jPos:0, jRot:0, jScale:0, seed:42,
   W:1024, H:1024,
 };
@@ -646,6 +738,7 @@ function render(forceTransparent, skipView){
   const rng=mulberry32(state.seed);
   const colors={main:state.main, aux:state.aux, accent:state.accent};
   const P=makePaint(state.mat,colors,state.outline,state.lineW,state.bg,state.wireOutline?'outline':'full');
+  P.seed=state.seed; P.density=state.density;   // 供地形等高线等纹样读取(随机地形 / 层数随密度)
   // 防崩：族或纹样找不到（自定义被删/存储清空）就回退到内置第一个
   let fam0=MOTIFS[state.family];
   if(!fam0 || !fam0.list.length){ state.family='cn'; state.motif='xiangyun'; fam0=MOTIFS.cn; }
@@ -667,7 +760,13 @@ function render(forceTransparent, skipView){
   /* ---- 各组合形式 ---- */
   // 无缝：有 tileDraw 的纹样仅在密度最大(10)时密铺无缝，密度降低回落到离散摆放（单个图案分开）；无 tileDraw 的底纹一直无缝
   const useSeamless = state.density>=10;   // 密度满 → 所有纹样密铺(有 tileDraw 用密铺版,否则图案本身规律满铺);密度低 → 离散单个
-  if(state.arr==='tile' && useSeamless){
+  if(motifDef.field && (state.arr==='tile'||state.arr==='planar'||state.arr==='grad')){
+    // 地形场:整幅画布画一张连续地形(不重复铺!)。密度=等高线疏密、元素大小=地形尺度、种子=形状
+    const nLev=2+Math.round((state.density||5)*1.5);
+    const featScale=state.size*4;
+    body=contourField(colors, state.lineW, W, H, state.seed, featScale, nLev, state.mono);
+  }
+  else if(state.arr==='tile' && useSeamless){
     const tw=(motifDef.tw||100), th=(motifDef.th||100);
     const tsW=s*tw/100, tsH=s*th/100;
     // 无 tileDraw 的图标：用「draw 半错位密铺」(中心+四角错位)填满、连成片；有 tileDraw 的用自带密铺版
@@ -753,6 +852,27 @@ function render(forceTransparent, skipView){
       }
     }
     body+=instance(draw('main'), W/2, H/2, baseScale*0.95, 0);
+  }
+  else if(state.arr==='ground'){
+    // 透视地面(终末地登录界面式):一张固定的 2D 世界网格做透视投影 —— 行近疏远密、列向地平线消失点会聚、近大远小、近处不透明远处淡出
+    const yH=H*0.15;                      // 地平线高度(越小地平线越靠上)
+    const near=1, far=9;                  // 深度范围
+    const rows=Math.round(16+state.density*3);
+    const invN=1/near, invF=1/far;
+    const K=Math.ceil(W/(2*spacing))+2;   // 固定世界列索引 ±K:近处(persp=1)刚好铺满全宽,远处自动聚拢
+    for(let r=0;r<rows;r++){
+      const p=1 - (r/(rows-1))*0.985;         // 近(1)→远(~0.015):行在屏幕上均匀分布 → 铺满整片地面(否则近处被 1/z 拉出大空隙)
+      const persp=invF + p*(invN-invF);       // 透视因子 near/z:近=1、远=invF
+      const sy=yH + (H-yH)*p;                  // 屏幕纵向均匀铺满(地平线→底部)
+      const sc=baseScale*persp*0.7*jitS();     // 近大远小
+      if(sc<baseScale*0.03) continue;
+      const colSp=spacing*persp;              // 列间距:近宽远窄 → 同一列 k 在远处 x 更靠中心 = 向消失点会聚
+      for(let k=-K;k<=K;k++){
+        const x=W/2 + k*colSp + (rng()*2-1)*colSp*0.25*jPos;
+        if(x<-30 || x>W+30) continue;          // 裁掉屏幕外(近处两端超出的列)
+        body+='<g opacity="'+(0.3+0.7*p).toFixed(2)+'">'+instance(draw(pickColorKey(rng)),x,sy,sc,jitR())+'</g>';
+      }
+    }
   }
   else if(state.arr==='grad'){
     for(let y=spacing*0.5; y<H+s; y+=spacing){
@@ -899,6 +1019,7 @@ for(const [id,k] of [['cBg','bg'],['cMain','main'],['cAux','aux'],['cAccent','ac
   document.getElementById(id).oninput=(e)=>{state[k]=e.target.value; render();};
 document.getElementById('transparentBg').onchange=(e)=>{state.transparent=e.target.checked; render();};
 document.getElementById('outlineMode').onchange=(e)=>{state.outline=e.target.checked; render();};
+document.getElementById('monoMode').onchange=(e)=>{state.mono=e.target.checked; render();};
 document.getElementById('wireOutlineMode').onchange=(e)=>{state.wireOutline=e.target.checked; render();};
 
 function bindRange(id,key,valId){
@@ -1166,6 +1287,7 @@ function syncControls(){   // 把 state 写回所有控件（加载预设时用�
   for(const [id,k] of [['cBg','bg'],['cMain','main'],['cAux','aux'],['cAccent','accent']]) document.getElementById(id).value=state[k];
   document.getElementById('transparentBg').checked=state.transparent;
   document.getElementById('outlineMode').checked=state.outline;
+  document.getElementById('monoMode').checked=state.mono;
   const sizeSel=document.getElementById('sizeSel'), val=state.W+','+state.H;
   const has=[...sizeSel.options].some(o=>o.value===val);
   sizeSel.value = has ? val : 'custom';
