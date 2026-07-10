@@ -12,7 +12,7 @@
 
 ## 🌐 Use it online
 
-**Live → https://lululucy0853-alt.github.io/design-tools/**
+**Live → https://wanglustudio.com/tools/design-tools/**
 
 Open the link, pick a tool, and use it right in your browser — no install, no setup. Everything runs client-side and offline.
 
