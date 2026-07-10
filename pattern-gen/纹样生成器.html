@@ -55,10 +55,80 @@
     #stage{min-height:50vh;}
     #view svg{max-height:44vh;}
   }
+  /* ===== 合并:顶部模式切换 + 手绘对称面板 ===== */
+  body{flex-direction:column;}
+  #modeBar{display:flex; gap:14px; align-items:center; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); flex:none;}
+  #modeBar .mtabs{display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--panel2);}
+  #modeBar .mtab{display:flex; flex-direction:column; gap:1px; padding:7px 18px; cursor:pointer; user-select:none; border-right:1px solid var(--line); min-width:200px; transition:background .12s;}
+  #modeBar .mtab:last-child{border-right:0;}
+  #modeBar .mtab b{font-size:14px; color:var(--text); letter-spacing:1px;}
+  #modeBar .mtab span{font-size:11px; color:var(--dim);}
+  #modeBar .mtab:hover{background:var(--line);}
+  #modeBar .mtab.on{background:var(--acc);}
+  #modeBar .mtab.on b{color:#17181c;} #modeBar .mtab.on span{color:rgba(23,24,28,.72);}
+  #modeBar .brand{font-size:12px; color:var(--dim); margin-left:auto; letter-spacing:1px;}
+  @media (max-width:760px){ #modeBar .mtab{min-width:0; padding:6px 10px;} #modeBar .mtab span{display:none;} #modeBar .brand{display:none;} }
+  #tools{flex:1; display:flex; min-height:0;}
+  .toolwrap{flex:1; display:flex; min-height:0;}
+  .toolwrap.hide{display:none;}
+  #panelHand{width:300px; min-width:300px; background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; padding:18px 16px 40px;}
+  #panelHand h1{font-size:16px; letter-spacing:2px; margin-bottom:2px;}
+  #panelHand .sub{font-size:11px; color:var(--dim); margin-bottom:16px;}
+  #stageHand{flex:1; display:flex; flex-direction:column; min-width:0; position:relative;}
+  #brushHUD{position:absolute; top:52px; left:16px; z-index:6; width:150px; background:rgba(31,33,39,.92); border:1px solid var(--line); border-radius:8px; padding:8px 10px; box-shadow:0 4px 16px rgba(0,0,0,.45);}
+  #brushHUD .bh-top{font-size:11px; color:var(--dim); margin-bottom:6px;} #brushHUD .bh-top b{color:var(--acc);}
+  #brushHUD .bh-dotbox{height:64px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;}
+  #brushHUD #bh_dot{display:block; width:6px; height:6px; border-radius:50%; background:var(--acc);}
+  #brushHUD input[type=range]{width:100%; accent-color:var(--acc); height:16px;}
+  #hBar{display:flex; gap:10px; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel); font-size:12px; color:var(--dim);}
+  #hBar .grow{flex:1;}
+  #hBar{flex-wrap:nowrap; overflow-x:auto;}
+  #hBar #hStatus{flex:none; white-space:nowrap;}
+  #hBar .hbdiv{width:1px; height:20px; background:var(--line); flex:none;}
+  #hBar .sw{gap:5px; flex-wrap:nowrap; flex:none;}
+  #hBar .sw .dot{width:20px; height:20px;}
+  #hBar .hbchk{display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text); cursor:pointer; flex:none; white-space:nowrap;}
+  #hBar .hblbl{font-size:12px; color:var(--dim); flex:none;}
+  #hBar .hbrange{width:90px; accent-color:var(--acc); flex:none;}
+  #hBar input[type=color]{width:28px; height:22px; flex:none; padding:1px;}
+  #viewHand{flex:1; overflow:auto; display:flex; align-items:safe center; justify-content:safe center; padding:20px;
+    background:conic-gradient(#202127 25%,#191a1f 0 50%,#202127 0 75%,#191a1f 0) 0 0/24px 24px;}
+  #canvasWrap{position:relative; box-shadow:0 8px 40px rgba(0,0,0,.5);
+    width:calc(min(78vh,calc(100vw - 360px)) * var(--z,1)); height:calc(min(78vh,calc(100vw - 360px)) * var(--z,1));
+    background:conic-gradient(#3a3b40 25%,#2c2d32 0 50%,#3a3b40 0 75%,#2c2d32 0) 0 0/18px 18px;}
+  #canvasWrap.solidBg{background:#ffffff;} #canvasWrap.darkBg{background:#101116;}
+  #ink,#guide{position:absolute; inset:0; width:100%; height:100%; touch-action:none;}
+  #guide{pointer-events:none;}
+  .sw{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .sw .dot{width:22px; height:22px; border-radius:50%; border:2px solid transparent; cursor:pointer;}
+  .sw .dot.on{border-color:var(--acc); box-shadow:0 0 0 1px var(--bg) inset;}
+  .modeParams{margin-top:8px;} .hide{display:none !important;}
+  #h_targets{display:flex; flex-direction:column; gap:2px; max-height:190px; overflow-y:auto; border:1px solid var(--line); border-radius:5px; padding:3px; background:var(--panel2);}
+  .layerRow{display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:4px; cursor:pointer; font-size:12px;}
+  .layerRow:hover{background:var(--line);}
+  .layerRow.on{background:rgba(201,162,39,.16); outline:1px solid var(--acc);}
+  .layerRow .lsw{width:16px; height:16px; border-radius:3px; border:1px solid var(--line); flex:none; text-align:center; line-height:14px; font-size:11px; color:var(--dim);}
+  .layerRow .lname{flex:1; color:var(--text);}
+  .layerRow .lw{color:var(--dim); font-size:11px;}
+  .sec.card{ background:rgba(201,162,39,.06); border:1px solid rgba(201,162,39,.38); border-radius:9px; padding:10px 12px 12px; margin:8px 0 16px; }
+  .sec.card>summary{ color:var(--acc); }
+  .sec.card>summary::before{ color:var(--acc); }
+  @media (max-width:760px){ .toolwrap{flex-direction:column;}
+    #panelHand{width:auto; min-width:0; max-height:46vh; border-right:0; border-bottom:1px solid var(--line);}
+    #canvasWrap{width:calc(min(46vh,calc(100vw - 40px)) * var(--z,1)); height:calc(min(46vh,calc(100vw - 40px)) * var(--z,1));} }
 </style>
 </head>
 <body>
 
+<div id="modeBar">
+  <div class="mtabs">
+    <div class="mtab on" id="mtabHand"><b>✎ 手绘对称</b><span>画一笔 → 万花筒 / 镜像 / 无缝纹样</span></div>
+    <div class="mtab" id="mtabParam"><b>◈ 参数纹样</b><span>内置几十种纹样，一键铺满</span></div>
+  </div>
+  <span class="brand">纹样生成器</span>
+</div>
+<div id="tools">
+<div id="toolParam" class="toolwrap hide">
 <div id="panel">
   <h1>纹样生成器</h1>
   <div class="sub">参数化装饰纹样 · SVG 矢量原生输出 · v2（+ 自定义纹样 / 预设 / 色板）</div>
@@ -81,7 +151,7 @@
     <label style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--dim);">
       <input type="checkbox" id="outlineMode"> 线框模式（只描边、不填充；内置纹样有效）</label>
     <label style="display:flex;align-items:center;gap:5px;margin-top:6px;margin-left:20px;font-size:12px;color:var(--dim);">
-      <input type="checkbox" id="wireOutlineMode"> 仅轮廓（只留外形，隐藏内部结构线；部分纹样有效）</label>
+      <input type="checkbox" id="wireOutlineMode"> 仅轮廓（只留外形轮廓，隐藏内部/重叠结构线）</label>
     <div class="row" style="margin-top:8px;"><label>线条粗细</label><input type="range" id="pLineW" min="1" max="16" value="5" title="管「线框模式」描边 + 「底纹/线纹」族的线宽"><span class="val" id="vLineW"></span></div>
   </details>
 
@@ -186,9 +256,92 @@
   </div>
   <div id="view"></div>
 </div>
+</div><!-- /toolParam -->
+
+<div id="toolHand" class="toolwrap">
+  <div id="panelHand">
+    <h1>手绘对称</h1>
+    <div class="sub">画一笔 → 万花筒 / 镜像 / 无缝纹样。</div>
+
+    <details class="sec" open>
+      <summary>对称模式</summary>
+      <div class="chips" id="h_modeChips"></div>
+      <div class="modeParams" id="h_mpRadial">
+        <div class="row"><label>瓣数</label><input type="range" id="h_rSlices" min="2" max="24" value="8"><span class="val" id="h_vSlices"></span></div>
+        <label class="note" style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="h_rMirror" checked> 加镜像（万花筒）</label>
+      </div>
+      <div class="modeParams hide" id="h_mpMirror"><div class="chips" id="h_mirChips" style="margin-top:2px;"></div></div>
+      <div class="modeParams hide" id="h_mpTile">
+        <div class="row"><label>单元</label><input type="range" id="h_tSize" min="80" max="500" value="200" step="10"><span class="val" id="h_vTSize"></span></div>
+        <label class="note" style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="h_tMirror"> 镜像平铺（消接缝）</label>
+        <div class="note">在高亮格里画，出界自动接回。</div>
+      </div>
+    </details>
+
+
+    <details class="sec card" open>
+      <summary>图层（单击选中 · 双击改色）</summary>
+      <div class="note">单击选中，双击改色，下面调粗细 / 不透明。</div>
+      <label class="note" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:4px;"><input type="checkbox" id="h_pick"> 🖱 点线选中（点画布的线选层）</label>
+      <div id="h_targets" style="margin-top:6px;"></div>
+      <input type="color" id="h_recolor" style="display:none;">
+      <div class="note" id="h_targetHint" style="margin-top:5px;color:var(--acc);">—</div>
+      <div class="row" style="margin-top:4px;"><label>粗细</label><input type="range" id="h_reWidth" min="1" max="60" value="6"><span class="val" id="h_vReWidth">6px</span></div>
+      <div class="row"><label>不透明</label><input type="range" id="h_reAlpha" min="10" max="100" value="100"><span class="val" id="h_vReAlpha">100%</span></div>
+    </details>
+
+    <details class="sec" open>
+      <summary>画布</summary>
+      <div class="row"><label>预览底</label><div class="chips" id="h_bgChips" style="flex:1;"></div></div>
+      <div class="row"><label>缩放</label><button id="h_zoomOut" title="缩小">－</button><span class="val" id="h_zoomV" style="width:auto;flex:1;text-align:center;">100%</span><button id="h_zoomIn" title="放大">＋</button><button id="h_zoomFit" title="回到100%">适应</button></div>
+      <div class="note">Ctrl+滚轮也能缩放；Ctrl+Z 撤销。</div>
+      <label class="note" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:4px;"><input type="checkbox" id="h_showGuide" checked> 显示参考线（不导出）</label>
+    </details>
+
+    <details class="sec" open>
+      <summary>操作</summary>
+      <div class="row"><button id="h_btnUndo" style="flex:1;">↶ 撤销</button><button id="h_btnClear" style="flex:1;">清空</button></div>
+    </details>
+
+    <details class="sec" open>
+      <summary>导出 / 送出</summary>
+      <div class="row"><label>尺寸</label><select id="h_expSize" style="flex:1;"><option value="512">512 px</option><option value="1024">1024 px</option><option value="2048" selected>2048 px</option><option value="4096">4096 px</option></select></div>
+      <div class="row"><label>背景</label><select id="h_expBg" style="flex:1;"><option value="none" selected>透明</option><option value="dark">深色底</option><option value="white">白色底</option></select></div>
+      <div class="row"><button class="primary" id="h_btnSvg" style="flex:1;">导出 SVG（矢量）</button></div>
+      <div class="row"><button id="h_btnPng" style="flex:1;">导出 PNG（透明底）</button></div>
+      <div class="row" id="h_rowTilePng"><button id="h_btnTilePng" style="flex:1;">导出无缝单元</button></div>
+      <div class="row"><button id="h_btnSend" style="flex:1;">→ 送去参数纹样当单元</button></div>
+      <div class="note">存进「我的纹样」，切到参数纹样即可用。</div>
+    </details>
+  </div>
+  <div id="stageHand">
+    <div id="hBar">
+      <span id="hStatus"></span>
+      <span class="hbdiv"></span>
+      <div class="sw" id="h_swatches"></div>
+      <input type="color" id="h_brushColor" value="#ffffff" title="自定义颜色">
+      <label class="hbchk"><input type="checkbox" id="h_eraser"> 橡皮</label>
+      <span class="hbdiv"></span>
+      <span class="hblbl">不透明</span><input type="range" id="h_brushA" min="10" max="100" value="100" class="hbrange"><span class="val" id="h_vBrushA" style="width:34px;">100%</span>
+      <div class="grow"></div>
+      <span style="flex:none;white-space:nowrap;">棋盘格 = 透明区域</span>
+    </div>
+    <div id="brushHUD" title="当前画笔粗细（点的大小 = 笔画粗细）">
+      <div class="bh-top">画笔粗细 <b id="bh_val">6px</b></div>
+      <div class="bh-dotbox"><span id="bh_dot"></span></div>
+      <input type="range" id="bh_w" min="1" max="60" value="6">
+    </div>
+    <div id="viewHand"><div id="canvasWrap">
+      <canvas id="ink" width="1000" height="1000"></canvas>
+      <canvas id="guide" width="1000" height="1000"></canvas>
+    </div></div>
+  </div>
+</div>
+</div><!-- /tools -->
 
 <script>
 'use strict';
+(function(){
 /* ================= 随机数（可复现） ================= */
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};}
 
@@ -784,7 +937,9 @@ function render(forceTransparent, skipView){
   const colors = state.mono
     ? {main:state.monoColor, aux:state.monoColor, accent:state.monoColor, monoColor:state.monoColor}
     : {main:state.main, aux:state.aux, accent:state.accent, monoColor:state.monoColor};
-  const P=makePaint(state.mat,colors,state.outline,state.lineW,state.bg,state.wireOutline?'outline':'full');
+  // 仅轮廓:先按实心画(不要材质/线框),再用滤镜抽剪影外轮廓(见下方 gAttr)
+  const wire=state.wireOutline;
+  const P=makePaint(wire?'flat':state.mat, colors, wire?false:state.outline, state.lineW, state.bg, 'full');
   P.seed=state.seed; P.density=state.density;   // 供地形等高线等纹样读取(随机地形 / 层数随密度)
   // 防崩：族或纹样找不到（自定义被删/存储清空）就回退到内置第一个
   let fam0=MOTIFS[state.family];
@@ -1037,7 +1192,16 @@ function render(forceTransparent, skipView){
     if(state.mat==='paper')  bgLayer+='<rect width="'+W+'" height="'+H+'" filter="url(#grainBg)"/>';
   }
   let gAttr='';
-  if(state.mat==='stitch') gAttr=' filter="url(#wobble)"';
+  if(wire){   // 仅轮廓:腐蚀剪影再相减 → 得到整体外轮廓(重叠部件自动合并、内部结构线隐藏),通用于所有实心纹样
+    const r=Math.max(1.2, state.lineW*0.9);
+    defs += '<filter id="silOutline" x="-8%" y="-8%" width="116%" height="116%">'
+      +'<feMorphology in="SourceAlpha" operator="erode" radius="'+r+'" result="er"/>'
+      +'<feComposite in="SourceAlpha" in2="er" operator="out" result="band"/>'
+      +'<feFlood flood-color="'+colors.main+'" result="fc"/>'
+      +'<feComposite in="fc" in2="band" operator="in"/></filter>';
+    gAttr=' filter="url(#silOutline)"';
+  }
+  else if(state.mat==='stitch') gAttr=' filter="url(#wobble)"';
   else if(state.mat==='sketch') gAttr=' filter="url(#roughen)"';
   else if(state.mat==='paper') gAttr=' filter="url(#grainShape)"';
 
@@ -1460,6 +1624,386 @@ applyPalette(0);
 document.getElementById('monoColor').value=state.monoColor;
 refreshChips();
 render();
+
+/* ===== 桥接:供手绘工具把成品送来当「我的纹样」自定义单元 ===== */
+function loadRaw(dataURL){   // 不裁边(保无缝单元完整),只限长边到 MAX_DIM
+  return new Promise((res)=>{ const img=new Image();
+    img.onload=()=>{ const s=Math.min(1,MAX_DIM/Math.max(img.naturalWidth,img.naturalHeight));
+      const ow=Math.max(1,Math.round(img.naturalWidth*s)), oh=Math.max(1,Math.round(img.naturalHeight*s));
+      const oc=document.createElement('canvas'); oc.width=ow; oc.height=oh;
+      oc.getContext('2d').drawImage(img,0,0,ow,oh); res({src:encodeMotif(oc,true),w:ow,h:oh}); };
+    img.onerror=()=>res(null); img.src=dataURL; });
+}
+window.PT={
+  addMotifDataURL: async function(dataURL,name,opts){
+    opts=opts||{};
+    const info = opts.noTrim ? await loadRaw(dataURL) : await processImage(dataURL,false,false,42);
+    if(!info){ alert('这张送不过去(读不到像素)。'); return false; }
+    const id='c'+Date.now().toString(36)+'_'+customMotifs.length+'_'+Math.floor(Math.random()*1e4);
+    customMotifs.push({id, name:(name||'手绘').slice(0,8), src:info.src, w:info.w, h:info.h});
+    if(!lsSave(LS.motifs, customMotifs)){ customMotifs=lsLoad(LS.motifs)||[]; rebuildCustomFamily(); return false; }
+    rebuildCustomFamily();
+    state.family='custom'; state.motif=id;
+    if(opts.noTrim){ state.arr='tile'; state.density=10; }   // 无缝单元→直接满铺预览
+    else { state.arr='tile'; }
+    syncControls(); refreshChips(); render();
+    return true;
+  }
+};
+})();
+</script>
+
+<script>
+'use strict';
+(function(){
+/* ================= 手绘对称(矢量记录版) ================= */
+const N=1000;
+const ink=document.getElementById('ink'),  ictx=ink.getContext('2d');
+const guide=document.getElementById('guide'), gctx=guide.getContext('2d');
+const cx=N/2, cy=N/2;
+const committed=document.createElement('canvas'); committed.width=N; committed.height=N;
+const cctx=committed.getContext('2d');
+const tile=document.createElement('canvas'); let tctx=tile.getContext('2d');
+const tmpTile=document.createElement('canvas'); let ttctx=tmpTile.getContext('2d');
+
+let mode='radial', mirrorType='quad';
+const state={ slices:8, radialMirror:true, tileSize:200, tileMirror:false,
+  color:'#ffffff', brushW:2, brushA:100, eraser:false, pickMode:false, bg:'dark', showGuide:true };
+let strokes=[];             // 每一笔:{sym, pts, color, w, a, eraser}
+let selKind=null, selIndex=0, selColor=null;   // 改已画的目标:'one'(第selIndex笔)|'all'|'color'(selColor)
+let placeholder=false;     // 示例纹样占位(画在参考层,不导出;落笔即清)
+let zoom=1;                // 画布缩放
+
+const $=id=>document.getElementById(id);
+
+/* ---- 几何变换 ---- */
+function rot(x,y,a){ const dx=x-cx,dy=y-cy,c=Math.cos(a),s=Math.sin(a); return [cx+dx*c-dy*s, cy+dx*s+dy*c]; }
+function reflectH(x,y){ return [x,2*cy-y]; }
+function reflectV(x,y){ return [2*cx-x,y]; }
+function transformsFor(sym){
+  const T=[];
+  if(sym.mode==='radial'){ const n=sym.slices;
+    for(let i=0;i<n;i++){ const a=i*2*Math.PI/n;
+      T.push((x,y)=>rot(x,y,a));
+      if(sym.radialMirror) T.push((x,y)=>{const[rx,ry]=reflectH(x,y);return rot(rx,ry,a);}); }
+  } else if(sym.mode==='mirror'){ T.push((x,y)=>[x,y]);
+    if(sym.mirrorType==='v') T.push(reflectV);
+    else if(sym.mirrorType==='h') T.push(reflectH);
+    else { T.push(reflectV); T.push(reflectH); T.push((x,y)=>{const[a,b]=reflectV(x,y);return reflectH(a,b);}); }
+  }
+  return T;
+}
+function symNow(){ return {mode, slices:state.slices, radialMirror:state.radialMirror,
+  mirrorType, tileSize:state.tileSize, tileMirror:state.tileMirror, tileBase:[0,0]}; }
+
+/* ---- 画笔 ---- */
+function applyBrushOf(ctx,st){ ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=st.w;
+  if(st.eraser){ ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='rgba(0,0,0,1)'; ctx.globalAlpha=1; }
+  else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle=st.color; ctx.globalAlpha=st.a/100; } }
+function resetCtx(ctx){ ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1; }
+function strokePath(ctx,pts,fn){ if(!pts.length) return;
+  ctx.beginPath(); const p0=fn(pts[0][0],pts[0][1]); ctx.moveTo(p0[0],p0[1]);
+  if(pts.length===1) ctx.lineTo(p0[0]+0.01,p0[1]+0.01);
+  for(let i=1;i<pts.length;i++){ const p=fn(pts[i][0],pts[i][1]); ctx.lineTo(p[0],p[1]); }
+  ctx.stroke(); }
+
+/* ---- 平铺:把一笔画到单元(9 向回环) ---- */
+function drawStrokeOnTileOf(ctx,st){ const S=st.sym.tileSize, base=st.sym.tileBase;
+  applyBrushOf(ctx,st);
+  for(let ox=-S;ox<=S;ox+=S) for(let oy=-S;oy<=S;oy+=S){
+    ctx.beginPath();
+    ctx.moveTo(st.pts[0][0]-base[0]+ox, st.pts[0][1]-base[1]+oy);
+    if(st.pts.length===1) ctx.lineTo(st.pts[0][0]-base[0]+ox+0.01, st.pts[0][1]-base[1]+oy+0.01);
+    for(let i=1;i<st.pts.length;i++) ctx.lineTo(st.pts[i][0]-base[0]+ox, st.pts[i][1]-base[1]+oy);
+    ctx.stroke();
+  }
+  resetCtx(ctx);
+}
+function tileToInk(src){ const S=state.tileSize; ictx.clearRect(0,0,N,N); ictx.imageSmoothingEnabled=false;
+  const cols=Math.ceil(N/S)+1, rows=Math.ceil(N/S)+1;
+  for(let gx=0;gx<cols;gx++) for(let gy=0;gy<rows;gy++){
+    if(state.tileMirror){ ictx.save(); const fx=gx%2?-1:1, fy=gy%2?-1:1;
+      ictx.translate(gx*S+(fx<0?S:0), gy*S+(fy<0?S:0)); ictx.scale(fx,fy); ictx.drawImage(src,0,0); ictx.restore(); }
+    else ictx.drawImage(src,gx*S,gy*S);
+  }
+  ictx.imageSmoothingEnabled=true;
+}
+
+/* ---- 烘焙 / 重建 ---- */
+function bake(st){ if(st.sym.mode==='tile') drawStrokeOnTileOf(tctx,st);
+  else { applyBrushOf(cctx,st); for(const fn of transformsFor(st.sym)) strokePath(cctx,st.pts,fn); resetCtx(cctx); } }
+function rebuild(){
+  if(mode==='tile'){ tile.width=state.tileSize; tile.height=state.tileSize; tctx=tile.getContext('2d');
+    tctx.clearRect(0,0,tile.width,tile.height); for(const st of strokes) drawStrokeOnTileOf(tctx,st); }
+  else { cctx.clearRect(0,0,N,N); for(const st of strokes) bake(st); }
+  render(); refreshTargets();
+}
+
+/* ---- 主渲染 ---- */
+let drawing=false, curPts=[], curBase=[0,0];
+function render(){
+  if(mode==='tile'){ tmpTile.width=state.tileSize; tmpTile.height=state.tileSize; ttctx=tmpTile.getContext('2d');
+    ttctx.clearRect(0,0,tmpTile.width,tmpTile.height); ttctx.drawImage(tile,0,0);
+    if(drawing&&curPts.length){ const s={sym:{...symNow(),tileBase:curBase},pts:curPts,color:state.color,w:state.brushW,a:state.brushA,eraser:state.eraser}; drawStrokeOnTileOf(ttctx,s); }
+    tileToInk(tmpTile);
+  } else { ictx.clearRect(0,0,N,N); ictx.drawImage(committed,0,0);
+    if(drawing&&curPts.length){ const st={color:state.color,w:state.brushW,a:state.brushA,eraser:state.eraser}; applyBrushOf(ictx,st);
+      for(const fn of transformsFor(symNow())) strokePath(ictx,curPts,fn); resetCtx(ictx); }
+  }
+  drawGuide();
+}
+function drawGuide(){ gctx.clearRect(0,0,N,N); if(!state.showGuide) return; gctx.save();
+  gctx.strokeStyle='rgba(201,162,39,.35)'; gctx.fillStyle='rgba(201,162,39,.5)'; gctx.lineWidth=1.5;
+  if(mode==='radial'){ const n=state.slices;
+    for(let i=0;i<n;i++){ const a=-Math.PI/2+i*2*Math.PI/n; gctx.beginPath(); gctx.moveTo(cx,cy); gctx.lineTo(cx+Math.cos(a)*N,cy+Math.sin(a)*N); gctx.stroke(); }
+    gctx.beginPath(); gctx.arc(cx,cy,6,0,7); gctx.fill();
+  } else if(mode==='mirror'){ gctx.beginPath();
+    if(mirrorType==='v'||mirrorType==='quad'){ gctx.moveTo(cx,0); gctx.lineTo(cx,N); }
+    if(mirrorType==='h'||mirrorType==='quad'){ gctx.moveTo(0,cy); gctx.lineTo(N,cy); } gctx.stroke();
+  } else { const S=state.tileSize; gctx.strokeStyle='rgba(201,162,39,.22)';
+    for(let x=0;x<=N;x+=S){ gctx.beginPath(); gctx.moveTo(x,0); gctx.lineTo(x,N); gctx.stroke(); }
+    for(let y=0;y<=N;y+=S){ gctx.beginPath(); gctx.moveTo(0,y); gctx.lineTo(N,y); gctx.stroke(); }
+    gctx.strokeStyle='rgba(201,162,39,.7)'; gctx.lineWidth=2.5;
+    gctx.strokeRect(Math.floor(cx/S)*S,Math.floor(cy/S)*S,S,S); }
+  if(placeholder){
+    // 先画到离屏(不透明统一灰) → 重叠不累加、明度一致;再整体低透明度贴上
+    const buf=document.createElement('canvas'); buf.width=N; buf.height=N; const bx=buf.getContext('2d');
+    bx.lineCap='round'; bx.lineJoin='round'; bx.strokeStyle='#c8c8c8'; bx.lineWidth=2.4;   // 细、统一灰
+    const sym={mode:'radial',slices:state.slices,radialMirror:state.radialMirror,mirrorType,tileSize:state.tileSize};
+    const petals=[]; for(let i=0;i<=30;i++){ const t=i/30,a=t*Math.PI*0.7,r=70+t*330; petals.push([cx+Math.cos(a-0.5)*r*0.7, cy+Math.sin(a-0.5)*r]); }
+    for(const fn of transformsFor(sym)) strokePath(bx,petals,fn);
+    const ring=[]; for(let i=0;i<=28;i++){ const t=i/28; ring.push([cx+Math.cos(t*6.2832)*150, cy+Math.sin(t*6.2832)*150]); }
+    strokePath(bx,ring,(x,y)=>[x,y]);                    // 中心圆只画一次(对称叠 16 次会累成实心亮)
+    gctx.globalAlpha=0.15; gctx.drawImage(buf,0,0); gctx.globalAlpha=1;
+    gctx.fillStyle='rgba(190,190,190,0.30)'; gctx.textAlign='center'; gctx.font='20px "Microsoft YaHei",sans-serif';
+    gctx.fillText('示例纹样 · 落笔即清空',cx,40); }
+  gctx.restore();
+}
+
+/* ---- 指针 ---- */
+function posOf(e){ const r=ink.getBoundingClientRect(); return [(e.clientX-r.left)*(N/r.width),(e.clientY-r.top)*(N/r.height)]; }
+/* 点线选中:算点到每一笔(含其对称副本)的最短距离,取最近且在容差内的那笔 */
+function distToSeg(px,py,ax,ay,bx,by){ const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy;
+  if(!l2) return Math.hypot(px-ax,py-ay); let t=((px-ax)*dx+(py-ay)*dy)/l2; t=Math.max(0,Math.min(1,t));
+  return Math.hypot(px-(ax+t*dx),py-(ay+t*dy)); }
+function strokeHitDist(st,px,py){ let best=Infinity;
+  if(st.sym.mode==='tile'){ const S=st.sym.tileSize,b=st.sym.tileBase,lx=((px%S)+S)%S,ly=((py%S)+S)%S;
+    for(let ox=-S;ox<=S;ox+=S) for(let oy=-S;oy<=S;oy+=S){
+      for(let i=1;i<st.pts.length;i++) best=Math.min(best,distToSeg(lx,ly, st.pts[i-1][0]-b[0]+ox,st.pts[i-1][1]-b[1]+oy, st.pts[i][0]-b[0]+ox,st.pts[i][1]-b[1]+oy));
+      if(st.pts.length===1) best=Math.min(best,Math.hypot(lx-(st.pts[0][0]-b[0]+ox),ly-(st.pts[0][1]-b[1]+oy))); }
+  } else { for(const fn of transformsFor(st.sym)){ const tp=st.pts.map(p=>fn(p[0],p[1]));
+    for(let i=1;i<tp.length;i++) best=Math.min(best,distToSeg(px,py,tp[i-1][0],tp[i-1][1],tp[i][0],tp[i][1]));
+    if(tp.length===1) best=Math.min(best,Math.hypot(px-tp[0][0],py-tp[0][1])); } }
+  return best; }
+function pickAt(px,py){ let bi=-1,bd=Infinity;
+  strokes.forEach((st,i)=>{ if(st.eraser) return; const d=strokeHitDist(st,px,py); if(d<=st.w/2+10 && d<bd){ bd=d; bi=i; } });
+  if(bi>=0){ selKind='one'; selIndex=bi; refreshTargets(); }
+  else $('hStatus').textContent='没点到线 —— 靠近某条线再点'; }
+function down(e){ e.preventDefault(); placeholder=false; const [px,py]=posOf(e);
+  if(state.pickMode){ pickAt(px,py); return; }              // 选笔模式:点线选中,不画新线
+  ink.setPointerCapture(e.pointerId); drawing=true; curPts=[[px,py]];
+  if(mode==='tile'){ const S=state.tileSize; curBase=[Math.floor(px/S)*S,Math.floor(py/S)*S]; } render(); }
+function move(e){ if(!drawing) return; curPts.push(posOf(e)); render(); }
+function up(){ if(!drawing) return;
+  const st={ sym:{...symNow(),tileBase:curBase}, pts:curPts.slice(), color:state.color, w:state.brushW, a:state.brushA, eraser:state.eraser };
+  strokes.push(st); bake(st); if(!st.eraser){ selKind='one'; selIndex=strokes.length-1; }   // 画完自动选中这笔(橡皮不选)
+  drawing=false; curPts=[]; render(); refreshTargets(); }
+ink.addEventListener('pointerdown',down); ink.addEventListener('pointermove',move);
+ink.addEventListener('pointerup',up); ink.addEventListener('pointercancel',up); ink.addEventListener('pointerleave',up);
+
+/* ---- 改已画的:选「哪一笔 / 全部 / 某个颜色」→ 换色 或 改粗细,实时重放 ---- */
+function usedColors(){ const seen=[]; for(const s of strokes){ if(s.eraser) continue; if(!seen.includes(s.color)) seen.push(s.color); } return seen; }
+function matches(s,i){ if(selKind==='all') return true; if(selKind==='one') return i===selIndex; return false; }
+function openRecolor(){ const inp=$('h_recolor'); const rep = selKind==='all' ? strokes.find(s=>!s.eraser) : strokes[selIndex];
+  if(rep) inp.value=rep.color; inp.click(); }                                   // 弹出系统取色器,改选中图层的色
+function layerRow(kind,i,no){ const row=document.createElement('div'); row.className='layerRow';
+  const on = kind==='all' ? selKind==='all' : (selKind==='one'&&selIndex===i); if(on) row.classList.add('on');
+  if(kind==='all'){ row.innerHTML='<span class="lname">全部图层（一起改）</span>';
+    row.onclick=()=>{ selKind='all'; refreshTargets(); };
+    row.ondblclick=()=>{ selKind='all'; refreshTargets(); openRecolor(); }; }
+  else { const s=strokes[i];
+    const sw=document.createElement('span'); sw.className='lsw'; sw.style.background=s.color; sw.title='双击改色';
+    const nm=document.createElement('span'); nm.className='lname'; nm.textContent='图层 '+no;
+    const wd=document.createElement('span'); wd.className='lw'; wd.textContent=s.w+'px';
+    row.append(sw,nm,wd);
+    row.onclick=()=>{ selKind='one'; selIndex=i; refreshTargets(); };
+    row.ondblclick=()=>{ selKind='one'; selIndex=i; refreshTargets(); openRecolor(); }; }
+  return row; }
+function refreshTargets(){ const box=$('h_targets'); const n=strokes.length;
+  const drawIdx=[]; for(let i=0;i<n;i++) if(!strokes[i].eraser) drawIdx.push(i);   // 橡皮不算图层,只列真正画的
+  if(!drawIdx.length){ box.innerHTML='<div class="note" style="margin:0;">还没画。</div>'; if(selKind==='one') selKind=null; $('h_targetHint').textContent='—'; return; }
+  if(selKind==='one' && (selIndex>=n || strokes[selIndex].eraser)) selIndex=drawIdx[drawIdx.length-1];
+  else if(!selKind){ selKind='one'; selIndex=drawIdx[drawIdx.length-1]; }
+  box.innerHTML=''; box.appendChild(layerRow('all',null,0));
+  for(let k=drawIdx.length-1;k>=0;k--) box.appendChild(layerRow('one',drawIdx[k],k+1));   // 新图层在上,编号=第几个画的
+  const rep = selKind==='all' ? strokes[drawIdx[drawIdx.length-1]] : strokes[selIndex];    // 回填换色/粗细到当前图层
+  if(rep){ if(!rep.eraser) $('h_recolor').value=rep.color; $('h_reWidth').value=rep.w; $('h_vReWidth').textContent=rep.w+'px';
+    $('h_reAlpha').value=rep.a; $('h_vReAlpha').textContent=rep.a+'%'; }
+  $('h_targetHint').textContent = selKind==='all' ? '正在改：全部图层' : '正在改：图层 '+(drawIdx.indexOf(selIndex)+1);
+}
+$('h_recolor').addEventListener('input',e=>{ const nc=e.target.value; let any=false;
+  strokes.forEach((s,i)=>{ if(matches(s,i) && !s.eraser){ s.color=nc; any=true; } });
+  if(selKind==='color') selColor=nc; if(any) rebuild(); });
+$('h_reWidth').addEventListener('input',e=>{ $('h_vReWidth').textContent=e.target.value+'px'; const nw=+e.target.value; let any=false;
+  strokes.forEach((s,i)=>{ if(matches(s,i) && !s.eraser){ s.w=nw; any=true; } }); if(any) rebuild(); });
+$('h_reAlpha').addEventListener('input',e=>{ $('h_vReAlpha').textContent=e.target.value+'%'; const na=+e.target.value; let any=false;
+  strokes.forEach((s,i)=>{ if(matches(s,i) && !s.eraser){ s.a=na; any=true; } }); if(any) rebuild(); });
+
+/* ---- 模式 / 参数 UI ---- */
+const MODES=[['radial','放射'],['mirror','镜像'],['tile','平铺']];
+const modeChips=$('h_modeChips');
+MODES.forEach(([id,name])=>{ const c=document.createElement('div'); c.className='chip'+(id===mode?' on':''); c.textContent=name; c.dataset.m=id; c.onclick=()=>setMode(id); modeChips.appendChild(c); });
+function syncModeChips(){ [...modeChips.children].forEach(c=>c.classList.toggle('on',c.dataset.m===mode)); }
+function initTile(){ tile.width=state.tileSize; tile.height=state.tileSize; tctx=tile.getContext('2d'); tctx.clearRect(0,0,tile.width,tile.height); }
+function setMode(m){ if(m===mode) return;
+  if(strokes.length && !confirm('切换对称模式会清空当前画布(三种模式画法不同)。确定切换？')){ syncModeChips(); return; }
+  mode=m; strokes=[]; selKind=null; placeholder=false; cctx.clearRect(0,0,N,N); initTile();
+  $('h_mpRadial').classList.toggle('hide',m!=='radial');
+  $('h_mpMirror').classList.toggle('hide',m!=='mirror');
+  $('h_mpTile').classList.toggle('hide',m!=='tile');
+  $('h_rowTilePng').style.display=(m==='tile')?'flex':'none';
+  syncModeChips(); updateStatus(); render(); refreshTargets();
+}
+const MIRS=[['v','左右'],['h','上下'],['quad','四向']];
+const mirChips=$('h_mirChips');
+MIRS.forEach(([id,name])=>{ const c=document.createElement('div'); c.className='chip'+(id===mirrorType?' on':''); c.textContent=name;
+  c.onclick=()=>{ mirrorType=id; [...mirChips.children].forEach(x=>x.classList.toggle('on',x.textContent===name)); updateStatus(); render(); }; mirChips.appendChild(c); });
+
+const SW=['#ffffff','#c9a227','#B23A2B','#1D4E89','#5C6B57','#26262A','#FF8FAB','#35E0D6'];
+const swBox=$('h_swatches');
+SW.forEach((col,i)=>{ const d=document.createElement('div'); d.className='dot'+(col===state.color?' on':''); d.style.background=col; d.dataset.c=col;
+  d.onclick=()=>{ state.color=col; state.eraser=false; $('h_eraser').checked=false; $('h_brushColor').value=col;
+    [...swBox.children].forEach(x=>x.classList.toggle('on',x.dataset.c===col)); updateBrushHUD(); }; swBox.appendChild(d); });
+
+const BGS=[['checker','棋盘'],['dark','深'],['solid','白']];
+const bgChips=$('h_bgChips');
+BGS.forEach(([id,name])=>{ const c=document.createElement('div'); c.className='chip'+(id==='dark'?' on':''); c.textContent=name;
+  c.onclick=()=>{ state.bg=id; [...bgChips.children].forEach(x=>x.classList.toggle('on',x.textContent===name)); applyBg(); }; bgChips.appendChild(c); });
+function applyBg(){ const w=$('canvasWrap'); w.classList.toggle('solidBg',state.bg==='solid'); w.classList.toggle('darkBg',state.bg==='dark'); }
+
+function bindRange(id,vid,key,fmt,after){ const el=$(id),v=$(vid);
+  const upd=()=>{ state[key]=+el.value; v.textContent=fmt?fmt(el.value):el.value; if(after)after(); }; el.addEventListener('input',upd); upd(); }
+bindRange('h_rSlices','h_vSlices','slices',null,()=>{updateStatus();render();});
+bindRange('h_tSize','h_vTSize','tileSize',v=>v+'px',()=>{ if(mode==='tile'){ strokes=[]; selKind=null; initTile(); } render(); refreshTargets(); });
+/* 画笔粗细 HUD(画布左上角):点的大小=笔画粗细,实时 */
+function updateBrushHUD(){ const dot=$('bh_dot'); dot.style.width=dot.style.height=Math.max(2,state.brushW)+'px';
+  dot.style.background=state.eraser?'transparent':state.color; dot.style.border=state.eraser?'2px dashed var(--dim)':'none';
+  $('bh_val').textContent=state.brushW+'px'; $('bh_w').value=state.brushW; }
+$('bh_w').addEventListener('input',e=>{ state.brushW=+e.target.value; updateBrushHUD(); });
+bindRange('h_brushA','h_vBrushA','brushA',v=>v+'%');
+$('h_rMirror').addEventListener('change',e=>{ state.radialMirror=e.target.checked; updateStatus(); render(); });
+$('h_tMirror').addEventListener('change',e=>{ state.tileMirror=e.target.checked; render(); });
+$('h_eraser').addEventListener('change',e=>{ state.eraser=e.target.checked; updateBrushHUD(); });
+$('h_brushColor').addEventListener('input',e=>{ state.color=e.target.value; state.eraser=false; $('h_eraser').checked=false; [...swBox.children].forEach(x=>x.classList.remove('on')); updateBrushHUD(); });
+$('h_showGuide').addEventListener('change',e=>{ state.showGuide=e.target.checked; drawGuide(); });
+function doUndo(){ if(!strokes.length) return; strokes.pop(); if(selIndex>=strokes.length) selIndex=strokes.length-1; rebuild(); }
+$('h_btnUndo').onclick=doUndo;
+let _lastUndo=0;
+document.addEventListener('keydown',e=>{
+  if(!((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z')) return;   // 只拦 Ctrl/⌘+Z,其它键立即放行
+  if($('toolHand').classList.contains('hide')) return;                 // 仅手绘模式
+  const tag=(document.activeElement&&document.activeElement.tagName)||'';
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
+  e.preventDefault();
+  const now=Date.now(); if(now-_lastUndo<90) return; _lastUndo=now;    // 节流:按住/连发最多约11次/秒,避免全量重绘堆积卡顿
+  doUndo();
+});
+$('h_btnClear').onclick=()=>{ if(strokes.length&&!confirm('清空画布？')) return; strokes=[]; selKind=null; cctx.clearRect(0,0,N,N); initTile(); render(); refreshTargets(); };
+/* 选笔模式 + 缩放 */
+$('h_pick').addEventListener('change',e=>{ state.pickMode=e.target.checked; ink.style.cursor=state.pickMode?'pointer':'crosshair'; updateStatus(); });
+function applyZoom(){ $('canvasWrap').style.setProperty('--z',zoom); $('h_zoomV').textContent=Math.round(zoom*100)+'%'; }
+$('h_zoomOut').onclick=()=>{ zoom=Math.max(0.5,+(zoom-0.25).toFixed(2)); applyZoom(); };
+$('h_zoomIn').onclick=()=>{ zoom=Math.min(4,+(zoom+0.25).toFixed(2)); applyZoom(); };
+$('h_zoomFit').onclick=()=>{ zoom=1; applyZoom(); };
+$('viewHand').addEventListener('wheel',e=>{ if(!e.ctrlKey) return; e.preventDefault(); zoom=Math.max(0.5,Math.min(4,+(zoom+(e.deltaY<0?0.2:-0.2)).toFixed(2))); applyZoom(); },{passive:false});
+function updateStatus(){ let s;
+  if(mode==='radial') s='放射 · '+state.slices+' 瓣'+(state.radialMirror?' · 镜像':'');
+  else if(mode==='mirror') s='镜像 · '+({v:'左右',h:'上下',quad:'四向'}[mirrorType]);
+  else s='平铺 · 单元 '+state.tileSize+'px'+(state.tileMirror?' · 镜像平铺':'');
+  if(state.pickMode) s+=' · 🖱 选笔模式(点线选中)';
+  $('hStatus').textContent=s; }
+
+/* ---- 导出 / 送出 ---- */
+function dl(canvas,name){ const a=document.createElement('a'); a.download=name; a.href=canvas.toDataURL('image/png'); a.click(); }
+/* ---- 由矢量笔迹直接生成真·SVG ---- */
+function pd(pts,fn){ let d=''; for(let i=0;i<pts.length;i++){ const q=fn(pts[i][0],pts[i][1]); d+=(i?'L':'M')+q[0].toFixed(1)+','+q[1].toFixed(1); }
+  if(pts.length===1){ const q=fn(pts[0][0],pts[0][1]); d+='L'+(q[0]+0.1).toFixed(1)+','+q[1].toFixed(1); } return d; }
+function cpath(st,fn){ return '<path d="'+pd(st.pts,fn)+'" fill="none" stroke="'+st.color+'" stroke-width="'+st.w+'" stroke-opacity="'+(st.a/100)+'" stroke-linecap="round" stroke-linejoin="round"/>'; }
+function epath(st,fn){ return '<path d="'+pd(st.pts,fn)+'" fill="none" stroke="#000" stroke-width="'+st.w+'" stroke-linecap="round" stroke-linejoin="round"/>'; }
+function buildSVG(size){
+  const cols=strokes.filter(s=>!s.eraser), ers=strokes.filter(s=>s.eraser);
+  let defs='', body='';
+  if(mode==='tile'){ const S=state.tileSize;
+    const tc=(list,er)=>{ let s=''; for(const st of list){ const b=st.sym.tileBase;
+      for(let ox=-S;ox<=S;ox+=S) for(let oy=-S;oy<=S;oy+=S){ const fn=(x,y)=>[x-b[0]+ox,y-b[1]+oy]; s+= er?epath(st,fn):cpath(st,fn); } } return s; };
+    defs='<pattern id="tpc" width="'+S+'" height="'+S+'" patternUnits="userSpaceOnUse">'+tc(cols,false)+'</pattern>';
+    if(ers.length){ defs+='<pattern id="tpe" width="'+S+'" height="'+S+'" patternUnits="userSpaceOnUse"><rect width="'+S+'" height="'+S+'" fill="#fff"/>'+tc(ers,true)+'</pattern><mask id="hm"><rect width="'+N+'" height="'+N+'" fill="url(#tpe)"/></mask>';
+      body='<rect width="'+N+'" height="'+N+'" fill="url(#tpc)" mask="url(#hm)"/>'; }
+    else body='<rect width="'+N+'" height="'+N+'" fill="url(#tpc)"/>';
+  } else { let colored='',erased='';
+    for(const st of cols) for(const fn of transformsFor(st.sym)) colored+=cpath(st,fn);
+    for(const st of ers) for(const fn of transformsFor(st.sym)) erased+=epath(st,fn);
+    if(erased){ defs='<mask id="hm"><rect width="'+N+'" height="'+N+'" fill="#fff"/>'+erased+'</mask>'; body='<g mask="url(#hm)">'+colored+'</g>'; }
+    else body=colored;
+  }
+  const bg=expBg(), bgRect = bg ? '<rect width="'+N+'" height="'+N+'" fill="'+bg+'"/>' : '';
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+N+' '+N+'" width="'+size+'" height="'+size+'">'+(defs?'<defs>'+defs+'</defs>':'')+bgRect+body+'</svg>';
+}
+function expSize(){ return +$('h_expSize').value||2048; }
+function expBg(){ const v=$('h_expBg').value; return v==='dark'?'#101116':(v==='white'?'#ffffff':null); }
+$('h_btnSvg').onclick=()=>{ if(!strokes.some(s=>!s.eraser)){ alert('先画点东西再导出。'); return; }
+  const blob=new Blob([buildSVG(expSize())],{type:'image/svg+xml'}); const a=document.createElement('a');
+  a.download='手绘对称_'+Date.now()+'.svg'; a.href=URL.createObjectURL(blob); a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
+$('h_btnPng').onclick=()=>{ if(!strokes.some(s=>!s.eraser)){ alert('先画点东西再导出。'); return; }
+  const size=expSize(), img=new Image(), url=URL.createObjectURL(new Blob([buildSVG(size)],{type:'image/svg+xml'}));
+  img.onload=()=>{ const c=document.createElement('canvas'); c.width=size; c.height=size; c.getContext('2d').drawImage(img,0,0,size,size); URL.revokeObjectURL(url);
+    c.toBlob(b=>{ const a=document.createElement('a'); a.download='手绘对称_'+size+'_'+Date.now()+'.png'; a.href=URL.createObjectURL(b); a.click(); },'image/png'); };
+  img.src=url; };
+$('h_btnTilePng').onclick=()=>{ if(mode!=='tile') return; dl(tile,'无缝单元_'+state.tileSize+'_'+Date.now()+'.png'); };
+$('h_btnSend').onclick=async ()=>{
+  if(!strokes.length){ alert('先画点东西再送。'); return; }
+  const btn=$('h_btnSend'); btn.textContent='送出中…';
+  let ok;
+  if(mode==='tile') ok=await window.PT.addMotifDataURL(tile.toDataURL('image/png'),'手绘平铺',{noTrim:true});
+  else ok=await window.PT.addMotifDataURL(ink.toDataURL('image/png'),'手绘');
+  btn.textContent='→ 送去参数纹样当单元';
+  if(ok){ $('hStatus').textContent='已送去「我的纹样」→ 正在参数纹样里'; if(window.__showTool) window.__showTool('param'); }
+};
+
+/* ---- 启动 + 演示钩子 ---- */
+initTile(); applyBg(); $('h_rowTilePng').style.display='none'; ink.style.cursor='crosshair'; updateStatus(); placeholder=true; applyZoom(); updateBrushHUD(); render(); refreshTargets();
+window.HAND={ runDemo(){ mode='radial'; placeholder=false; syncModeChips();
+    let pts=[]; for(let i=0;i<=40;i++){ const t=i/40,a=t*Math.PI*0.9,r=60+t*300; pts.push([cx+Math.cos(a-0.6)*r*0.7,cy+Math.sin(a-0.6)*r]); }
+    strokes.push({sym:symNow(),pts,color:'#c9a227',w:7,a:95,eraser:false});
+    pts=[]; for(let i=0;i<=24;i++){ const t=i/24; pts.push([cx+120+t*160,cy-40+Math.sin(t*6.28)*70]); }
+    strokes.push({sym:symNow(),pts,color:'#B23A2B',w:6,a:100,eraser:false});
+    rebuild(); },
+  recolorDemo(){ this.runDemo(); for(const s of strokes){ if(s.color==='#c9a227') s.color='#1D4E89'; } rebuild(); },
+  async sendDemo(){ this.runDemo(); const ok=await window.PT.addMotifDataURL(ink.toDataURL('image/png'),'手绘'); if(ok&&window.__showTool) window.__showTool('param'); },
+  rewidthDemo(){ this.runDemo(); selKind='one'; selIndex=0; for(const s of strokes) if(matches(s,strokes.indexOf(s))) s.w=16; rebuild(); },
+  pickDemo(){ this.runDemo(); pickAt(cx+200,cy-40); $('hStatus').textContent='点线命中 → 选中第 '+(selIndex+1)+' 笔'; },
+  brushDemo(){ state.brushW=44; state.color='#35E0D6'; updateBrushHUD(); },
+  alphaDemo(){ this.runDemo(); selKind='one'; selIndex=0; strokes[0].a=30; rebuild(); },
+  svgDemo(){ this.runDemo(); const el=document.createElement('div'); el.style.cssText='position:absolute;right:14px;bottom:14px;width:300px;height:300px;background:#151515;border:1px solid #c9a227;'; el.innerHTML=buildSVG(300); $('viewHand').appendChild(el); $('hStatus').textContent='右下=SVG矢量渲染,应与画布一致'; },
+  tileSvgDemo(){ setMode('tile'); state.color='#c9a227'; let p=[]; for(let i=0;i<=30;i++){ const t=i/30; p.push([cx-30+t*260, cy-30+t*230]); } let st={sym:{...symNow(),tileBase:[Math.floor(p[0][0]/state.tileSize)*state.tileSize,Math.floor(p[0][1]/state.tileSize)*state.tileSize]},pts:p,color:'#c9a227',w:8,a:100,eraser:false}; strokes.push(st); drawStrokeOnTileOf(tctx,st); state.color='#B23A2B'; p=[]; for(let i=0;i<=20;i++){const t=i/20;p.push([cx+Math.cos(t*6.28)*70,cy+Math.sin(t*6.28)*70]);} st={sym:{...symNow(),tileBase:[Math.floor(p[0][0]/state.tileSize)*state.tileSize,Math.floor(p[0][1]/state.tileSize)*state.tileSize]},pts:p,color:'#B23A2B',w:6,a:100,eraser:false}; strokes.push(st); drawStrokeOnTileOf(tctx,st); render(); refreshTargets(); const el=document.createElement('div'); el.style.cssText='position:absolute;right:14px;bottom:14px;width:300px;height:300px;background:#151515;border:1px solid #c9a227;'; el.innerHTML=buildSVG(300); $('viewHand').appendChild(el); $('hStatus').textContent='右下=平铺SVG矢量,应与画布一致'; } };
+})();
+</script>
+
+<script>
+/* ===== 顶部模式切换 ===== */
+(function(){
+  const tp=document.getElementById('toolParam'), th=document.getElementById('toolHand');
+  const bp=document.getElementById('mtabParam'), bh=document.getElementById('mtabHand');
+  function show(which){ const hand=which==='hand';
+    tp.classList.toggle('hide',hand); th.classList.toggle('hide',!hand);
+    bp.classList.toggle('on',!hand); bh.classList.toggle('on',hand); }
+  bp.onclick=()=>show('param'); bh.onclick=()=>show('hand');
+  window.__showTool=show;
+  const q=new URLSearchParams(location.search);
+  if(q.get('tool')==='param'){ show('param'); }
+  else { show('hand');   // 默认:手绘对称
+    if(window.HAND){ if(q.get('demo')==='1') window.HAND.runDemo(); else if(q.get('demo')==='recolor') window.HAND.recolorDemo(); else if(q.get('demo')==='send') window.HAND.sendDemo(); else if(q.get('demo')==='rewidth') window.HAND.rewidthDemo(); else if(q.get('demo')==='pick') window.HAND.pickDemo(); else if(q.get('demo')==='brush') window.HAND.brushDemo(); else if(q.get('demo')==='alpha') window.HAND.alphaDemo(); else if(q.get('demo')==='svg') window.HAND.svgDemo(); else if(q.get('demo')==='tilesvg') window.HAND.tileSvgDemo(); } }
+})();
 </script>
 </body>
 </html>
