@@ -361,7 +361,7 @@ function shade(hex,f){ // f>0 变亮, f<0 变暗
 
 /* ================= 配色预设 ================= */
 const PALETTES=[
-  {name:'看形·白／灰',      bg:'#808080', main:'#FFFFFF', aux:'#FFFFFF', accent:'#FFFFFF'},
+  {name:'看形·白／深灰',    bg:'#101116', main:'#FFFFFF', aux:'#FFFFFF', accent:'#FFFFFF'},
   {name:'朱砂描金（国风）', bg:'#F6EFE3', main:'#B23A2B', aux:'#274A59', accent:'#C9A227'},
   {name:'青花（国风）',     bg:'#F4F7F7', main:'#1D4E89', aux:'#6FA3C7', accent:'#E0B44B'},
   {name:'墨玉（国风）',     bg:'#22261F', main:'#8FA98B', aux:'#5C6B57', accent:'#D8C08A'},
@@ -872,7 +872,7 @@ const ARRANGEMENTS=[
 /* ================= 状态 ================= */
 const state={
   family:'modern', motif:'dot', arr:'tile', mat:'flat',
-  palette:0, bg:'#808080', main:'#FFFFFF', aux:'#FFFFFF', accent:'#FFFFFF',   // 初始:白纹样 + 灰底,便于看清纹样形状
+  palette:0, bg:'#101116', main:'#FFFFFF', aux:'#FFFFFF', accent:'#FFFFFF',   // 初始:白纹样 + 深灰底(与手绘画布 #101116 一致),便于看清纹样形状
   transparent:false, outline:false, wireOutline:false, mono:false, monoColor:'#FFFFFF', spin:0, lineW:5,
   size:88, density:5, jPos:0, jRot:0, jScale:0, seed:42,
   vpx:50, horizon:14, depth:9,   // 透视地面:灭点水平位置% / 地平线高度% / 最远深度
@@ -1960,11 +1960,16 @@ function epath(st,fn){ return '<path d="'+pd(st.pts,fn)+'" fill="none" stroke="#
 function buildSVG(size){
   const cols=strokes.filter(s=>!s.eraser), ers=strokes.filter(s=>s.eraser);
   let defs='', body='';
-  if(mode==='tile'){ const S=state.tileSize;
+  if(mode==='tile'){ const S=state.tileSize, mir=state.tileMirror, PS=mir?2*S:S;
     const tc=(list,er)=>{ let s=''; for(const st of list){ const b=st.sym.tileBase;
       for(let ox=-S;ox<=S;ox+=S) for(let oy=-S;oy<=S;oy+=S){ const fn=(x,y)=>[x-b[0]+ox,y-b[1]+oy]; s+= er?epath(st,fn):cpath(st,fn); } } return s; };
-    defs='<pattern id="tpc" width="'+S+'" height="'+S+'" patternUnits="userSpaceOnUse">'+tc(cols,false)+'</pattern>';
-    if(ers.length){ defs+='<pattern id="tpe" width="'+S+'" height="'+S+'" patternUnits="userSpaceOnUse"><rect width="'+S+'" height="'+S+'" fill="#fff"/>'+tc(ers,true)+'</pattern><mask id="hm"><rect width="'+N+'" height="'+N+'" fill="url(#tpe)"/></mask>';
+    // 镜像平铺:把单元内容放进 2S×2S 超级单元的四格,分别 正/水平翻/垂直翻/双翻,与预览 tileToInk 的 fx/fy 奇偶规则一致 → 导出与画布同款反射平铺
+    const MC=[[0,0,1,1],[1,0,-1,1],[0,1,1,-1],[1,1,-1,-1]];
+    const pat=(list,er)=>{ const unit=tc(list,er); if(!mir) return unit;
+      return MC.map(([col,row,fx,fy])=>{ const tx=col*S+(fx<0?S:0), ty=row*S+(fy<0?S:0);
+        return '<g transform="translate('+tx+','+ty+') scale('+fx+','+fy+')">'+unit+'</g>'; }).join(''); };
+    defs='<pattern id="tpc" width="'+PS+'" height="'+PS+'" patternUnits="userSpaceOnUse">'+pat(cols,false)+'</pattern>';
+    if(ers.length){ defs+='<pattern id="tpe" width="'+PS+'" height="'+PS+'" patternUnits="userSpaceOnUse"><rect width="'+PS+'" height="'+PS+'" fill="#fff"/>'+pat(ers,true)+'</pattern><mask id="hm"><rect width="'+N+'" height="'+N+'" fill="url(#tpe)"/></mask>';
       body='<rect width="'+N+'" height="'+N+'" fill="url(#tpc)" mask="url(#hm)"/>'; }
     else body='<rect width="'+N+'" height="'+N+'" fill="url(#tpc)"/>';
   } else { let colored='',erased='';
@@ -1986,7 +1991,13 @@ $('h_btnPng').onclick=()=>{ if(!strokes.some(s=>!s.eraser)){ alert('先画点东
   img.onload=()=>{ const c=document.createElement('canvas'); c.width=size; c.height=size; c.getContext('2d').drawImage(img,0,0,size,size); URL.revokeObjectURL(url);
     c.toBlob(b=>{ const a=document.createElement('a'); a.download='手绘对称_'+size+'_'+Date.now()+'.png'; a.href=URL.createObjectURL(b); a.click(); },'image/png'); };
   img.src=url; };
-$('h_btnTilePng').onclick=()=>{ if(mode!=='tile') return; dl(tile,'无缝单元_'+state.tileSize+'_'+Date.now()+'.png'); };
+$('h_btnTilePng').onclick=()=>{ if(mode!=='tile') return;
+  if(state.tileMirror){ const S=state.tileSize, c=document.createElement('canvas'); c.width=c.height=2*S;   // 镜像模式:导出 2S 反射超级单元,单独按 p1 平铺即无缝
+    const x=c.getContext('2d'); x.imageSmoothingEnabled=false;
+    for(let gx=0;gx<2;gx++) for(let gy=0;gy<2;gy++){ x.save(); const fx=gx%2?-1:1, fy=gy%2?-1:1;
+      x.translate(gx*S+(fx<0?S:0), gy*S+(fy<0?S:0)); x.scale(fx,fy); x.drawImage(tile,0,0); x.restore(); }
+    dl(c,'无缝单元_镜像_'+(2*S)+'_'+Date.now()+'.png'); }
+  else dl(tile,'无缝单元_'+state.tileSize+'_'+Date.now()+'.png'); };
 $('h_btnSend').onclick=async ()=>{
   if(!strokes.length){ alert('先画点东西再送。'); return; }
   const btn=$('h_btnSend'); btn.textContent='送出中…';
@@ -2012,7 +2023,11 @@ window.HAND={ runDemo(){ mode='radial'; placeholder=false; syncModeChips();
   brushDemo(){ state.brushW=44; state.color='#35E0D6'; updateBrushHUD(); },
   alphaDemo(){ this.runDemo(); selKind='one'; selIndex=0; strokes[0].a=30; rebuild(); },
   svgDemo(){ this.runDemo(); const el=document.createElement('div'); el.style.cssText='position:absolute;right:14px;bottom:14px;width:300px;height:300px;background:#151515;border:1px solid #c9a227;'; el.innerHTML=buildSVG(300); $('viewHand').appendChild(el); $('hStatus').textContent='右下=SVG矢量渲染,应与画布一致'; },
-  tileSvgDemo(){ setMode('tile'); state.color='#c9a227'; let p=[]; for(let i=0;i<=30;i++){ const t=i/30; p.push([cx-30+t*260, cy-30+t*230]); } let st={sym:{...symNow(),tileBase:[Math.floor(p[0][0]/state.tileSize)*state.tileSize,Math.floor(p[0][1]/state.tileSize)*state.tileSize]},pts:p,color:'#c9a227',w:8,a:100,eraser:false}; strokes.push(st); drawStrokeOnTileOf(tctx,st); state.color='#B23A2B'; p=[]; for(let i=0;i<=20;i++){const t=i/20;p.push([cx+Math.cos(t*6.28)*70,cy+Math.sin(t*6.28)*70]);} st={sym:{...symNow(),tileBase:[Math.floor(p[0][0]/state.tileSize)*state.tileSize,Math.floor(p[0][1]/state.tileSize)*state.tileSize]},pts:p,color:'#B23A2B',w:6,a:100,eraser:false}; strokes.push(st); drawStrokeOnTileOf(tctx,st); render(); refreshTargets(); const el=document.createElement('div'); el.style.cssText='position:absolute;right:14px;bottom:14px;width:300px;height:300px;background:#151515;border:1px solid #c9a227;'; el.innerHTML=buildSVG(300); $('viewHand').appendChild(el); $('hStatus').textContent='右下=平铺SVG矢量,应与画布一致'; } };
+  tileSvgDemo(){ setMode('tile'); state.color='#c9a227'; let p=[]; for(let i=0;i<=30;i++){ const t=i/30; p.push([cx-30+t*260, cy-30+t*230]); } let st={sym:{...symNow(),tileBase:[Math.floor(p[0][0]/state.tileSize)*state.tileSize,Math.floor(p[0][1]/state.tileSize)*state.tileSize]},pts:p,color:'#c9a227',w:8,a:100,eraser:false}; strokes.push(st); drawStrokeOnTileOf(tctx,st); state.color='#B23A2B'; p=[]; for(let i=0;i<=20;i++){const t=i/20;p.push([cx+Math.cos(t*6.28)*70,cy+Math.sin(t*6.28)*70]);} st={sym:{...symNow(),tileBase:[Math.floor(p[0][0]/state.tileSize)*state.tileSize,Math.floor(p[0][1]/state.tileSize)*state.tileSize]},pts:p,color:'#B23A2B',w:6,a:100,eraser:false}; strokes.push(st); drawStrokeOnTileOf(tctx,st); render(); refreshTargets(); const el=document.createElement('div'); el.style.cssText='position:absolute;right:14px;bottom:14px;width:300px;height:300px;background:#151515;border:1px solid #c9a227;'; el.innerHTML=buildSVG(300); $('viewHand').appendChild(el); $('hStatus').textContent='右下=平铺SVG矢量,应与画布一致'; },
+  tileMirrorDemo(){ setMode('tile'); state.tileMirror=true; $('h_tMirror').checked=true;   // 镜像平铺验证:画一笔明显不对称的斜线,开镜像,右下角 SVG 应与画布同款反射平铺
+    state.color='#c9a227'; let p=[]; for(let i=0;i<=26;i++){ const t=i/26; p.push([cx-60+t*150, cy-70+t*40]); } let st={sym:{...symNow(),tileBase:[Math.floor(p[0][0]/state.tileSize)*state.tileSize,Math.floor(p[0][1]/state.tileSize)*state.tileSize]},pts:p,color:'#c9a227',w:9,a:100,eraser:false}; strokes.push(st); drawStrokeOnTileOf(tctx,st);
+    state.color='#B23A2B'; p=[]; for(let i=0;i<=16;i++){ const t=i/16; p.push([cx+30+t*90, cy+t*100]); } st={sym:{...symNow(),tileBase:[Math.floor(p[0][0]/state.tileSize)*state.tileSize,Math.floor(p[0][1]/state.tileSize)*state.tileSize]},pts:p,color:'#B23A2B',w:7,a:100,eraser:false}; strokes.push(st); drawStrokeOnTileOf(tctx,st);
+    render(); refreshTargets(); const el=document.createElement('div'); el.style.cssText='position:absolute;right:14px;bottom:14px;width:300px;height:300px;background:#151515;border:1px solid #c9a227;'; el.innerHTML=buildSVG(300); $('viewHand').appendChild(el); $('hStatus').textContent='右下=镜像平铺SVG,应与画布逐格翻转一致'; } };
 })();
 </script>
 
@@ -2029,7 +2044,7 @@ window.HAND={ runDemo(){ mode='radial'; placeholder=false; syncModeChips();
   const q=new URLSearchParams(location.search);
   if(q.get('tool')==='param'){ show('param'); }
   else { show('hand');   // 默认:手绘对称
-    if(window.HAND){ if(q.get('demo')==='1') window.HAND.runDemo(); else if(q.get('demo')==='recolor') window.HAND.recolorDemo(); else if(q.get('demo')==='send') window.HAND.sendDemo(); else if(q.get('demo')==='rewidth') window.HAND.rewidthDemo(); else if(q.get('demo')==='pick') window.HAND.pickDemo(); else if(q.get('demo')==='brush') window.HAND.brushDemo(); else if(q.get('demo')==='alpha') window.HAND.alphaDemo(); else if(q.get('demo')==='svg') window.HAND.svgDemo(); else if(q.get('demo')==='tilesvg') window.HAND.tileSvgDemo(); } }
+    if(window.HAND){ if(q.get('demo')==='1') window.HAND.runDemo(); else if(q.get('demo')==='recolor') window.HAND.recolorDemo(); else if(q.get('demo')==='send') window.HAND.sendDemo(); else if(q.get('demo')==='rewidth') window.HAND.rewidthDemo(); else if(q.get('demo')==='pick') window.HAND.pickDemo(); else if(q.get('demo')==='brush') window.HAND.brushDemo(); else if(q.get('demo')==='alpha') window.HAND.alphaDemo(); else if(q.get('demo')==='svg') window.HAND.svgDemo(); else if(q.get('demo')==='tilesvg') window.HAND.tileSvgDemo(); else if(q.get('demo')==='tilemirror') window.HAND.tileMirrorDemo(); } }
 })();
 </script>
 </body>
