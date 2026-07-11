@@ -57,8 +57,9 @@
   }
   /* ===== 合并:顶部模式切换 + 手绘对称面板 ===== */
   body{flex-direction:column;}
-  #modeBar{display:flex; gap:14px; align-items:center; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); flex:none;}
-  #modeBar .mtabs{display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--panel2);}
+  #modeBar{display:flex; gap:14px; align-items:center; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); flex:none; position:relative;}
+  #modeBar .lead{width:284px; flex:none;}          /* = 左面板宽,让下面的 mtabs 恰好居中于画布区 */
+  #modeBar .mtabs{display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--panel2); margin:0 auto;}
   #modeBar .mtab{display:flex; flex-direction:column; gap:1px; padding:7px 18px; cursor:pointer; user-select:none; border-right:1px solid var(--line); min-width:200px; transition:background .12s;}
   #modeBar .mtab:last-child{border-right:0;}
   #modeBar .mtab b{font-size:14px; color:var(--text); letter-spacing:1px;}
@@ -66,8 +67,8 @@
   #modeBar .mtab:hover{background:var(--line);}
   #modeBar .mtab.on{background:var(--acc);}
   #modeBar .mtab.on b{color:#17181c;} #modeBar .mtab.on span{color:rgba(23,24,28,.72);}
-  #modeBar .brand{font-size:12px; color:var(--dim); margin-left:auto; letter-spacing:1px;}
-  @media (max-width:760px){ #modeBar .mtab{min-width:0; padding:6px 10px;} #modeBar .mtab span{display:none;} #modeBar .brand{display:none;} }
+  #modeBar .brand{font-size:12px; color:var(--dim); position:absolute; right:16px; top:50%; transform:translateY(-50%); letter-spacing:1px;}
+  @media (max-width:760px){ #modeBar .lead{display:none;} #modeBar .mtab{min-width:0; padding:6px 10px;} #modeBar .mtab span{display:none;} #modeBar .brand{display:none;} }
   #tools{flex:1; display:flex; min-height:0;}
   .toolwrap{flex:1; display:flex; min-height:0;}
   .toolwrap.hide{display:none;}
@@ -121,6 +122,7 @@
 <body>
 
 <div id="modeBar">
+  <div class="lead"></div>
   <div class="mtabs">
     <div class="mtab on" id="mtabHand"><b>✎ 手绘对称</b><span>画一笔 → 万花筒 / 镜像 / 无缝纹样</span></div>
     <div class="mtab" id="mtabParam"><b>◈ 参数纹样</b><span>内置几十种纹样，一键铺满</span></div>
@@ -323,6 +325,8 @@
       <label class="hbchk"><input type="checkbox" id="h_eraser"> 橡皮</label>
       <span class="hbdiv"></span>
       <span class="hblbl">不透明</span><input type="range" id="h_brushA" min="10" max="100" value="100" class="hbrange"><span class="val" id="h_vBrushA" style="width:34px;">100%</span>
+      <span class="hbdiv"></span>
+      <span class="hblbl">平滑度</span><input type="range" id="h_smooth" min="0" max="100" step="5" value="37" class="hbrange" title="越大越顺滑(但笔迹略缩水);0=最跟手"><span class="val" id="h_vSmooth" style="width:34px;">37%</span>
       <div class="grow"></div>
       <span style="flex:none;white-space:nowrap;">棋盘格 = 透明区域</span>
     </div>
@@ -1701,21 +1705,43 @@ function applyBrushOf(ctx,st){ ctx.lineCap='round'; ctx.lineJoin='round'; ctx.li
   if(st.eraser){ ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='rgba(0,0,0,1)'; ctx.globalAlpha=1; }
   else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle=st.color; ctx.globalAlpha=st.a/100; } }
 function resetCtx(ctx){ ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1; }
+/* ---- 笔迹平滑:折线点 → 圆滑曲线。canvas 与 SVG 共用同一份,保证所见即所得。三步:
+   ① 抽稀去手抖(丢过近点、端点保留);② 拉普拉斯平滑迭代(每点向邻居中点靠,端点固定,K 越大越柔,平滑主力);
+   ③ 中点二次贝塞尔渲染(穿点不过冲)。SMOOTH∈[0,1] 由顶栏「平滑度」滑块实时调,0=最跟手 1=最顺(略缩水)。 */
+let SMOOTH=0.37;
+function smoothCmds(P0){
+  const n0=P0.length; if(!n0) return null;
+  // ① 抽稀:阈值随平滑度 1→7px,点越稀后续越圆
+  const gap=1+SMOOTH*6, th2=gap*gap; let P=[];
+  for(let i=0;i<n0;i++){ if(!P.length||i===n0-1){ P.push(P0[i].slice()); continue; }
+    const q=P[P.length-1], dx=P0[i][0]-q[0], dy=P0[i][1]-q[1]; if(dx*dx+dy*dy>=th2) P.push(P0[i].slice()); }
+  // ② 拉普拉斯平滑:迭代 0→24 次,λ=0.5,端点固定 —— 让高档位明显变柔(24 次以上收敛,无谓)
+  const K=Math.round(SMOOTH*24);
+  for(let it=0; it<K && P.length>2; it++){ const Q=P.map(p=>p.slice());
+    for(let i=1;i<P.length-1;i++){ Q[i][0]=P[i][0]+0.5*((P[i-1][0]+P[i+1][0])/2-P[i][0]);
+      Q[i][1]=P[i][1]+0.5*((P[i-1][1]+P[i+1][1])/2-P[i][1]); } P=Q; }
+  // ③ 中点二次贝塞尔
+  const n=P.length, m=[P[0][0],P[0][1]], q=[];
+  if(n===1){ q.push([P[0][0],P[0][1],P[0][0]+0.01,P[0][1]+0.01]); return {m,q}; }
+  if(n===2){ q.push([P[0][0],P[0][1],P[1][0],P[1][1]]); return {m,q}; }
+  let i; for(i=1;i<n-2;i++){ const xc=(P[i][0]+P[i+1][0])/2, yc=(P[i][1]+P[i+1][1])/2; q.push([P[i][0],P[i][1],xc,yc]); }
+  q.push([P[i][0],P[i][1],P[i+1][0],P[i+1][1]]);   // 收尾:倒数第二点作控制、末点为锚
+  return {m,q};
+}
+function smoothStroke(ctx,P){ const c=smoothCmds(P); if(!c) return;
+  ctx.moveTo(c.m[0],c.m[1]); for(const g of c.q) ctx.quadraticCurveTo(g[0],g[1],g[2],g[3]); }
+function smoothD(P){ const c=smoothCmds(P); if(!c) return '';
+  let d='M'+c.m[0].toFixed(1)+','+c.m[1].toFixed(1);
+  for(const g of c.q) d+='Q'+g[0].toFixed(1)+','+g[1].toFixed(1)+' '+g[2].toFixed(1)+','+g[3].toFixed(1);
+  return d; }
 function strokePath(ctx,pts,fn){ if(!pts.length) return;
-  ctx.beginPath(); const p0=fn(pts[0][0],pts[0][1]); ctx.moveTo(p0[0],p0[1]);
-  if(pts.length===1) ctx.lineTo(p0[0]+0.01,p0[1]+0.01);
-  for(let i=1;i<pts.length;i++){ const p=fn(pts[i][0],pts[i][1]); ctx.lineTo(p[0],p[1]); }
-  ctx.stroke(); }
+  ctx.beginPath(); smoothStroke(ctx,pts.map(p=>fn(p[0],p[1]))); ctx.stroke(); }
 
 /* ---- 平铺:把一笔画到单元(9 向回环) ---- */
 function drawStrokeOnTileOf(ctx,st){ const S=st.sym.tileSize, base=st.sym.tileBase;
   applyBrushOf(ctx,st);
   for(let ox=-S;ox<=S;ox+=S) for(let oy=-S;oy<=S;oy+=S){
-    ctx.beginPath();
-    ctx.moveTo(st.pts[0][0]-base[0]+ox, st.pts[0][1]-base[1]+oy);
-    if(st.pts.length===1) ctx.lineTo(st.pts[0][0]-base[0]+ox+0.01, st.pts[0][1]-base[1]+oy+0.01);
-    for(let i=1;i<st.pts.length;i++) ctx.lineTo(st.pts[i][0]-base[0]+ox, st.pts[i][1]-base[1]+oy);
-    ctx.stroke();
+    ctx.beginPath(); smoothStroke(ctx, st.pts.map(p=>[p[0]-base[0]+ox, p[1]-base[1]+oy])); ctx.stroke();
   }
   resetCtx(ctx);
 }
@@ -1891,6 +1917,8 @@ function updateBrushHUD(){ const dot=$('bh_dot'); dot.style.width=dot.style.heig
   $('bh_val').textContent=state.brushW+'px'; $('bh_w').value=state.brushW; }
 $('bh_w').addEventListener('input',e=>{ state.brushW=+e.target.value; updateBrushHUD(); });
 bindRange('h_brushA','h_vBrushA','brushA',v=>v+'%');
+$('h_smooth').addEventListener('input',e=>{ SMOOTH=+e.target.value/100;   // 平滑度 0~100%:即时改强度并重绘已画笔迹
+  $('h_vSmooth').textContent=e.target.value+'%'; rebuild(); });
 $('h_rMirror').addEventListener('change',e=>{ state.radialMirror=e.target.checked; updateStatus(); render(); });
 $('h_tMirror').addEventListener('change',e=>{ state.tileMirror=e.target.checked; render(); });
 $('h_eraser').addEventListener('change',e=>{ state.eraser=e.target.checked; updateBrushHUD(); });
@@ -1926,8 +1954,7 @@ function updateStatus(){ let s;
 /* ---- 导出 / 送出 ---- */
 function dl(canvas,name){ const a=document.createElement('a'); a.download=name; a.href=canvas.toDataURL('image/png'); a.click(); }
 /* ---- 由矢量笔迹直接生成真·SVG ---- */
-function pd(pts,fn){ let d=''; for(let i=0;i<pts.length;i++){ const q=fn(pts[i][0],pts[i][1]); d+=(i?'L':'M')+q[0].toFixed(1)+','+q[1].toFixed(1); }
-  if(pts.length===1){ const q=fn(pts[0][0],pts[0][1]); d+='L'+(q[0]+0.1).toFixed(1)+','+q[1].toFixed(1); } return d; }
+function pd(pts,fn){ return smoothD(pts.map(p=>fn(p[0],p[1]))); }   // 与画布同一份平滑,导出即所见
 function cpath(st,fn){ return '<path d="'+pd(st.pts,fn)+'" fill="none" stroke="'+st.color+'" stroke-width="'+st.w+'" stroke-opacity="'+(st.a/100)+'" stroke-linecap="round" stroke-linejoin="round"/>'; }
 function epath(st,fn){ return '<path d="'+pd(st.pts,fn)+'" fill="none" stroke="#000" stroke-width="'+st.w+'" stroke-linecap="round" stroke-linejoin="round"/>'; }
 function buildSVG(size){
