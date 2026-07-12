@@ -17,6 +17,8 @@
   .row label { font-size: 12px; color: var(--dim); width: 62px; flex: none; }
   .row input[type=range] { flex: 1; accent-color: var(--acc); }
   .row .val { width: 44px; text-align: right; font-size: 11px; color: var(--dim); }
+  input.pos { flex: 1; width: 100%; background: var(--panel2); border: 1px solid var(--line); color: var(--text); font-size: 12px; border-radius: 4px; padding: 4px 6px; }
+  input.pos:focus { outline: 1px solid var(--acc); }
   span.val[contenteditable] { cursor: text; }
   span.val[contenteditable]:hover { color: var(--text); background: #0003; border-radius: 3px; }
   span.val[contenteditable]:focus { outline: 1px solid var(--acc); border-radius: 3px; background: #0004; color: var(--text); }
@@ -69,10 +71,11 @@
     <div class="row"><label>宽度</label><input type="range" id="isx" min="20" max="400" value="100"><span class="val" contenteditable="true" inputmode="decimal" id="visx"></span></div>
     <div class="row"><label>高度</label><input type="range" id="isy" min="20" max="400" value="100"><span class="val" contenteditable="true" inputmode="decimal" id="visy"></span></div>
     <label class="ck" style="margin:2px 0 6px"><input type="checkbox" id="ifLock"> 锁定宽高比(缩放不变形)</label>
-    <div class="note" style="margin:0 0 6px">提示:选中界面后<b>右键拖拽</b>可直接转 360° 角度。</div>
+    <div class="note" style="margin:0 0 6px">提示:选中界面后 <b>Shift+左键拖</b>(或中键)可直接转 360° 角度。</div>
     <div style="font-size:11px;color:var(--dim);margin:2px 0 6px;">快捷角度</div>
     <div class="chips" id="presets"></div>
     <div class="grp"><button id="ifaceReset">复位角度</button><button id="ifaceHide">隐藏此界面</button></div>
+    <button class="full" id="ifaceCopy">▸ 一键并到上一块界面旁边</button>
   </div>
 
   <div id="figCtrl" class="hidden">
@@ -85,13 +88,18 @@
     <div class="row"><label>朝向</label><input type="range" id="dir" min="-180" max="180" value="0"><span class="val" contenteditable="true" inputmode="decimal" id="vdir"></span></div>
     <div class="row"><label>大小</label><input type="range" id="figscale" min="30" max="250" value="100"><span class="val" contenteditable="true" inputmode="decimal" id="vfigscale"></span></div>
     <div class="row"><label>俯仰</label><input type="range" id="figrx" min="-180" max="180" value="0"><span class="val" contenteditable="true" inputmode="decimal" id="vfigrx"></span></div>
-    <div class="note" style="margin:0 0 6px">提示:选中人物后<b>右键拖拽</b>可直接转 360°。</div>
+    <div class="note" style="margin:0 0 6px">提示:选中人物后 <b>Shift+左键拖</b>(或中键)可直接转 360°。</div>
     <div style="font-size:11px;color:var(--dim);margin:2px 0 5px;">整体姿态</div>
     <div class="chips"><span class="chip" data-fori="0">站立</span><span class="chip" data-fori="-90">躺平(平行地面)</span></div>
-    <button class="full" id="figHide">隐藏此人物</button>
+    <div class="grp"><button id="figResetRot">复位角度</button><button id="figHide">隐藏此人物</button></div>
   </div>
 
-  <div id="commonCtrl" class="hidden"><div class="row"><label>离地 Y</label><input type="range" id="posy" min="0" max="4" step="0.02" value="0"><span class="val" contenteditable="true" inputmode="decimal" id="vposy"></span></div></div>
+  <div id="commonCtrl" class="hidden">
+    <div style="font-size:11px;color:var(--dim);margin:2px 0 5px;">位置(左右/前后可直接输入,两块填一样即重合)</div>
+    <div class="row"><label>左右 X</label><input type="number" class="pos" id="px" step="0.1"></div>
+    <div class="row"><label>前后 Z</label><input type="number" class="pos" id="pz" step="0.1"></div>
+    <div class="row"><label>离地 Y</label><input type="range" id="py" min="0" max="4" step="0.02" value="0"><span class="val" contenteditable="true" inputmode="decimal" id="vpy"></span></div>
+  </div>
   <button id="delSel" class="full hidden" style="border-color:#7a3b3b;color:#e0a0a0">删除选中 (Del 键)</button>
 
   <div class="sec">视角 / 透视</div>
@@ -101,7 +109,7 @@
   <div class="sec">显示</div>
   <label class="ck"><input type="checkbox" id="groundck" checked> 地面网格(衬托空间)</label>
   <label class="ck"><input type="checkbox" id="ifgridck"> 界面透视网格(读透视)</label>
-  <label class="ck"><input type="checkbox" id="hzck"> 视平线 / 相机高度</label>
+  <label class="ck"><input type="checkbox" id="hzck" checked> 视平线 / 相机高度</label>
   <div class="grp"><label class="ck" style="flex:1"><input type="checkbox" id="showFig" checked> 显示人物</label><label class="ck" style="flex:1"><input type="checkbox" id="showIf" checked> 显示界面</label></div>
   <button class="full" id="resetScene">重置场景</button>
 
@@ -115,7 +123,7 @@
     <button data-mode2="view">移动视角</button>
     <button data-mode2="edit" class="on">编辑物件</button>
   </div>
-  <div id="modehint">左键拖 移动物件 · 右键拖 转物件 · 滚轮 缩放 · 中键/空白拖 转视角 · Del 删除 · Ctrl+Z 撤回</div>
+  <div id="modehint">左键拖 移动 · Shift+左键(或中键)拖 转物件 · 右键/空白拖 转视角 · 滚轮 缩放 · Del 删除 · Ctrl+Z 撤回</div>
   <div id="horizon"><span>视平线 · 相机高度 —</span></div>
   <div id="gizmoLabel">坐标轴(点轴=正对该视角)</div>
 </div>
@@ -207,10 +215,11 @@
   }
   function ifaceGridTexture() {
     const c = document.createElement("canvas"); c.width = 512; c.height = 340; const x = c.getContext("2d");
-    x.clearRect(0, 0, 512, 340); x.strokeStyle = "#c9a227cc"; x.lineWidth = 2;
-    for (let i = 1; i < 8; i++) { x.beginPath(); x.moveTo(i / 8 * 512, 0); x.lineTo(i / 8 * 512, 340); x.stroke(); }
-    for (let j = 1; j < 6; j++) { x.beginPath(); x.moveTo(0, j / 6 * 340); x.lineTo(512, j / 6 * 340); x.stroke(); }
-    x.lineWidth = 3; x.strokeRect(0, 0, 512, 340);
+    x.clearRect(0, 0, 512, 340); x.strokeStyle = "rgba(200,214,228,0.34)"; x.lineWidth = 1.5;
+    const CN = 10, RN = 7;
+    for (let i = 1; i < CN; i++) { x.beginPath(); x.moveTo(i / CN * 512, 0); x.lineTo(i / CN * 512, 340); x.stroke(); }
+    for (let j = 1; j < RN; j++) { x.beginPath(); x.moveTo(0, j / RN * 340); x.lineTo(512, j / RN * 340); x.stroke(); }
+    x.strokeStyle = "rgba(212,224,236,0.55)"; x.lineWidth = 2; x.strokeRect(0, 0, 512, 340);
     return new THREE.CanvasTexture(c);
   }
   const IF_H = 1.7;
@@ -220,11 +229,12 @@
     const w = IF_H * aspect;
     const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, toneMapped: false });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, IF_H), mat); mesh.position.y = IF_H / 2; inner.add(mesh);
-    const gmat = new THREE.MeshBasicMaterial({ map: ifaceGridTexture(), transparent: true, side: THREE.DoubleSide, depthTest: false });
-    const gmesh = new THREE.Mesh(new THREE.PlaneGeometry(w, IF_H), gmat); gmesh.position.set(0, IF_H / 2, 0.012); gmesh.visible = false; gmesh.renderOrder = 2; gmesh.raycast = function () {}; inner.add(gmesh);
+    const gmat = new THREE.MeshBasicMaterial({ map: ifaceGridTexture(), transparent: true, side: THREE.DoubleSide });
+    const gW = w * 1.5, gH = IF_H * 1.3;   // 比界面大一圈,框在背后
+    const gmesh = new THREE.Mesh(new THREE.PlaneGeometry(gW, gH), gmat); gmesh.position.set(0, gH / 2, -0.05); gmesh.visible = false; gmesh.renderOrder = -1; gmesh.raycast = function () {}; inner.add(gmesh);
     const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(w, IF_H)), new THREE.LineBasicMaterial({ color: 0x5a6068 }));
     edge.position.set(0, IF_H / 2, 0.02); edge.raycast = function () {}; inner.add(edge);   // 常显淡边框;关掉射线检测,避免线段容差误选
-    g.userData = { type: "interface", inner, grid: gmesh, edge, ang: { rx: 0, ry: 0, rz: 0, sx: 100, sy: 100 }, lock: false, lockRatio: 1 };
+    g.userData = { type: "interface", inner, grid: gmesh, edge, baseW: w, ang: { rx: 0, ry: 0, rz: 0, sx: 100, sy: 100 }, lock: false, lockRatio: 1 };
     applyIfaceAngles(g);
     return g;
   }
@@ -270,9 +280,10 @@
   }
 
   // ===== 选择 =====
-  let selected = null;
-  function refreshIfaceGrid() { const on = $("ifgridck").checked; items.forEach((g) => { if (g.userData.type === "interface") g.userData.grid.visible = on; }); }
+  let selected = null, copySource = null;
+  function refreshIfaceGrid() { const on = $("ifgridck").checked; items.forEach((g) => { if (g.userData.type === "interface") g.userData.grid.visible = on || g === selected; }); }
   function select(g) {
+    if (selected && selected.userData.type === "interface" && selected !== g) copySource = selected;
     if (selected) { if (selected.userData.mat) selected.userData.mat.emissive.setHex(0x000000); if (selected.userData.edge) selected.userData.edge.material.color.setHex(0x5a6068); }
     selected = g || null;
     $("noSel").classList.toggle("hidden", !!selected);
@@ -280,8 +291,9 @@
     $("commonCtrl").classList.toggle("hidden", !selected);
     $("ifaceCtrl").classList.toggle("hidden", !(selected && selected.userData.type === "interface"));
     $("figCtrl").classList.toggle("hidden", !(selected && selected.userData.type === "figure"));
+    refreshIfaceGrid();
     if (!selected) return;
-    $("posy").value = selected.position.y; $("vposy").textContent = selected.position.y.toFixed(2);
+    syncPos();
     if (selected.userData.type === "figure") {
       selected.userData.mat.emissive.setHex(0x24405f);
       document.querySelectorAll("#poseRow .chip").forEach((b) => b.classList.toggle("on", b.dataset.pose === selected.userData.pose));
@@ -337,8 +349,8 @@
     setNDC(e); el.setPointerCapture(e.pointerId);
     if (mode === "view") { drag = { kind: (e.button === 2 || e.button === 1) ? "pan" : "orbit", x: e.clientX, y: e.clientY }; return; }
     // 编辑物件
-    if (e.button === 1) { drag = { kind: "pan", x: e.clientX, y: e.clientY }; return; }         // 中键=平移
-    if (e.button === 2) {                                                                          // 右键=转物件(没物体则平移)
+    if (e.button === 2) { drag = { kind: "pan", x: e.clientX, y: e.clientY }; return; }         // 右键=平移视角
+    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {                                        // 中键 或 Shift+左键 = 转物件
       const it = pickItem(); if (it) select(it);
       if (it || selected) { beginUndo(); drag = { kind: "rotate", x: e.clientX, y: e.clientY, changed: false }; }
       else drag = { kind: "pan", x: e.clientX, y: e.clientY };
@@ -370,7 +382,7 @@
       const flat = new THREE.Vector3(fwd.x, 0, fwd.z).normalize();
       const k = cam.radius * 0.0015;
       drag.obj.position.addScaledVector(right, dx * k).addScaledVector(flat, -dy * k);
-      drag.lastX = e.clientX; drag.lastY = e.clientY;
+      drag.lastX = e.clientX; drag.lastY = e.clientY; syncPos();
     }
   });
   el.addEventListener("pointerup", () => {
@@ -412,11 +424,37 @@
   $("isy").oninput = (e) => setIfaceSize("sy", +e.target.value);
   $("ifLock").onchange = (e) => { if (!selected || selected.userData.type !== "interface") return; selected.userData.lock = e.target.checked; if (e.target.checked) selected.userData.lockRatio = selected.userData.ang.sy / selected.userData.ang.sx; };
   $("figscale").oninput = (e) => { if (!selected || selected.userData.type !== "figure") return; selected.scale.setScalar(+e.target.value / 100); $("vfigscale").textContent = e.target.value + "%"; };
-  $("posy").oninput = (e) => { if (!selected) return; selected.position.y = +e.target.value; $("vposy").textContent = (+e.target.value).toFixed(2); };
+  function syncPos() { if (!selected) return; const ae = document.activeElement; if (ae !== $("px")) $("px").value = Math.round(selected.position.x * 100) / 100; if (ae !== $("pz")) $("pz").value = Math.round(selected.position.z * 100) / 100; $("py").value = selected.position.y; $("vpy").textContent = Math.round(selected.position.y * 100) / 100; }
+  ["px", "pz"].forEach((id) => {
+    const el = $(id);
+    el.addEventListener("focus", beginUndo);
+    el.addEventListener("change", commitUndo);
+    el.addEventListener("input", () => { if (!selected) return; const v = parseFloat(el.value); if (isNaN(v)) return; if (id === "px") selected.position.x = v; else selected.position.z = v; });
+  });
+  $("py").oninput = (e) => { if (!selected) return; selected.position.y = +e.target.value; $("vpy").textContent = Math.round(+e.target.value * 100) / 100; };
   const PRE = [["平视", { rx: 0, ry: 0, rz: 0 }], ["贴地平铺", { rx: -90, ry: 0, rz: 0 }], ["俯视", { rx: 72, ry: 0, rz: 0 }], ["斜俯视", { rx: 52, ry: -20, rz: 0 }], ["仰视", { rx: -38, ry: 0, rz: 0 }], ["侧斜", { rx: 20, ry: -42, rz: 0 }]];
   PRE.forEach(([name, v]) => { const b = document.createElement("span"); b.className = "chip"; b.textContent = name; b.onclick = () => { if (!selected || selected.userData.type !== "interface") return; pushUndoNow(); Object.assign(selected.userData.ang, v); applyIfaceAngles(selected); select(selected); }; $("presets").appendChild(b); });
   $("ifaceReset").onclick = () => { if (!selected || selected.userData.type !== "interface") return; pushUndoNow(); Object.assign(selected.userData.ang, { rx: 0, ry: 0, rz: 0 }); applyIfaceAngles(selected); select(selected); };
+  $("ifaceCopy").onclick = () => {
+    if (!selected || selected.userData.type !== "interface") return;
+    const src = (copySource && copySource !== selected && items.indexOf(copySource) >= 0 && copySource.userData.type === "interface") ? copySource : items.find((g) => g !== selected && g.userData.type === "interface");
+    if (!src) { alert("先放两块界面,再用这个把当前这块并到另一块旁边。"); return; }
+    pushUndoNow();
+    // 1) 角度 + 尺寸 对齐
+    const a = src.userData.ang; Object.assign(selected.userData.ang, { rx: a.rx, ry: a.ry, rz: a.rz, sx: a.sx, sy: a.sy });
+    selected.userData.lock = src.userData.lock; selected.userData.lockRatio = src.userData.lockRatio;
+    applyIfaceAngles(selected);
+    // 2) 自动贴到旁边(沿界面宽度方向,边缘相接,贴到当前所在的那一侧)
+    const right = new THREE.Vector3(1, 0, 0).applyEuler(selected.userData.inner.rotation);
+    const halfSrc = src.userData.baseW * src.userData.ang.sx / 200;
+    const halfSel = selected.userData.baseW * selected.userData.ang.sx / 200;
+    const side = selected.position.clone().sub(src.position).dot(right) >= 0 ? 1 : -1;
+    selected.position.copy(src.position).addScaledVector(right, side * (halfSrc + halfSel));
+    selected.position.y = src.position.y;
+    select(selected);
+  };
   $("ifaceHide").onclick = () => { if (!selected) return; pushUndoNow(); selected.userData.hidden = true; applyVisibility(); select(null); };
+  $("figResetRot").onclick = () => { if (!selected || selected.userData.type !== "figure") return; pushUndoNow(); selected.rotation.set(0, 0, 0); syncFig(selected); };
   $("figHide").onclick = () => { if (!selected) return; pushUndoNow(); selected.userData.hidden = true; applyVisibility(); select(null); };
 
   // 人物姿势 / 朝向
@@ -432,6 +470,7 @@
   $("ifgridck").onchange = refreshIfaceGrid;
   const hzDiv = $("horizon");
   $("hzck").onchange = (e) => { hzDiv.style.display = e.target.checked ? "block" : "none"; };
+  hzDiv.style.display = $("hzck").checked ? "block" : "none";
   $("showFig").onchange = applyVisibility; $("showIf").onchange = applyVisibility;
   $("resetScene").onclick = resetScene;
   // 数值可直接点击输入(回车/失焦生效),复用对应滑块逻辑
