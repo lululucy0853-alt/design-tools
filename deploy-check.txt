@@ -1,0 +1,2 @@
+deploy-check 20260713-032314
+自动重部署流水线验证 / auto-redeploy pipeline check
