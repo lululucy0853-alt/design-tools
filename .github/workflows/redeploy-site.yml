@@ -1,0 +1,10 @@
+name: Redeploy portfolio site
+on:
+  push:
+    branches: [main]
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Cloudflare Pages deploy hook
+        run: curl -fsS -X POST "${{ secrets.SITE_DEPLOY_HOOK }}"
