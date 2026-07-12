@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>透视工具 3D · 人物 + 界面</title>
+<style>
+  :root { --bg:#17181c; --panel:#1f2127; --panel2:#26292f; --line:#33363e; --text:#e8e6e1; --dim:#9a9890; --acc:#c9a227; --stage:#26292e; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.6 "Microsoft YaHei", system-ui, sans-serif; display: flex; height: 100vh; overflow: hidden; }
+  #panel { width: 300px; min-width: 300px; background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 16px 14px 40px; }
+  h1 { font-size: 15px; letter-spacing: 2px; margin-bottom: 2px; }
+  .sub { font-size: 11px; color: var(--dim); margin-bottom: 12px; }
+  .sec { font-size: 11px; color: var(--dim); letter-spacing: 1px; margin: 14px 0 7px; border-top: 1px solid var(--line); padding-top: 10px; }
+  .row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .row label { font-size: 12px; color: var(--dim); width: 62px; flex: none; }
+  .row input[type=range] { flex: 1; accent-color: var(--acc); }
+  .row .val { width: 44px; text-align: right; font-size: 11px; color: var(--dim); }
+  span.val[contenteditable] { cursor: text; }
+  span.val[contenteditable]:hover { color: var(--text); background: #0003; border-radius: 3px; }
+  span.val[contenteditable]:focus { outline: 1px solid var(--acc); border-radius: 3px; background: #0004; color: var(--text); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .chip { padding: 4px 9px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel2); color: var(--text); font-size: 12px; cursor: pointer; }
+  .chip:hover { border-color: var(--acc); color: var(--acc); }
+  .chip.on { background: var(--acc); color: #17181c; border-color: var(--acc); }
+  button { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; font-size: 12px; cursor: pointer; margin-bottom: 6px; }
+  button:hover { border-color: var(--acc); color: var(--acc); }
+  button.full { width: 100%; }
+  button.on { background: var(--acc); color: #17181c; border-color: var(--acc); }
+  button.primary { background: var(--acc); color: #17181c; border-color: var(--acc); font-weight: bold; width: 100%; }
+  button.primary:hover { filter: brightness(1.1); color: #17181c; }
+  .grp { display: flex; gap: 6px; flex-wrap: wrap; }
+  .grp button { flex: 1; margin-bottom: 0; }
+  .note { font-size: 11px; color: var(--dim); margin-top: 8px; line-height: 1.5; }
+  label.ck { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); cursor: pointer; margin-bottom: 6px; }
+  label.ck input { accent-color: var(--acc); }
+  .hidden { display: none !important; }
+  #stage { flex: 1; position: relative; overflow: hidden; background: var(--stage); }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  #horizon { position: absolute; left: 0; width: 100%; height: 0; border-top: 1px dashed #e5484d; pointer-events: none; display: none; z-index: 1; }
+  #horizon span { position: absolute; left: 10px; top: -18px; font-size: 12px; color: #e5484d; background: #17181ccc; padding: 1px 6px; border-radius: 4px; }
+  #gizmoLabel { position: absolute; left: 12px; top: 122px; font-size: 11px; color: #7f868f; pointer-events: none; z-index: 2; }
+  #modebar { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; background: #1f2127ee; border: 1px solid var(--line); border-radius: 9px; padding: 4px; z-index: 4; }
+  #modebar button { margin: 0; border: none; background: transparent; color: var(--dim); padding: 7px 18px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  #modebar button:hover { color: var(--text); }
+  #modebar button.on { background: var(--acc); color: #17181c; }
+  #modehint { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #7f868f; white-space: nowrap; pointer-events: none; z-index: 3; }
+  #tip { position: absolute; right: 12px; bottom: 10px; font-size: 11px; color: #cfd3da; background: #0009; padding: 5px 9px; border-radius: 6px; max-width: 46%; }
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>透视工具 · 3D</h1>
+  <div class="sub">人物 + 界面同处 3D · 360° 绕转 · 导出透明底</div>
+
+  <div class="sec">添加</div>
+  <button class="full" id="btnUpload">＋ 载入界面图(贴到平面)</button>
+  <input type="file" id="file" accept="image/*" class="hidden">
+  <div class="grp"><button id="addFig">＋人物</button><button id="addPanel">＋界面示例</button></div>
+
+  <div class="sec">选中物体</div>
+  <div id="noSel" class="note">切到「编辑物件」,点一个人物或界面来编辑。</div>
+
+  <div id="ifaceCtrl" class="hidden">
+    <div class="row"><label>俯仰 X</label><input type="range" id="rx" min="-180" max="180" value="0"><span class="val" contenteditable="true" inputmode="decimal" id="vrx"></span></div>
+    <div class="row"><label>左右 Y</label><input type="range" id="ry" min="-180" max="180" value="0"><span class="val" contenteditable="true" inputmode="decimal" id="vry"></span></div>
+    <div class="row"><label>旋转 Z</label><input type="range" id="rz" min="-180" max="180" value="0"><span class="val" contenteditable="true" inputmode="decimal" id="vrz"></span></div>
+    <div class="row"><label>宽度</label><input type="range" id="isx" min="20" max="400" value="100"><span class="val" contenteditable="true" inputmode="decimal" id="visx"></span></div>
+    <div class="row"><label>高度</label><input type="range" id="isy" min="20" max="400" value="100"><span class="val" contenteditable="true" inputmode="decimal" id="visy"></span></div>
+    <label class="ck" style="margin:2px 0 6px"><input type="checkbox" id="ifLock"> 锁定宽高比(缩放不变形)</label>
+    <div class="note" style="margin:0 0 6px">提示:选中界面后<b>右键拖拽</b>可直接转 360° 角度。</div>
+    <div style="font-size:11px;color:var(--dim);margin:2px 0 6px;">快捷角度</div>
+    <div class="chips" id="presets"></div>
+    <div class="grp"><button id="ifaceReset">复位角度</button><button id="ifaceHide">隐藏此界面</button></div>
+  </div>
+
+  <div id="figCtrl" class="hidden">
+    <div style="font-size:11px;color:var(--dim);margin-bottom:5px;">姿势</div>
+    <div class="chips" id="poseRow">
+      <span class="chip on" data-pose="stand">站</span>
+      <span class="chip" data-pose="walk">走</span>
+      <span class="chip" data-pose="raise">抬手</span>
+    </div>
+    <div class="row"><label>朝向</label><input type="range" id="dir" min="-180" max="180" value="0"><span class="val" contenteditable="true" inputmode="decimal" id="vdir"></span></div>
+    <div class="row"><label>大小</label><input type="range" id="figscale" min="30" max="250" value="100"><span class="val" contenteditable="true" inputmode="decimal" id="vfigscale"></span></div>
+    <div class="row"><label>俯仰</label><input type="range" id="figrx" min="-180" max="180" value="0"><span class="val" contenteditable="true" inputmode="decimal" id="vfigrx"></span></div>
+    <div class="note" style="margin:0 0 6px">提示:选中人物后<b>右键拖拽</b>可直接转 360°。</div>
+    <div style="font-size:11px;color:var(--dim);margin:2px 0 5px;">整体姿态</div>
+    <div class="chips"><span class="chip" data-fori="0">站立</span><span class="chip" data-fori="-90">躺平(平行地面)</span></div>
+    <button class="full" id="figHide">隐藏此人物</button>
+  </div>
+
+  <div id="commonCtrl" class="hidden"><div class="row"><label>离地 Y</label><input type="range" id="posy" min="0" max="4" step="0.02" value="0"><span class="val" contenteditable="true" inputmode="decimal" id="vposy"></span></div></div>
+  <button id="delSel" class="full hidden" style="border-color:#7a3b3b;color:#e0a0a0">删除选中 (Del 键)</button>
+
+  <div class="sec">视角 / 透视</div>
+  <div class="row"><label>透视强度</label><input type="range" id="fov" min="20" max="75" value="45"><span class="val" contenteditable="true" inputmode="decimal" id="vfov"></span></div>
+  <div class="grp"><button id="recenter">回正视角</button></div>
+
+  <div class="sec">显示</div>
+  <label class="ck"><input type="checkbox" id="groundck" checked> 地面网格(衬托空间)</label>
+  <label class="ck"><input type="checkbox" id="ifgridck"> 界面透视网格(读透视)</label>
+  <label class="ck"><input type="checkbox" id="hzck"> 视平线 / 相机高度</label>
+  <div class="grp"><label class="ck" style="flex:1"><input type="checkbox" id="showFig" checked> 显示人物</label><label class="ck" style="flex:1"><input type="checkbox" id="showIf" checked> 显示界面</label></div>
+  <button class="full" id="resetScene">重置场景</button>
+
+  <div class="sec">导出</div>
+  <button class="primary" id="export">导出透视 PNG(透明底)</button>
+  <div class="note">按当前角度把人物 + 界面渲染成透明底 PNG,可直接叠进 PS / 绘画软件当底图。示例界面无原图也能导出(渲染当前画面)。</div>
+</div>
+
+<div id="stage">
+  <div id="modebar">
+    <button data-mode2="view">移动视角</button>
+    <button data-mode2="edit" class="on">编辑物件</button>
+  </div>
+  <div id="modehint">左键拖 移动物件 · 右键拖 转物件 · 滚轮 缩放 · 中键/空白拖 转视角 · Del 删除 · Ctrl+Z 撤回</div>
+  <div id="horizon"><span>视平线 · 相机高度 —</span></div>
+  <div id="gizmoLabel">坐标轴(点轴=正对该视角)</div>
+</div>
+
+<script src="lib/three.min.js"></script>
+<script>
+(function () {
+  if (!window.THREE) { document.getElementById("stage").innerHTML = "<p style='padding:20px;color:#f88'>three.js 未加载:请确认同目录下有 lib/three.min.js</p>"; return; }
+  const stage = document.getElementById("stage");
+  const $ = (id) => document.getElementById(id);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x26292e);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  stage.appendChild(renderer.domElement);
+
+  scene.add(new THREE.HemisphereLight(0xdfe6ee, 0x2a2d33, 0.9));
+  scene.add(new THREE.AmbientLight(0x5a6068, 0.3));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+  sun.position.set(5, 11, 6); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
+  const dd = 10; sun.shadow.camera.left = -dd; sun.shadow.camera.right = dd; sun.shadow.camera.top = dd; sun.shadow.camera.bottom = -dd; sun.shadow.camera.near = 1; sun.shadow.camera.far = 44;
+  scene.add(sun);
+
+  const grid = new THREE.GridHelper(60, 60, 0x6a7078, 0x40454c);
+  scene.add(grid);
+  const groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.ShadowMaterial({ opacity: 0.34 }));
+  groundMesh.rotation.x = -Math.PI / 2; groundMesh.receiveShadow = true; scene.add(groundMesh);
+  const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+  // ===== 人偶 =====
+  function meshPart(geo, mat) { const m = new THREE.Mesh(geo, mat); m.castShadow = true; return m; }
+  function createFigure() {
+    const mat = new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: 0.72, metalness: 0.04 });
+    const g = new THREE.Group();
+    const pelvis = new THREE.Group(); pelvis.position.y = 0.9; g.add(pelvis);
+    pelvis.add(meshPart(new THREE.SphereGeometry(0.145, 18, 14), mat));
+    const torso = meshPart(new THREE.CapsuleGeometry(0.14, 0.27, 6, 14), mat); torso.position.y = 0.26; pelvis.add(torso);
+    const chest = new THREE.Group(); chest.position.y = 0.52; pelvis.add(chest);
+    [-0.17, 0.17].forEach((x) => { const s = meshPart(new THREE.SphereGeometry(0.1, 16, 12), mat); s.position.set(x, 0, 0); chest.add(s); });
+    const neck = meshPart(new THREE.CapsuleGeometry(0.045, 0.06, 4, 10), mat); neck.position.y = 0.08; chest.add(neck);
+    const head = meshPart(new THREE.SphereGeometry(0.115, 20, 16), mat); head.position.y = 0.21; chest.add(head);
+    function arm(side) {
+      const sh = new THREE.Group(); sh.position.set(0.17 * side, 0, 0); chest.add(sh);
+      const up = meshPart(new THREE.CapsuleGeometry(0.052, 0.28, 6, 12), mat); up.position.y = -0.19; sh.add(up);
+      const el = new THREE.Group(); el.position.y = -0.384; sh.add(el);
+      const fo = meshPart(new THREE.CapsuleGeometry(0.05, 0.24, 6, 12), mat); fo.position.y = -0.17; el.add(fo);
+      const hand = meshPart(new THREE.SphereGeometry(0.056, 12, 10), mat); hand.position.y = -0.34; el.add(hand);
+      return { sh, el };
+    }
+    function leg(side) {
+      const hip = new THREE.Group(); hip.position.set(0.1 * side, 0, 0); pelvis.add(hip);
+      const th = meshPart(new THREE.CapsuleGeometry(0.078, 0.34, 6, 12), mat); th.position.y = -0.245; hip.add(th);
+      const kn = new THREE.Group(); kn.position.y = -0.49; hip.add(kn);
+      const sh = meshPart(new THREE.CapsuleGeometry(0.07, 0.32, 6, 12), mat); sh.position.y = -0.2; kn.add(sh);
+      const foot = meshPart(new THREE.BoxGeometry(0.11, 0.06, 0.24), mat); foot.position.set(0, -0.4, 0.05); kn.add(foot);
+      return { hip, kn };
+    }
+    const aL = arm(-1), aR = arm(1), lL = leg(-1), lR = leg(1);
+    g.userData = { type: "figure", mat, parts: { pelvis, chest, armL: aL.sh, armR: aR.sh, elbowL: aL.el, elbowR: aR.el, legL: lL.hip, legR: lR.hip, kneeL: lL.kn, kneeR: lR.kn }, pose: "stand" };
+    applyPose(g, "stand");
+    return g;
+  }
+  function applyPose(fig, name) {
+    const p = fig.userData.parts;
+    ["chest", "armL", "armR", "elbowL", "elbowR", "legL", "legR", "kneeL", "kneeR"].forEach((k) => p[k].rotation.set(0, 0, 0));
+    p.pelvis.position.y = 0.9;
+    if (name === "walk") { p.legL.rotation.x = 0.5; p.kneeL.rotation.x = -0.25; p.legR.rotation.x = -0.45; p.kneeR.rotation.x = 0.55; p.armL.rotation.x = -0.5; p.armR.rotation.x = 0.5; }
+    else if (name === "crouch") { p.legL.rotation.x = 1.05; p.legR.rotation.x = 1.05; p.kneeL.rotation.x = -1.85; p.kneeR.rotation.x = -1.85; p.pelvis.position.y = 0.56; p.chest.rotation.x = 0.38; p.armL.rotation.x = -0.7; p.armR.rotation.x = -0.7; }
+    else if (name === "raise") { p.armR.rotation.z = 2.35; p.elbowR.rotation.x = -0.15; p.armL.rotation.x = -0.15; }
+    fig.userData.pose = name;
+  }
+
+  // ===== 界面(贴图平面) =====
+  function sampleTexture() {
+    const c = document.createElement("canvas"); c.width = 690; c.height = 450; const x = c.getContext("2d");
+    const g = x.createLinearGradient(0, 0, 690, 450); g.addColorStop(0, "#20304a"); g.addColorStop(1, "#101827");
+    x.fillStyle = g; x.fillRect(0, 0, 690, 450);
+    x.fillStyle = "#0d1422"; x.fillRect(0, 0, 690, 78);
+    x.fillStyle = "#35e0d6"; x.beginPath(); x.arc(34, 39, 8, 0, 7); x.fill();
+    x.fillStyle = "#dfe7f2"; x.font = "22px system-ui"; x.fillText("终端 · TERMINAL", 56, 47);
+    const cardW = 200, gap = 18, x0 = 27, cy = 108;
+    for (let i = 0; i < 3; i++) { x.fillStyle = i === 1 ? "#233a5e" : "#1b2740"; x.strokeStyle = "#33507a"; x.lineWidth = 1.5; x.beginPath(); x.rect(x0 + i * (cardW + gap), cy, cardW, 176, 12); x.fill(); x.stroke(); }
+    x.fillStyle = "#3d77ff"; x.beginPath(); x.rect(27, 316, 636, 90, 12); x.fill();
+    x.fillStyle = "#fff"; x.font = "bold 30px system-ui"; x.textAlign = "center"; x.fillText("开始 / START", 345, 372); x.textAlign = "left";
+    const t = new THREE.CanvasTexture(c); t.anisotropy = 8; return { tex: t, aspect: 690 / 450 };
+  }
+  function ifaceGridTexture() {
+    const c = document.createElement("canvas"); c.width = 512; c.height = 340; const x = c.getContext("2d");
+    x.clearRect(0, 0, 512, 340); x.strokeStyle = "#c9a227cc"; x.lineWidth = 2;
+    for (let i = 1; i < 8; i++) { x.beginPath(); x.moveTo(i / 8 * 512, 0); x.lineTo(i / 8 * 512, 340); x.stroke(); }
+    for (let j = 1; j < 6; j++) { x.beginPath(); x.moveTo(0, j / 6 * 340); x.lineTo(512, j / 6 * 340); x.stroke(); }
+    x.lineWidth = 3; x.strokeRect(0, 0, 512, 340);
+    return new THREE.CanvasTexture(c);
+  }
+  const IF_H = 1.7;
+  function createInterface(tex, aspect) {
+    const g = new THREE.Group();
+    const inner = new THREE.Group(); g.add(inner);
+    const w = IF_H * aspect;
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, toneMapped: false });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, IF_H), mat); mesh.position.y = IF_H / 2; inner.add(mesh);
+    const gmat = new THREE.MeshBasicMaterial({ map: ifaceGridTexture(), transparent: true, side: THREE.DoubleSide, depthTest: false });
+    const gmesh = new THREE.Mesh(new THREE.PlaneGeometry(w, IF_H), gmat); gmesh.position.set(0, IF_H / 2, 0.012); gmesh.visible = false; gmesh.renderOrder = 2; gmesh.raycast = function () {}; inner.add(gmesh);
+    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(w, IF_H)), new THREE.LineBasicMaterial({ color: 0x5a6068 }));
+    edge.position.set(0, IF_H / 2, 0.02); edge.raycast = function () {}; inner.add(edge);   // 常显淡边框;关掉射线检测,避免线段容差误选
+    g.userData = { type: "interface", inner, grid: gmesh, edge, ang: { rx: 0, ry: 0, rz: 0, sx: 100, sy: 100 }, lock: false, lockRatio: 1 };
+    applyIfaceAngles(g);
+    return g;
+  }
+  function applyIfaceAngles(g) {
+    const a = g.userData.ang;
+    g.userData.inner.rotation.set(a.rx * Math.PI / 180, a.ry * Math.PI / 180, a.rz * Math.PI / 180);
+    g.userData.inner.scale.set(a.sx / 100, a.sy / 100, 1);
+  }
+
+  // ===== 物件管理 =====
+  const items = [];
+  let ifOffset = 0, figOffset = 0;
+  function addFigureAt(x, z) { const g = createFigure(); g.position.set(x, 0, z); scene.add(g); items.push(g); return g; }
+  function addInterface(tex, aspect, x, z) { const g = createInterface(tex, aspect); g.position.set(x, 0, z); scene.add(g); items.push(g); return g; }
+  function removeItem(g) { const i = items.indexOf(g); if (i >= 0) items.splice(i, 1); scene.remove(g); if (selected === g) select(null); }
+  function clearItems() { items.slice().forEach(removeItem); }
+
+  // ===== 撤回(Ctrl+Z) =====
+  const undoStack = []; let pendingUndo = null;
+  function snapshot() { return items.map((g) => ({ obj: g, pos: g.position.clone(), rot: g.rotation.clone(), scale: g.scale.clone(), ang: g.userData.ang ? Object.assign({}, g.userData.ang) : null, lock: g.userData.lock, lockRatio: g.userData.lockRatio, pose: g.userData.pose, hidden: !!g.userData.hidden })); }
+  function pushUndoNow() { undoStack.push(snapshot()); if (undoStack.length > 80) undoStack.shift(); }
+  function beginUndo() { pendingUndo = snapshot(); }
+  function commitUndo() { if (pendingUndo) { undoStack.push(pendingUndo); if (undoStack.length > 80) undoStack.shift(); pendingUndo = null; } }
+  function undo() {
+    if (!undoStack.length) return;
+    const snap = undoStack.pop();
+    const target = snap.map((r) => r.obj);
+    items.slice().forEach((g) => { if (target.indexOf(g) < 0) scene.remove(g); });
+    target.forEach((g) => { if (!g.parent) scene.add(g); });
+    items.length = 0; target.forEach((g) => items.push(g));
+    snap.forEach((r) => {
+      r.obj.position.copy(r.pos); r.obj.rotation.copy(r.rot); r.obj.scale.copy(r.scale);
+      if (r.ang && r.obj.userData.ang) { Object.assign(r.obj.userData.ang, r.ang); r.obj.userData.lock = r.lock; r.obj.userData.lockRatio = r.lockRatio; applyIfaceAngles(r.obj); }
+      if (r.pose && r.obj.userData.parts) applyPose(r.obj, r.pose);
+      r.obj.userData.hidden = r.hidden;
+    });
+    applyVisibility(); refreshIfaceGrid();
+    if (selected && items.indexOf(selected) < 0) select(null); else if (selected) select(selected);
+  }
+  function applyVisibility() {
+    const sf = $("showFig").checked, si = $("showIf").checked;
+    items.forEach((g) => { const t = g.userData.type; if (g.userData.hidden) { g.visible = false; return; } g.visible = t === "figure" ? sf : si; });
+  }
+
+  // ===== 选择 =====
+  let selected = null;
+  function refreshIfaceGrid() { const on = $("ifgridck").checked; items.forEach((g) => { if (g.userData.type === "interface") g.userData.grid.visible = on; }); }
+  function select(g) {
+    if (selected) { if (selected.userData.mat) selected.userData.mat.emissive.setHex(0x000000); if (selected.userData.edge) selected.userData.edge.material.color.setHex(0x5a6068); }
+    selected = g || null;
+    $("noSel").classList.toggle("hidden", !!selected);
+    $("delSel").classList.toggle("hidden", !selected);
+    $("commonCtrl").classList.toggle("hidden", !selected);
+    $("ifaceCtrl").classList.toggle("hidden", !(selected && selected.userData.type === "interface"));
+    $("figCtrl").classList.toggle("hidden", !(selected && selected.userData.type === "figure"));
+    if (!selected) return;
+    $("posy").value = selected.position.y; $("vposy").textContent = selected.position.y.toFixed(2);
+    if (selected.userData.type === "figure") {
+      selected.userData.mat.emissive.setHex(0x24405f);
+      document.querySelectorAll("#poseRow .chip").forEach((b) => b.classList.toggle("on", b.dataset.pose === selected.userData.pose));
+      const deg = Math.round(selected.rotation.y * 180 / Math.PI); $("dir").value = deg; $("vdir").textContent = deg + "°";
+      const degx = Math.round(selected.rotation.x * 180 / Math.PI); $("figrx").value = degx; $("vfigrx").textContent = degx + "°";
+      const sc = Math.round(selected.scale.x * 100); $("figscale").value = sc; $("vfigscale").textContent = sc + "%";
+    } else {
+      selected.userData.edge.material.color.setHex(0xc9a227);
+      const a = selected.userData.ang;
+      $("rx").value = Math.round(a.rx); $("ry").value = Math.round(a.ry); $("rz").value = Math.round(a.rz); $("isx").value = Math.round(a.sx); $("isy").value = Math.round(a.sy);
+      $("vrx").textContent = Math.round(a.rx) + "°"; $("vry").textContent = Math.round(a.ry) + "°"; $("vrz").textContent = Math.round(a.rz) + "°"; $("visx").textContent = Math.round(a.sx) + "%"; $("visy").textContent = Math.round(a.sy) + "%";
+      $("ifLock").checked = !!selected.userData.lock;
+    }
+  }
+
+  // ===== 相机 =====
+  const cam = { target: new THREE.Vector3(0, 0.9, 0), radius: 8, theta: Math.PI * 0.28, phi: Math.PI * 0.40 };
+  function updateCamera() {
+    cam.phi = Math.max(0.08, Math.min(1.54, cam.phi)); cam.radius = Math.max(2.2, Math.min(40, cam.radius));
+    const sp = Math.sin(cam.phi);
+    camera.position.set(cam.target.x + cam.radius * sp * Math.sin(cam.theta), cam.target.y + cam.radius * Math.cos(cam.phi), cam.target.z + cam.radius * sp * Math.cos(cam.theta));
+    camera.lookAt(cam.target);
+  }
+  function snapToDir(v) { const d = v.clone().normalize(); cam.phi = Math.max(0.08, Math.min(1.54, Math.acos(Math.max(-1, Math.min(1, d.y))))); cam.theta = Math.atan2(d.x, d.z); updateCamera(); }
+
+  // ===== gizmo =====
+  const axisScene = new THREE.Scene(); axisScene.add(new THREE.AxesHelper(1));
+  const axisCam = new THREE.PerspectiveCamera(40, 1, 0.1, 10);
+  function makeLabel(text, color) { const c = document.createElement("canvas"); c.width = c.height = 64; const x = c.getContext("2d"); x.fillStyle = color; x.font = "bold 44px sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(text, 32, 34); const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false })); sp.scale.set(0.5, 0.5, 0.5); return sp; }
+  const AX = [{ v: new THREE.Vector3(1, 0, 0), sp: makeLabel("X", "#ff5a5a") }, { v: new THREE.Vector3(0, 1, 0), sp: makeLabel("Y", "#5ad07a") }, { v: new THREE.Vector3(0, 0, 1), sp: makeLabel("Z", "#5a9bff") }];
+  AX.forEach((a) => { a.sp.position.copy(a.v).multiplyScalar(1.25); axisScene.add(a.sp); });
+  const GS = 104, GM = 12;
+  function updateAxisCam() { const d = new THREE.Vector3(); camera.getWorldDirection(d); axisCam.position.copy(d).multiplyScalar(-3.4); axisCam.up.copy(camera.up); axisCam.lookAt(0, 0, 0); }
+
+  // ===== 旋转辅助(右键拖拽转物件) =====
+  function wrap180(v) { return ((v + 180) % 360 + 360) % 360 - 180; }
+  function syncIface(g) { const a = g.userData.ang; $("rx").value = Math.round(a.rx); $("ry").value = Math.round(a.ry); $("rz").value = Math.round(a.rz); $("vrx").textContent = Math.round(a.rx) + "°"; $("vry").textContent = Math.round(a.ry) + "°"; $("vrz").textContent = Math.round(a.rz) + "°"; }
+  function syncFig(g) { const dy = Math.round(wrap180(g.rotation.y * 180 / Math.PI)), dx = Math.round(wrap180(g.rotation.x * 180 / Math.PI)); $("dir").value = dy; $("vdir").textContent = dy + "°"; $("figrx").value = dx; $("vfigrx").textContent = dx + "°"; }
+
+  // ===== 交互 =====
+  const raycaster = new THREE.Raycaster(); const ndc = new THREE.Vector2();
+  let mode = "edit", drag = null, W = 0, H = 0;
+  function setNDC(e) { const r = renderer.domElement.getBoundingClientRect(); ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1; ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1; }
+  function groundPoint() { raycaster.setFromCamera(ndc, camera); const p = new THREE.Vector3(); return raycaster.ray.intersectPlane(groundPlane, p) ? p : null; }
+  function pickItem() { raycaster.setFromCamera(ndc, camera); const hits = raycaster.intersectObjects(items, true); if (!hits.length) return null; let o = hits[0].object; while (o && items.indexOf(o) < 0) o = o.parent; return o || null; }
+  function inGizmo(e) { const r = renderer.domElement.getBoundingClientRect(); const gx = e.clientX - r.left, gy = e.clientY - r.top; return (gx >= GM && gx <= GM + GS && gy >= GM && gy <= GM + GS) ? { gx, gy } : null; }
+  function gizmoClick(gx, gy) { updateAxisCam(); let best = null, bd = 1e9; [1, -1].forEach((s) => AX.forEach((a) => { const p = a.v.clone().multiplyScalar(1.25 * s).project(axisCam); const sx = GM + (p.x * 0.5 + 0.5) * GS, sy = GM + (1 - (p.y * 0.5 + 0.5)) * GS; const dist = Math.hypot(sx - gx, sy - gy); if (dist < bd) { bd = dist; best = a.v.clone().multiplyScalar(s); } })); if (best) snapToDir(best); }
+
+  const el = renderer.domElement;
+  el.addEventListener("contextmenu", (e) => e.preventDefault());
+  el.addEventListener("pointerdown", (e) => {
+    const gz = inGizmo(e); if (gz) { gizmoClick(gz.gx, gz.gy); return; }
+    setNDC(e); el.setPointerCapture(e.pointerId);
+    if (mode === "view") { drag = { kind: (e.button === 2 || e.button === 1) ? "pan" : "orbit", x: e.clientX, y: e.clientY }; return; }
+    // 编辑物件
+    if (e.button === 1) { drag = { kind: "pan", x: e.clientX, y: e.clientY }; return; }         // 中键=平移
+    if (e.button === 2) {                                                                          // 右键=转物件(没物体则平移)
+      const it = pickItem(); if (it) select(it);
+      if (it || selected) { beginUndo(); drag = { kind: "rotate", x: e.clientX, y: e.clientY, changed: false }; }
+      else drag = { kind: "pan", x: e.clientX, y: e.clientY };
+      return;
+    }
+    const it = pickItem();                                                                          // 左键=选中;超过阈值才移动
+    if (it) { select(it); beginUndo(); drag = { kind: "move", obj: it, downX: e.clientX, downY: e.clientY, lastX: e.clientX, lastY: e.clientY, moved: false, changed: false }; return; }
+    drag = { kind: "orbit", x: e.clientX, y: e.clientY, downX: e.clientX, downY: e.clientY, moved: false, deselectIfClick: true };
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (!drag) return; setNDC(e);
+    if (drag.kind === "orbit") { if (drag.downX != null && Math.hypot(e.clientX - drag.downX, e.clientY - drag.downY) > 4) drag.moved = true; cam.theta -= (e.clientX - drag.x) * 0.008; cam.phi -= (e.clientY - drag.y) * 0.008; drag.x = e.clientX; drag.y = e.clientY; updateCamera(); }
+    else if (drag.kind === "pan") { const dx = (e.clientX - drag.x) * 0.01, dy = (e.clientY - drag.y) * 0.01; const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd); const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize(); const flat = new THREE.Vector3(fwd.x, 0, fwd.z).normalize(); cam.target.addScaledVector(right, -dx * cam.radius * 0.15); cam.target.addScaledVector(flat, dy * cam.radius * 0.15); drag.x = e.clientX; drag.y = e.clientY; updateCamera(); }
+    else if (drag.kind === "rotate") {
+      if (selected) {
+        drag.changed = true;
+        const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+        if (selected.userData.type === "interface") { const a = selected.userData.ang; a.ry = wrap180(a.ry + dx * 0.4); a.rx = wrap180(a.rx - dy * 0.4); applyIfaceAngles(selected); syncIface(selected); }
+        else { selected.rotation.y += dx * 0.007; selected.rotation.x -= dy * 0.007; syncFig(selected); }
+      }
+      drag.x = e.clientX; drag.y = e.clientY;
+    }
+    else if (drag.kind === "move") {
+      if (!drag.moved && Math.hypot(e.clientX - drag.downX, e.clientY - drag.downY) < 4) return;   // 阈值内视为点选,不移动
+      drag.moved = true; drag.changed = true;
+      const dx = e.clientX - drag.lastX, dy = e.clientY - drag.lastY;                               // 屏幕相对移动,灵敏度可控、不会飞走
+      const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd);
+      const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)); right.y = 0; right.normalize();
+      const flat = new THREE.Vector3(fwd.x, 0, fwd.z).normalize();
+      const k = cam.radius * 0.0015;
+      drag.obj.position.addScaledVector(right, dx * k).addScaledVector(flat, -dy * k);
+      drag.lastX = e.clientX; drag.lastY = e.clientY;
+    }
+  });
+  el.addEventListener("pointerup", () => {
+    if (drag) {
+      if (drag.kind === "orbit" && !drag.moved && drag.deselectIfClick) select(null);
+      if ((drag.kind === "move" || drag.kind === "rotate") && drag.changed) commitUndo(); else pendingUndo = null;
+    }
+    drag = null;
+  });
+  el.addEventListener("pointercancel", () => { drag = null; });
+  el.addEventListener("wheel", (e) => { e.preventDefault(); cam.radius *= (1 + e.deltaY * 0.0011); updateCamera(); }, { passive: false });
+
+  // ===== 侧栏事件 =====
+  document.querySelectorAll("[data-mode2]").forEach((b) => b.addEventListener("click", () => { mode = b.dataset.mode2; document.querySelectorAll("[data-mode2]").forEach((x) => x.classList.toggle("on", x.dataset.mode2 === mode)); el.style.cursor = mode === "view" ? "grab" : "default"; }));
+  function setEdit() { mode = "edit"; document.querySelectorAll("[data-mode2]").forEach((x) => x.classList.toggle("on", x.dataset.mode2 === "edit")); el.style.cursor = "default"; }
+  $("addFig").onclick = () => { pushUndoNow(); figOffset = (figOffset + 1) % 5; const g = addFigureAt(-1 + figOffset * 0.6, 0.6 - figOffset * 0.5); applyVisibility(); setEdit(); select(g); };
+  $("addPanel").onclick = () => { pushUndoNow(); const s = sampleTexture(); ifOffset += 0.7; const g = addInterface(s.tex, s.aspect, 1.6, -0.4 - ifOffset); applyVisibility(); setEdit(); select(g); };
+  $("btnUpload").onclick = () => $("file").click();
+  $("file").onchange = (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { pushUndoNow(); const tex = new THREE.Texture(im); tex.needsUpdate = true; tex.anisotropy = 8; ifOffset += 0.7; const g = addInterface(tex, im.width / im.height, 1.6, -0.4 - ifOffset); applyVisibility(); setEdit(); select(g); }; im.src = r.result; }; r.readAsDataURL(f); e.target.value = ""; };
+  $("delSel").onclick = () => { if (selected) { pushUndoNow(); removeItem(selected); } };
+  window.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) { e.preventDefault(); undo(); return; }
+    const typing = /INPUT|TEXTAREA/.test(e.target.tagName || "") || e.target.isContentEditable;
+    if ((e.key === "Delete" || e.key === "Backspace") && selected && !typing) { e.preventDefault(); pushUndoNow(); removeItem(selected); }
+  });
+
+  // 界面角度
+  ["rx", "ry", "rz"].forEach((k) => $(k).oninput = (e) => { if (!selected || selected.userData.type !== "interface") return; selected.userData.ang[k] = +e.target.value; $("v" + k).textContent = e.target.value + "°"; applyIfaceAngles(selected); });
+  function setIfaceSize(which, val) {
+    if (!selected || selected.userData.type !== "interface") return;
+    const a = selected.userData.ang, u = selected.userData;
+    if (which === "sx") { a.sx = val; if (u.lock) a.sy = Math.round(a.sx * u.lockRatio); }
+    else { a.sy = val; if (u.lock) a.sx = Math.round(a.sy / u.lockRatio); }
+    $("isx").value = Math.round(a.sx); $("visx").textContent = Math.round(a.sx) + "%";
+    $("isy").value = Math.round(a.sy); $("visy").textContent = Math.round(a.sy) + "%";
+    applyIfaceAngles(selected);
+  }
+  $("isx").oninput = (e) => setIfaceSize("sx", +e.target.value);
+  $("isy").oninput = (e) => setIfaceSize("sy", +e.target.value);
+  $("ifLock").onchange = (e) => { if (!selected || selected.userData.type !== "interface") return; selected.userData.lock = e.target.checked; if (e.target.checked) selected.userData.lockRatio = selected.userData.ang.sy / selected.userData.ang.sx; };
+  $("figscale").oninput = (e) => { if (!selected || selected.userData.type !== "figure") return; selected.scale.setScalar(+e.target.value / 100); $("vfigscale").textContent = e.target.value + "%"; };
+  $("posy").oninput = (e) => { if (!selected) return; selected.position.y = +e.target.value; $("vposy").textContent = (+e.target.value).toFixed(2); };
+  const PRE = [["平视", { rx: 0, ry: 0, rz: 0 }], ["贴地平铺", { rx: -90, ry: 0, rz: 0 }], ["俯视", { rx: 72, ry: 0, rz: 0 }], ["斜俯视", { rx: 52, ry: -20, rz: 0 }], ["仰视", { rx: -38, ry: 0, rz: 0 }], ["侧斜", { rx: 20, ry: -42, rz: 0 }]];
+  PRE.forEach(([name, v]) => { const b = document.createElement("span"); b.className = "chip"; b.textContent = name; b.onclick = () => { if (!selected || selected.userData.type !== "interface") return; pushUndoNow(); Object.assign(selected.userData.ang, v); applyIfaceAngles(selected); select(selected); }; $("presets").appendChild(b); });
+  $("ifaceReset").onclick = () => { if (!selected || selected.userData.type !== "interface") return; pushUndoNow(); Object.assign(selected.userData.ang, { rx: 0, ry: 0, rz: 0 }); applyIfaceAngles(selected); select(selected); };
+  $("ifaceHide").onclick = () => { if (!selected) return; pushUndoNow(); selected.userData.hidden = true; applyVisibility(); select(null); };
+  $("figHide").onclick = () => { if (!selected) return; pushUndoNow(); selected.userData.hidden = true; applyVisibility(); select(null); };
+
+  // 人物姿势 / 朝向
+  document.querySelectorAll("#poseRow .chip").forEach((b) => b.addEventListener("click", () => { if (!selected || selected.userData.type !== "figure") return; pushUndoNow(); applyPose(selected, b.dataset.pose); document.querySelectorAll("#poseRow .chip").forEach((x) => x.classList.toggle("on", x === b)); }));
+  $("dir").oninput = (e) => { if (!selected || selected.userData.type !== "figure") return; selected.rotation.y = +e.target.value * Math.PI / 180; $("vdir").textContent = e.target.value + "°"; };
+  $("figrx").oninput = (e) => { if (!selected || selected.userData.type !== "figure") return; selected.rotation.x = +e.target.value * Math.PI / 180; $("vfigrx").textContent = e.target.value + "°"; };
+  document.querySelectorAll("[data-fori]").forEach((b) => b.addEventListener("click", () => { if (!selected || selected.userData.type !== "figure") return; pushUndoNow(); const v = +b.dataset.fori; selected.rotation.x = v * Math.PI / 180; $("figrx").value = v; $("vfigrx").textContent = v + "°"; }));
+
+  // 视角 / 显示 / 导出
+  $("fov").oninput = (e) => { camera.fov = +e.target.value; camera.updateProjectionMatrix(); $("vfov").textContent = e.target.value; };
+  $("recenter").onclick = () => { cam.target.set(0, 0.9, 0); cam.theta = Math.PI * 0.14; cam.phi = Math.PI * 0.42; updateCamera(); };
+  $("groundck").onchange = (e) => { grid.visible = e.target.checked; };
+  $("ifgridck").onchange = refreshIfaceGrid;
+  const hzDiv = $("horizon");
+  $("hzck").onchange = (e) => { hzDiv.style.display = e.target.checked ? "block" : "none"; };
+  $("showFig").onchange = applyVisibility; $("showIf").onchange = applyVisibility;
+  $("resetScene").onclick = resetScene;
+  // 数值可直接点击输入(回车/失焦生效),复用对应滑块逻辑
+  document.querySelectorAll("span.val[contenteditable]").forEach((sp) => {
+    sp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sp.blur(); } });
+    sp.addEventListener("blur", () => {
+      const r = $(sp.id.slice(1)); if (!r) return;
+      const num = parseFloat((sp.textContent || "").replace(/[^-\d.]/g, ""));
+      if (!isNaN(num)) { pushUndoNow(); r.value = Math.max(+r.min, Math.min(+r.max, num)); }
+      r.dispatchEvent(new Event("input"));
+    });
+  });
+  document.querySelectorAll("#panel input[type=range]").forEach((r) => { r.addEventListener("pointerdown", beginUndo); r.addEventListener("change", commitUndo); });
+  $("export").onclick = () => {
+    const oldBg = scene.background; scene.background = null;
+    const gv = grid.visible, sv = groundMesh.visible;
+    grid.visible = false; groundMesh.visible = false;
+    const edges = items.filter((g) => g.userData.edge).map((g) => g.userData.edge); edges.forEach((e) => e.visible = false);
+    renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, camera);
+    const url = renderer.domElement.toDataURL("image/png");
+    scene.background = oldBg; grid.visible = gv; groundMesh.visible = sv; edges.forEach((e) => e.visible = true);
+    const a = document.createElement("a"); a.href = url; a.download = "透视参考_X" + Math.round(cam.phi * 57) + ".png"; a.click();
+  };
+
+  function resetScene() {
+    if (items.length) pushUndoNow();
+    clearItems(); select(null);
+    cam.target.set(0, 0.9, 0); cam.radius = 8.5; cam.theta = 0; cam.phi = Math.PI * 0.44;   // 近正面视角
+    camera.fov = 45; camera.updateProjectionMatrix(); $("fov").value = 45; $("vfov").textContent = 45;
+    const w = addFigureAt(-1.0, 0.2); applyPose(w, "walk"); w.rotation.y = 0;                  // 人正对相机
+    const s = sampleTexture(); const ip = addInterface(s.tex, s.aspect, 1.05, 0.2); ip.userData.ang.ry = 0; applyIfaceAngles(ip);   // 界面正对相机
+    applyVisibility(); refreshIfaceGrid(); updateCamera(); select(null);
+  }
+
+  function updateHorizon() {
+    if (hzDiv.style.display === "none") return;
+    const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd);
+    const flat = new THREE.Vector3(fwd.x, 0, fwd.z); if (flat.lengthSq() < 1e-6) flat.set(0, 0, 1); flat.normalize();
+    const P = camera.position.clone().addScaledVector(flat, 100000); P.y = camera.position.y;
+    const n = P.clone().project(camera); hzDiv.style.top = (1 - (n.y * 0.5 + 0.5)) * H + "px";
+    hzDiv.querySelector("span").textContent = "视平线 · 相机高度 " + camera.position.y.toFixed(2) + " m";
+  }
+
+  function resize() { W = stage.clientWidth; H = stage.clientHeight; renderer.setSize(W, H, false); camera.aspect = W / H; camera.updateProjectionMatrix(); }
+  window.addEventListener("resize", resize);
+  function loop() {
+    updateHorizon();
+    renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H); renderer.setClearColor(0x000000, 1); renderer.render(scene, camera);
+    updateAxisCam(); renderer.setScissorTest(true); renderer.setViewport(GM, H - GS - GM, GS, GS); renderer.setScissor(GM, H - GS - GM, GS, GS); renderer.clearDepth(); renderer.render(axisScene, axisCam); renderer.setScissorTest(false);
+    requestAnimationFrame(loop);
+  }
+  $("vfov").textContent = 45;
+  resize(); resetScene(); loop();
+})();
+</script>
+</body>
+</html>

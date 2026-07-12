@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>人物 + 界面 透视工具(2D)</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: "Microsoft YaHei", system-ui, sans-serif; background: #eceef1; }
+  #app { display: flex; flex-direction: column; height: 100vh; }
+  #bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border-bottom: 1px solid #dfe2e6; }
+  #bar button { font: inherit; font-size: 13px; padding: 6px 12px; border: 1px solid #c7ccd2; background: #fff; border-radius: 7px; cursor: pointer; color: #333; }
+  #bar button:hover { background: #f2f4f6; }
+  #bar button.on { background: #1c1c1c; color: #fff; border-color: #1c1c1c; }
+  #bar .sep { width: 1px; height: 22px; background: #e2e5e9; margin: 0 4px; }
+  #bar label { font-size: 13px; color: #555; display: inline-flex; align-items: center; gap: 6px; }
+  #bar input[type=range] { width: 120px; }
+  #hint { font-size: 12px; color: #97a0a8; margin-left: auto; }
+  #stage { position: relative; flex: 1; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; background: #fff; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bar">
+    <button data-mode="figure">＋人物</button>
+    <button data-mode="panel">＋界面</button>
+    <button data-mode="move" class="on">拖动/编辑</button>
+    <button data-mode="del">删除</button>
+    <span class="sep"></span>
+    <button id="reset">重置</button>
+    <span class="sep"></span>
+    <label>基准身高 <input type="range" id="refh" min="120" max="460" value="300"></label>
+    <label><input type="checkbox" id="guides" checked> 辅助线</label>
+    <span id="hint">选「＋人物 / ＋界面」后点画面放置 · 拖动模式可移动 · 拖红线=视平线 · 拖蓝点=灭点</span>
+  </div>
+  <div id="stage"><canvas id="cv"></canvas></div>
+</div>
+<script>
+(function () {
+  const cv = document.getElementById("cv");
+  const ctx = cv.getContext("2d");
+  const stage = document.getElementById("stage");
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  const S = {
+    horizonY: 0,        // 视平线 y(设备无关像素)
+    vpX: 0,             // 灭点 x
+    refHeight: 300,     // 基准身高(画面最底部一个人的像素高)
+    showGuides: true,
+    mode: "move",       // figure | panel | move | del
+    items: [],          // {type:'figure'|'panel', x, feetY}
+    drag: null          // {kind:'horizon'|'vp'|'item', idx}
+  };
+
+  function groundRefY() { return H - 20; }
+
+  // 距视平线越近 → 越小;贴地(最底)→ refHeight
+  function heightAt(feetY) {
+    const denom = groundRefY() - S.horizonY;
+    if (denom <= 1) return 0;
+    const t = (feetY - S.horizonY) / denom;
+    return Math.max(0, S.refHeight * t);
+  }
+
+  function resize() {
+    W = stage.clientWidth; H = stage.clientHeight;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    draw();
+  }
+
+  // ---------- 绘制:人物 ----------
+  function drawFigure(cx, feetY, h) {
+    if (h < 4) return;
+    const headR = h * 0.065;
+    const topY = feetY - h;
+    const headCy = topY + headR;
+    const shoulderY = topY + h * 0.17;
+    const hipY = feetY - h * 0.44;
+    const hs = h * 0.115;   // 半肩宽
+    const hh = h * 0.092;   // 半臀宽
+    const footIn = h * 0.016;
+    const midY = (shoulderY + hipY) / 2;
+    ctx.lineWidth = Math.max(1.2, h * 0.012);
+    ctx.strokeStyle = "#141414";
+    ctx.fillStyle = "#fff";
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    // 身体
+    ctx.beginPath();
+    ctx.moveTo(cx - hs, shoulderY);
+    ctx.quadraticCurveTo(cx - hs * 1.05, midY, cx - hh, hipY);
+    ctx.lineTo(cx - hh, feetY);
+    ctx.lineTo(cx - footIn, feetY);
+    ctx.lineTo(cx, hipY + h * 0.02);
+    ctx.lineTo(cx + footIn, feetY);
+    ctx.lineTo(cx + hh, feetY);
+    ctx.lineTo(cx + hh, hipY);
+    ctx.quadraticCurveTo(cx + hs * 1.05, midY, cx + hs, shoulderY);
+    ctx.quadraticCurveTo(cx, shoulderY - h * 0.04, cx - hs, shoulderY);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // 脖子
+    ctx.beginPath();
+    ctx.moveTo(cx - headR * 0.5, shoulderY);
+    ctx.lineTo(cx - headR * 0.4, headCy + headR * 0.7);
+    ctx.moveTo(cx + headR * 0.5, shoulderY);
+    ctx.lineTo(cx + headR * 0.4, headCy + headR * 0.7);
+    ctx.stroke();
+    // 头
+    ctx.beginPath();
+    ctx.arc(cx, headCy, headR, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+  }
+
+  // ---------- 绘制:界面面板 ----------
+  function drawPanel(cx, feetY, h) {
+    if (h < 6) return;
+    const standH = h * 0.16;
+    const scrH = h * 0.5, scrW = h * 0.8;
+    const scrBottom = feetY - standH;
+    const scrTop = scrBottom - scrH;
+    const left = cx - scrW / 2, right = cx + scrW / 2;
+    ctx.lineWidth = Math.max(1.2, h * 0.012);
+    ctx.strokeStyle = "#141414"; ctx.fillStyle = "#fff";
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    // 支架
+    ctx.beginPath();
+    ctx.moveTo(cx, scrBottom); ctx.lineTo(cx, feetY - h * 0.02);
+    ctx.moveTo(cx - h * 0.09, feetY); ctx.lineTo(cx + h * 0.09, feetY);
+    ctx.stroke();
+    // 屏幕
+    const r = h * 0.03;
+    roundRect(left, scrTop, scrW, scrH, r);
+    ctx.fill(); ctx.stroke();
+    // 顶栏
+    ctx.fillStyle = "#e9ecef";
+    roundRect(left + h * 0.03, scrTop + h * 0.03, scrW - h * 0.06, h * 0.09, r * 0.6);
+    ctx.fill();
+    // 内容行
+    ctx.strokeStyle = "#b7bdc4"; ctx.lineWidth = Math.max(1, h * 0.008);
+    for (let i = 0; i < 3; i++) {
+      const y = scrTop + h * 0.19 + i * h * 0.1;
+      ctx.beginPath();
+      ctx.moveTo(left + h * 0.05, y);
+      ctx.lineTo(right - h * 0.05 - (i === 2 ? scrW * 0.3 : 0), y);
+      ctx.stroke();
+    }
+  }
+
+  function roundRect(x, y, w, hh, r) {
+    r = Math.min(r, w / 2, hh / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + hh, r);
+    ctx.arcTo(x + w, y + hh, x, y + hh, r);
+    ctx.arcTo(x, y + hh, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawItem(it) {
+    const h = heightAt(it.feetY);
+    if (it.type === "panel") drawPanel(it.x, it.feetY, h);
+    else drawFigure(it.x, it.feetY, h);
+  }
+
+  // ---------- 辅助线 ----------
+  function drawGuides() {
+    // 参考物:第一个物件,否则虚拟一个贴地参考人
+    let ref = S.items.find(Boolean);
+    const rx = ref ? ref.x : W * 0.62;
+    const rFeet = ref ? ref.feetY : groundRefY();
+    const rH = heightAt(rFeet);
+    const rHead = rFeet - rH;
+    // 从灭点穿过参考脚 / 参考头,延伸到画面右缘
+    dashLine(S.vpX, S.horizonY, rx, rFeet, W);
+    dashLine(S.vpX, S.horizonY, rx, rHead, W);
+    // 参考物脚下高亮圈(像视频)
+    ctx.strokeStyle = "#2f6fe0"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(rx, rFeet, 9, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = "#2f6fe0";
+    ctx.beginPath(); ctx.arc(rx, rFeet, 3, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function dashLine(x1, y1, x2, y2, extendTo) {
+    let ex = x2, ey = y2;
+    const dx = x2 - x1, dy = y2 - y1;
+    if (Math.abs(dx) > 0.5) {
+      const k = ((extendTo > x1 ? W + 40 : -40) - x1) / dx;
+      if (k > 1) { ex = x1 + dx * k; ey = y1 + dy * k; }
+    }
+    ctx.save();
+    ctx.setLineDash([5, 6]); ctx.strokeStyle = "#c9ced4"; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(ex, ey); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ---------- 主绘制 ----------
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+    if (S.showGuides) drawGuides();
+    // 视平线(红)
+    ctx.strokeStyle = "#e5484d"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, S.horizonY); ctx.lineTo(W, S.horizonY); ctx.stroke();
+    ctx.fillStyle = "#e5484d"; ctx.font = "12px 'Microsoft YaHei'";
+    ctx.fillText("视平线(视线高度)", 10, S.horizonY - 7);
+    // 物件:远(小)先画,近(大)后画,白色填充自动遮挡
+    S.items.slice().sort((a, b) => a.feetY - b.feetY).forEach(drawItem);
+    // 灭点(蓝)
+    ctx.fillStyle = "#2f6fe0";
+    ctx.beginPath(); ctx.arc(S.vpX, S.horizonY, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillText("灭点", S.vpX + 9, S.horizonY - 8);
+  }
+
+  // ---------- 命中测试 ----------
+  function itemBBox(it) {
+    const h = heightAt(it.feetY);
+    const w = it.type === "panel" ? h * 0.8 : h * 0.28;
+    return { x0: it.x - w / 2, x1: it.x + w / 2, y0: it.feetY - h, y1: it.feetY + 6 };
+  }
+  function hitItem(x, y) {
+    const sorted = S.items.map((it, i) => ({ it, i })).sort((a, b) => b.it.feetY - a.it.feetY);
+    for (const { it, i } of sorted) {
+      const b = itemBBox(it);
+      if (x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1) return i;
+    }
+    return -1;
+  }
+
+  function pos(e) {
+    const r = cv.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  function clampFeet(y) { return Math.max(S.horizonY + 4, Math.min(groundRefY(), y)); }
+
+  cv.addEventListener("pointerdown", (e) => {
+    const p = pos(e); cv.setPointerCapture(e.pointerId);
+    // 场景控制永远优先:灭点(蓝点)、视平线(红线)——任何模式都能拖
+    if (Math.hypot(p.x - S.vpX, p.y - S.horizonY) < 16) { S.drag = { kind: "vp" }; return; }
+    if (Math.abs(p.y - S.horizonY) < 7) { S.drag = { kind: "horizon" }; return; }
+    // 添加模式:点到已有物件则拖它,点空白处才新建
+    if (S.mode === "figure" || S.mode === "panel") {
+      const hit = hitItem(p.x, p.y);
+      if (hit >= 0) { S.drag = { kind: "item", idx: hit }; return; }
+      S.items.push({ type: S.mode, x: p.x, feetY: clampFeet(p.y) });
+      draw(); return;
+    }
+    // 物件命中
+    const idx = hitItem(p.x, p.y);
+    if (S.mode === "del") { if (idx >= 0) { S.items.splice(idx, 1); draw(); } return; }
+    if (idx >= 0) { S.drag = { kind: "item", idx }; return; }
+  });
+
+  cv.addEventListener("pointermove", (e) => {
+    if (!S.drag) return;
+    const p = pos(e);
+    if (S.drag.kind === "horizon") S.horizonY = Math.max(20, Math.min(H - 60, p.y));
+    else if (S.drag.kind === "vp") { S.vpX = Math.max(0, Math.min(W, p.x)); S.horizonY = Math.max(20, Math.min(H - 60, p.y)); }
+    else if (S.drag.kind === "item") { const it = S.items[S.drag.idx]; it.x = p.x; it.feetY = clampFeet(p.y); }
+    draw();
+  });
+
+  cv.addEventListener("pointerup", () => { S.drag = null; });
+  cv.addEventListener("pointercancel", () => { S.drag = null; });
+
+  // ---------- 工具栏 ----------
+  document.querySelectorAll("#bar button[data-mode]").forEach((b) => {
+    b.addEventListener("click", () => {
+      S.mode = b.dataset.mode;
+      document.querySelectorAll("#bar button[data-mode]").forEach((x) => x.classList.toggle("on", x === b));
+      cv.style.cursor = (S.mode === "figure" || S.mode === "panel") ? "copy" : (S.mode === "del" ? "not-allowed" : "crosshair");
+    });
+  });
+  document.getElementById("refh").addEventListener("input", (e) => { S.refHeight = +e.target.value; draw(); });
+  document.getElementById("guides").addEventListener("change", (e) => { S.showGuides = e.target.checked; draw(); });
+
+  window.addEventListener("resize", resize);
+
+  // 初始化 / 复原
+  function seedScene() {
+    S.items = [];
+    const gy = groundRefY();
+    S.items.push({ type: "figure", x: W * 0.72, feetY: gy - 4 });
+    S.items.push({ type: "figure", x: W * 0.60, feetY: S.horizonY + (gy - S.horizonY) * 0.62 });
+    S.items.push({ type: "figure", x: W * 0.50, feetY: S.horizonY + (gy - S.horizonY) * 0.40 });
+    S.items.push({ type: "figure", x: W * 0.43, feetY: S.horizonY + (gy - S.horizonY) * 0.26 });
+    S.items.push({ type: "panel", x: W * 0.85, feetY: gy - 4 });
+  }
+  function resetAll() {
+    W = stage.clientWidth; H = stage.clientHeight;
+    S.horizonY = Math.round(H * 0.42);
+    S.vpX = Math.round(W * 0.30);
+    S.refHeight = 300;
+    const refh = document.getElementById("refh");
+    if (refh) refh.value = 300;
+    resize();
+    seedScene();
+    draw();
+  }
+  document.getElementById("reset").addEventListener("click", resetAll);
+  resetAll();
+})();
+</script>
+</body>
+</html>
