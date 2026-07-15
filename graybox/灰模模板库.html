@@ -173,7 +173,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .ak-plates .blk>*{transform:skewX(8deg)}
 .ak-term{flex:1.5}.ak-term .lbl{font-size:18px;color:#111}
 .ak-r2{display:flex;gap:7px;flex:1}.ak-r2 .blk{flex:1}.ak-r2 .lbl{font-size:14px}
-.ak-recruit{flex:.9}.ak-recruit .lbl{font-size:14px}
+.ak-r3{display:flex;gap:7px;flex:.9}.ak-r3 .blk{flex:1}.ak-r3 .lbl{font-size:12px}
 .ak-r4{display:flex;gap:7px;flex:1}.ak-r4 .blk{flex:1}.ak-r4 .lbl{font-size:12px}
 .ak-news{position:absolute;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:flex-end;z-index:4}
 .ak-news .banner{width:min(164px,30vw);height:54px;font-size:11px;flex-direction:row;gap:6px}
@@ -501,9 +501,9 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo ak-home show-hints">
       <div class="bg"><div class="blk low stage"><svg class="silo silo-hi"><use href="#silo-char"/></svg>
-        <span class="lbl" style="position:absolute;left:50%;bottom:58px;transform:translateX(-50%);white-space:nowrap;font-size:12px">立绘=视觉主体 · 满屏场景=衬底</span>
-        <span class="order" style="top:auto;left:50%;bottom:84px;transform:translateX(-50%)">③</span>
-        <span class="invert" style="left:50%;bottom:34px;transform:translateX(-50%)">大背景退场 = 倒置</span></div></div>
+        <span class="lbl" style="position:absolute;left:22%;bottom:96px;transform:translateX(-50%);white-space:nowrap;font-size:12px">立绘=视觉主体 · 满屏场景=衬底</span>
+        <span class="order" style="top:auto;left:22%;bottom:122px;transform:translateX(-50%)">③</span>
+        <span class="invert" style="left:22%;bottom:72px;transform:translateX(-50%)">大背景退场 = 倒置</span></div></div>
       <!-- 顶左:系统图标 + 引导 -->
       <div class="ak-sys">
         <div class="blk mid clk"><svg class="ic"><use href="#i-quest"/></svg></div>
@@ -513,22 +513,24 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
       </div>
       <!-- 左:玩家信息 -->
       <div class="ak-pinfo"><div class="blk mid clk"><svg class="ic"><use href="#i-person"/></svg><span class="lbl">LV · 玩家名 · ID</span></div></div>
-      <!-- 顶右:资源 -->
+      <!-- 顶右:货币(可充值的带 +) -->
       <div class="ak-res">
-        <div class="blk low"><svg class="ic"><use href="#i-bolt"/></svg><span class="lbl">理智</span></div>
-        <div class="blk low"><svg class="ic"><use href="#i-gem"/></svg><span class="lbl">合成玉</span></div>
-        <div class="blk low"><svg class="ic"><use href="#i-box"/></svg><span class="lbl">源石</span></div>
+        <div class="blk low"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">龙门币</span></div>
+        <div class="blk low"><svg class="ic"><use href="#i-gem"/></svg><span class="lbl">合成玉 ＋</span></div>
+        <div class="blk low"><svg class="ic"><use href="#i-box"/></svg><span class="lbl">源石 ＋</span></div>
       </div>
       <!-- 右侧:斜切功能大板 -->
       <div class="ak-plates">
-        <div class="ak-term blk high clk"><span class="lbl">终端 · 作战(当前 TR-5)</span><span class="ctatag" style="top:6px;right:6px">主操作·最大板</span><span class="order" style="top:6px;left:6px">①</span></div>
+        <div class="ak-term blk high clk"><span class="lbl">终端 · 作战<small style="opacity:.65">理智 157/157 · 当前 TR-5(体力贴着主操作)</small></span><span class="ctatag" style="top:6px;right:6px">主操作·最大板</span><span class="order" style="top:6px;left:6px">①</span></div>
         <div class="ak-r2">
           <div class="blk mid clk"><span class="lbl">编队</span><span class="order">②</span></div>
           <div class="blk mid clk"><span class="lbl">干员 · 角色管理</span></div>
         </div>
-        <div class="ak-recruit blk mid clk"><span class="lbl">招募 · 公开招募 / 干员寻访</span></div>
+        <div class="ak-r3">
+          <div class="blk low clk"><span class="lbl">采购中心</span></div>
+          <div class="blk mid clk"><span class="lbl">招募 · 寻访</span><span class="invert" style="left:auto;right:7px;bottom:auto;top:7px">原图唯一高饱和色=付费焦点</span></div>
+        </div>
         <div class="ak-r4">
-          <div class="blk low clk"><span class="lbl">采购</span></div>
           <div class="blk low clk"><span class="lbl">任务</span></div>
           <div class="blk low clk"><span class="lbl">基建</span></div>
           <div class="blk low clk"><span class="lbl">仓库</span></div>
@@ -697,12 +699,14 @@ const CITES={
   ['③ 小地图 / 目标(中)','辅助判断的信息,放角落。','辅助信息偏弱'],
   ['屏幕中心(留空·降噪)','关键点:战斗要看清场面,中心必须干净,信息一律退到边缘。','中心降噪、信息退边'],
  ]},
- 's-ak-home':{title:'案例 · 明日方舟 主界面',rows:[
-  ['① 终端/作战(主操作·最大板)','招牌布局:右侧一叠斜切大板,"终端(去打关)"做成最大最亮的一块——玩家每次进来最核心的动作,做成全屏最突出。','一屏一个主操作,做成最大最亮'],
-  ['② 编队/干员/招募(主要功能,中)','养成与抽卡的核心入口,排在终端下方、稍小,统一斜切风格成组。','高频功能成组,次于主操作'],
-  ['③ 中央立绘(视觉主体,中)','立绘居中、较清晰,是情感锚点、第一眼看的"主体";但它不是要点的按钮 → 视觉主体 ≠ 行动焦点。','立绘抓眼球,功能板抓操作'],
-  ['④ 左下 News/寻访 banner(运营位)','活动、寻访、好友、档案放左下角,常驻但不抢右侧功能板。','运营位靠边'],
-  ['满屏场景(衬底)+ 顶部资源/图标(低)','满屏基地场景面积最大却去饱和压最低;顶部资源和系统图标是常驻状态,都不抢注意力。','面积≠重要度 · 状态信息弱化'],
+ 's-ak-home':{title:'案例 · 明日方舟 主界面(已按实机截图核对)',rows:[
+  ['① 终端/作战(主操作·最大板,体力贴附)','招牌布局:右侧一叠斜切大板,"终端(去打关)"做成最大最亮的一块;体力(理智)就显示在这块板上——资源和"要花它的动作"放在一起,少一次寻找。','一屏一个主操作 · 体力贴着主操作'],
+  ['② 编队/干员(高频功能,中)','养成核心入口排在终端正下方、稍小,统一斜切风格成组。','高频功能成组,次于主操作'],
+  ['招募 = 付费焦点(原图唯一彩色)','灰模里它和邻居明度相近,但原图给了它全屏唯一的高饱和色——用"唯一强调色"从一排入口里跳出来,是付费入口的常用手法。','唯一强调色 = 付费焦点'],
+  ['③ 中央立绘(视觉主体,中)','立绘居中、较清晰,是情感锚点、第一眼看的"主体";但它不是要点的按钮 → 视觉主体 ≠ 行动焦点。原图还配了"隐藏 UI"按钮,官方承认"只看立绘"的欣赏需求。','立绘抓眼球,功能板抓操作'],
+  ['④ 左下 News banner + 好友/档案(运营位)','运营资讯固定左下角,常驻但不抢右侧功能板。','运营位靠边'],
+  ['顶右货币(可充值带＋)· 顶左系统图标(低)','货币常驻右上,可充值的带"＋"一步直达获取;设置/邮件/公告等低频系统功能缩成左上小图标;满屏基地场景面积最大却去饱和压最低。','四角分区 · 面积≠重要度'],
+  ['依据','本屏 2026-07 按实机截图逐区位核对修正过一遍:货币栏内容、板块行序(采购中心与招募同排)、体力位置均照实更新。','实证核对,非凭印象'],
  ]},
  's-ak-bt':{title:'案例 · 明日方舟 战斗部署',rows:[
   ['① 战场 / 部署格(玩法主体,居中)','为什么居中留给它:战斗屏里"要盯着看"的是战场本身,所以 UI 全退到四边、把中间让出来。','战场是主体,UI 退边'],
