@@ -76,6 +76,8 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .gcat button::after{content:"›";position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#777;font-size:18px}
 .gcat button em{font-style:normal;font-size:10px;color:#888;background:#1c1c22;border:1px solid #3a3a42;padding:1px 6px;border-radius:8px;margin-left:6px}
 .gnote{font-size:11px;color:#666;text-align:center;margin-top:6px;padding:10px;border:1px dashed #333;border-radius:8px}
+/* 横屏时首页收成居中一栏,别让按钮拉满全宽 */
+.mode-landscape .gallery h2,.mode-landscape .gallery .ghelp,.mode-landscape .gallery .gcat,.mode-landscape .gallery .gnote{width:min(560px,94%);margin-left:auto;margin-right:auto}
 
 /* 主界面 · 竖版 */
 .home.p .top{display:flex;gap:8px}
@@ -271,37 +273,33 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
  </div>
  <div class="phone mode-portrait" id="phone">
 
-  <!-- ============ 模板库首页 ============ -->
-  <section class="screen active" id="gallery" data-ori="p">
+  <!-- ============ 模板库首页(分类 = 游戏类型;带「案例」标的为真实游戏研究屏,开源时可摘) ============ -->
+  <section class="screen active" id="gallery" data-ori="both">
     <div class="layout solo gallery">
       <div style="height:8px"></div>
       <h2>灰模模板库</h2>
       <p class="ghelp">选一个界面 → 一键套用它的层级线框(黑白灰 = 高/中/低)</p>
-      <div class="gcat"><h3>二次元 / 通用</h3>
+      <div class="gcat"><h3>通用(跨品类)</h3>
         <button onclick="go('s-home')">主界面 · 大厅<em>竖/横</em></button>
         <button onclick="go('s-bag')">背包 · 物品<em>竖/横</em></button>
         <button onclick="go('s-role')">角色 · 养成<em>竖/横</em></button>
-      </div>
-      <div class="gcat"><h3>乙女 · 换装(如无限暖暖)</h3>
-        <button onclick="go('s-dressup')">换装 · 搭配<em>竖</em></button>
+        <button onclick="go('s-shop')">商城<em>竖</em></button>
       </div>
       <div class="gcat"><h3>塔防</h3>
         <button onclick="go('s-td-battle')">布防战斗 HUD<em>横</em></button>
-        <button onclick="go('s-shop')">商城<em>竖</em></button>
+        <button onclick="go('s-ak-home')">明日方舟 · 主界面<em>横</em><em>案例</em></button>
+        <button onclick="go('s-ak-bt')">明日方舟 · 战斗部署<em>横</em><em>案例</em></button>
       </div>
       <div class="gcat"><h3>RPG</h3>
         <button onclick="go('s-rpg-battle')">战斗 HUD<em>横</em></button>
+        <button onclick="go('s-hsr-char')">星穹铁道 · 角色详情<em>横</em><em>案例</em></button>
+        <button onclick="go('s-hsr-book')">星穹铁道 · 教学目录<em>横</em><em>案例</em></button>
+        <button onclick="go('s-hsr-q')">星穹铁道 · 任务弹窗<em>横</em><em>案例</em></button>
       </div>
-      <div class="gcat"><h3>案例研究 · 明日方舟(塔防)<em style="font-style:normal;font-size:10px;color:#666;border:0;background:0;margin-left:6px">开源可摘</em></h3>
-        <button onclick="go('s-ak-home')">主界面(大背景当衬底)<em>横</em></button>
-        <button onclick="go('s-ak-bt')">战斗部署(战场即主体)<em>横</em></button>
+      <div class="gcat"><h3>乙女 · 换装</h3>
+        <button onclick="go('s-dressup')">换装 · 搭配<em>竖</em></button>
       </div>
-      <div class="gcat"><h3>案例研究 · 崩坏:星穹铁道(RPG)<em style="font-style:normal;font-size:10px;color:#666;border:0;background:0;margin-left:6px">开源可摘</em></h3>
-        <button onclick="go('s-hsr-char')">角色详情(立绘=主体)<em>横</em></button>
-        <button onclick="go('s-hsr-book')">教学目录(明暗分区)<em>横</em></button>
-        <button onclick="go('s-hsr-q')">任务弹窗(虚化背景)<em>横</em></button>
-      </div>
-      <div class="gnote">批次 1 预览 · 对照常见游戏品类核心界面清单(约 29 个),确认效果后补全其余</div>
+      <div class="gnote">批次 1 预览 · 对照常见游戏品类核心界面清单(约 29 个),确认效果后补全其余;「案例」= 真实游戏研究屏</div>
     </div>
   </section>
 
@@ -656,7 +654,7 @@ const CITES={
  'gallery':{title:'关于这个模板库',rows:[
   ['黑白灰 = 层级','亮 = 最先看到/主操作,灰 = 次要/引导,暗 = 背景/陪衬。一眼就能看出这屏"先看哪、点哪"。','明度 = 注意力顺序'],
   ['①②③ = 视线顺序,黄标 = 主操作','每个界面点"说明",能看到每个元素为什么排这个层级——线框有据,不是随手摆。','排序都有理由'],
-  ['横屏 / 竖屏','有的界面天生横屏(战斗)、有的竖屏(换装);支持双版的会亮出"竖▸横"按钮。','方向跟着界面走'],
+  ['横屏 / 竖屏','默认横屏(多数游戏界面是横屏);天生竖屏的界面(换装/商城)进去自动切竖,支持双版的会亮出切换按钮。','方向跟着界面走'],
  ]},
  's-home':{title:'说明 · 主界面 / 大厅',rows:[
   ['① 开始/进入 = 主操作(最突出)','玩家每次进来最想做的事、产品最想让人点的。横屏做成右侧最大最亮的功能卡,竖屏放底部拇指区。','一屏一个主操作,做成最大最突出'],
@@ -733,5 +731,5 @@ function renderCite(id){const c=CITES[id];if(!c)return;document.getElementById('
   document.getElementById('cite-body').innerHTML=c.rows.map(r=>`<div class="cite-row"><b>${r[0]}</b><br>${r[1]}<br><span class="src">↳ ${r[2]}</span></div>`).join('');}
 function openCite(){renderCite(document.querySelector('.screen.active').id);document.getElementById('cite').classList.add('open');document.getElementById('tCite').classList.add('on');}
 function closeCite(){document.getElementById('cite').classList.remove('open');document.getElementById('tCite').classList.remove('on');}
-go('gallery');
+go('gallery');setOri(true); /* 默认横屏(多数游戏界面为横屏) */
 </script>
