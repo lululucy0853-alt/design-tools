@@ -229,7 +229,7 @@
       <select id="pngScale"><option value="1">PNG ×1</option><option value="2" selected>PNG ×2</option><option value="4">PNG ×4</option></select>
       <button id="btnPng" style="flex:1;">导出 PNG（透明底可用）</button>
     </div>
-    <div class="note">平铺 / 线性形式基于 SVG pattern，导出即无缝连续。</div>
+    <div class="note">平铺 / 线性预览基于 SVG pattern；导出 SVG 时自动烘焙成真实矢量几何（Illustrator 可直接打开编辑）。⚠️ 布纹 / 半调 / 手绘 / 纸纹 / 仅轮廓靠 SVG 滤镜或 pattern 填充实现，AI 里会丢效果——进 AI 请用平涂 / 描边 / 鎏金，特殊材质走 PNG。</div>
   </details>
 
   <details class="sec">
@@ -933,7 +933,9 @@ function buildDefs(mat,colors){
   return d;
 }
 
-function render(forceTransparent, skipView){
+function render(forceTransparent, skipView, bake){
+  // bake=true(导出SVG时):平铺/线性不走 <pattern>,把纹样烘焙成真实几何+clipPath 裁边。
+  // 原因:Illustrator 导入 pattern 填充的矩形会变成空矩形、且不认 SVG2 的 <use href>,导致导出文件在 AI 里一片空白。
   const transp = forceTransparent || state.transparent;   // 导出可强制透明而不动预览
   const {W,H}=state;
   const rng=mulberry32(state.seed);
@@ -988,8 +990,22 @@ function render(forceTransparent, skipView){
     for(let i=0;i<2;i++)for(let j=0;j<2;j++){
       content+='<g transform="translate('+(i*tsW)+','+(j*tsH)+')"><g transform="translate('+(tsW/2)+','+(tsH/2)+') scale('+baseScale+')">'+tfn(cols[ci++])+'</g></g>';
     }
-    defs+='<pattern id="tileP" width="'+(2*tsW)+'" height="'+(2*tsH)+'" patternUnits="userSpaceOnUse" patternTransform="rotate('+state.spin+')">'+content+'</pattern>';
-    body='<rect width="'+W+'" height="'+H+'" fill="url(#tileP)"/>';
+    if(bake){   // 烘焙:把画布四角旋回 pattern 坐标系取包围盒,按格铺真实几何,再整体 rotate(spin) + 裁到画布。
+      // 每个超级单元必须裁到自身边界(#scClip):pattern 语义就是"内容裁到单元格再平铺",无缝密铺靠越界被裁、邻格补上;不裁会在格界串色/重叠。
+      const pw=2*tsW, ph=2*tsH;
+      defs+='<clipPath id="cvClip"><rect width="'+W+'" height="'+H+'"/></clipPath>'
+        +'<clipPath id="scClip"><rect width="'+pw+'" height="'+ph+'"/></clipPath>';
+      const rad=-state.spin*Math.PI/180, cosA=Math.cos(rad), sinA=Math.sin(rad);
+      const xs=[],ys=[]; for(const [x,y] of [[0,0],[W,0],[0,H],[W,H]]){ xs.push(x*cosA-y*sinA); ys.push(x*sinA+y*cosA); }
+      const i0=Math.floor(Math.min(...xs)/pw)-1, i1=Math.ceil(Math.max(...xs)/pw)+1;
+      const j0=Math.floor(Math.min(...ys)/ph)-1, j1=Math.ceil(Math.max(...ys)/ph)+1;
+      let tiles=''; for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++)
+        tiles+='<g transform="translate('+(i*pw)+','+(j*ph)+')"><g clip-path="url(#scClip)">'+content+'</g></g>';
+      body='<g clip-path="url(#cvClip)"><g transform="rotate('+state.spin+')">'+tiles+'</g></g>';
+    } else {
+      defs+='<pattern id="tileP" width="'+(2*tsW)+'" height="'+(2*tsH)+'" patternUnits="userSpaceOnUse" patternTransform="rotate('+state.spin+')">'+content+'</pattern>';
+      body='<rect width="'+W+'" height="'+H+'" fill="url(#tileP)"/>';
+    }
   }
   else if(state.arr==='tile' || state.arr==='linear'){
     const K = state.arr==='tile' ? 4 : 6;
@@ -1002,14 +1018,21 @@ function render(forceTransparent, skipView){
       const cy= state.arr==='tile' ? (j+0.5)*spacing + (rng()*2-1)*spacing*0.45*jPos : H/2 + (rng()*2-1)*H*0.1*jPos;
       cells+=instance(draw(pickColorKey(rng)),cx,cy,baseScale*jitS(),jitR());
     }
-    // 8 邻域复制，保证 pattern 边界无缝
-    defs+='<g id="cellsG">'+cells+'</g>'
-      +'<pattern id="tileP" width="'+tileW+'" height="'+tileH+'" patternUnits="userSpaceOnUse">';
-    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
-      defs+='<use href="#cellsG" x="'+(dx*tileW)+'" y="'+(dy*tileH)+'"/>';
+    if(bake){   // 烘焙:单元几何按格直接铺满画布(多铺一圈接住越界纹样),裁到画布
+      defs+='<clipPath id="cvClip"><rect width="'+W+'" height="'+H+'"/></clipPath>';
+      let tiles=''; for(let i=-1;i<=Math.ceil(W/tileW);i++)for(let j=-1;j<=Math.ceil(H/tileH);j++)
+        tiles+='<g transform="translate('+(i*tileW)+','+(j*tileH)+')">'+cells+'</g>';
+      body='<g clip-path="url(#cvClip)">'+tiles+'</g>';
+    } else {
+      // 8 邻域复制，保证 pattern 边界无缝
+      defs+='<g id="cellsG">'+cells+'</g>'
+        +'<pattern id="tileP" width="'+tileW+'" height="'+tileH+'" patternUnits="userSpaceOnUse">';
+      for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+        defs+='<use xlink:href="#cellsG" x="'+(dx*tileW)+'" y="'+(dy*tileH)+'"/>';
+      }
+      defs+='</pattern>';
+      body='<rect width="'+W+'" height="'+H+'" fill="url(#tileP)"/>';
     }
-    defs+='</pattern>';
-    body='<rect width="'+W+'" height="'+H+'" fill="url(#tileP)"/>';
   }
   else if(state.arr==='focus'){
     const n=Math.round(26*state.density);
@@ -1209,7 +1232,7 @@ function render(forceTransparent, skipView){
   else if(state.mat==='sketch') gAttr=' filter="url(#roughen)"';
   else if(state.mat==='paper') gAttr=' filter="url(#grainShape)"';
 
-  const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'">'
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'">'
     +'<defs>'+defs+'</defs>'+bgLayer+'<g'+gAttr+'>'+body+'</g></svg>';
 
   if(!skipView) document.getElementById('view').innerHTML=svg;
@@ -1232,7 +1255,7 @@ function download(blob,name){
   setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
 }
 document.getElementById('btnSvg').onclick=()=>{
-  const svg=render(document.getElementById('expTransparent').checked, true);
+  const svg=render(document.getElementById('expTransparent').checked, true, true);   // bake=true:AI 兼容导出(skipView,不动预览)
   download(new Blob([svg],{type:'image/svg+xml'}), fileBase()+'.svg');
 };
 document.getElementById('btnPng').onclick=()=>{
@@ -1373,7 +1396,7 @@ let customMotifs = lsLoad(LS.motifs) || [];   // [{id,name,src,w,h}]
 const rawCache = {};   // id -> {raw, mode, isSVG}：仅当次会话保留原图，用于事后调容差重新抠背景
 function customDraw(m){
   const k=100/Math.max(m.w,m.h), dw=m.w*k, dh=m.h*k;
-  return ()=>'<image href="'+m.src+'" x="'+(-dw/2).toFixed(1)+'" y="'+(-dh/2).toFixed(1)
+  return ()=>'<image xlink:href="'+m.src+'" x="'+(-dw/2).toFixed(1)+'" y="'+(-dh/2).toFixed(1)
     +'" width="'+dw.toFixed(1)+'" height="'+dh.toFixed(1)+'" preserveAspectRatio="xMidYMid meet"/>';
 }
 function rebuildCustomFamily(){
@@ -1968,10 +1991,15 @@ function buildSVG(size){
     const pat=(list,er)=>{ const unit=tc(list,er); if(!mir) return unit;
       return MC.map(([col,row,fx,fy])=>{ const tx=col*S+(fx<0?S:0), ty=row*S+(fy<0?S:0);
         return '<g transform="translate('+tx+','+ty+') scale('+fx+','+fy+')">'+unit+'</g>'; }).join(''); };
-    defs='<pattern id="tpc" width="'+PS+'" height="'+PS+'" patternUnits="userSpaceOnUse">'+pat(cols,false)+'</pattern>';
-    if(ers.length){ defs+='<pattern id="tpe" width="'+PS+'" height="'+PS+'" patternUnits="userSpaceOnUse"><rect width="'+PS+'" height="'+PS+'" fill="#fff"/>'+pat(ers,true)+'</pattern><mask id="hm"><rect width="'+N+'" height="'+N+'" fill="url(#tpe)"/></mask>';
-      body='<rect width="'+N+'" height="'+N+'" fill="url(#tpc)" mask="url(#hm)"/>'; }
-    else body='<rect width="'+N+'" height="'+N+'" fill="url(#tpc)"/>';
+    // 烘焙成真实几何(不用 <pattern>):Illustrator 导入 pattern 填充会得到空矩形。
+    // 每格内容裁到单元边界(#hUnit)= pattern 语义;单元内已含 ±S 环绕副本,不裁会与邻格重叠(半透明笔迹会叠深)。
+    const tileUp=u=>{ let s=''; for(let i=0;i<Math.ceil(N/PS);i++)for(let j=0;j<Math.ceil(N/PS);j++)
+      s+='<g transform="translate('+(i*PS)+','+(j*PS)+')"><g clip-path="url(#hUnit)">'+u+'</g></g>'; return s; };
+    defs='<clipPath id="hClip"><rect width="'+N+'" height="'+N+'"/></clipPath>'
+      +'<clipPath id="hUnit"><rect width="'+PS+'" height="'+PS+'"/></clipPath>';
+    if(ers.length){ defs+='<mask id="hm"><rect width="'+N+'" height="'+N+'" fill="#fff"/>'+tileUp(pat(ers,true))+'</mask>';
+      body='<g clip-path="url(#hClip)" mask="url(#hm)">'+tileUp(pat(cols,false))+'</g>'; }
+    else body='<g clip-path="url(#hClip)">'+tileUp(pat(cols,false))+'</g>';
   } else { let colored='',erased='';
     for(const st of cols) for(const fn of transformsFor(st.sym)) colored+=cpath(st,fn);
     for(const st of ers) for(const fn of transformsFor(st.sym)) erased+=epath(st,fn);
@@ -1979,7 +2007,7 @@ function buildSVG(size){
     else body=colored;
   }
   const bg=expBg(), bgRect = bg ? '<rect width="'+N+'" height="'+N+'" fill="'+bg+'"/>' : '';
-  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+N+' '+N+'" width="'+size+'" height="'+size+'">'+(defs?'<defs>'+defs+'</defs>':'')+bgRect+body+'</svg>';
+  return '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 '+N+' '+N+'" width="'+size+'" height="'+size+'">'+(defs?'<defs>'+defs+'</defs>':'')+bgRect+body+'</svg>';
 }
 function expSize(){ return +$('h_expSize').value||2048; }
 function expBg(){ const v=$('h_expBg').value; return v==='dark'?'#101116':(v==='white'?'#ffffff':null); }
