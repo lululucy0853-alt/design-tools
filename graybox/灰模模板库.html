@@ -38,6 +38,11 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .low{background:linear-gradient(155deg,#2d2d34 0%,#1b1b20 100%);border:1px solid #34343c;color:#7c7c86}
 .mid{background:linear-gradient(155deg,#474751 0%,#31313a 100%);border:1px solid #4d4d58;color:#a6a6b2}
 .high{background:linear-gradient(155deg,#ffffff 0%,#dcdce1 100%);color:#111}
+.lv1{background:linear-gradient(155deg,#ffffff 0%,#dcdce1 100%);color:#111}
+.lv2{background:linear-gradient(155deg,#c0c0c9 0%,#a2a2ac 100%);border:1px solid #ccccd5;color:#1b1b20}
+.lv3{background:linear-gradient(155deg,#8e8e99 0%,#73737d 100%);border:1px solid #9b9ba5;color:#141419}
+.lv4{background:linear-gradient(155deg,#585862 0%,#42424a 100%);border:1px solid #61616b;color:#d4d4dc}
+.lv5{background:linear-gradient(155deg,#35353d 0%,#242429 100%);border:1px solid #3f3f49;color:#96969f}
 .high.ghost{background:transparent;border:2px solid var(--lv-high);color:var(--lv-high);box-shadow:none}
 .cta{animation:pulse 2.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 16px 2px rgba(242,242,244,.16)}50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 30px 6px rgba(242,242,244,.4)}}
@@ -162,7 +167,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 /* 明日方舟 · 主界面(横):右侧斜切功能大板 + 中央立绘 + 顶部信息条(按真实布局) */
 .ak-home{padding:0}
 .ak-home .bg{position:absolute;inset:0}.ak-home .bg .blk{width:100%;height:100%;border-radius:0}
-.ak-home .bg .silo{height:74%;top:15%;left:44%;color:#6a6a7a;opacity:.6}
+.ak-home .bg .silo{height:60%;top:11%;left:25%;color:#6a6a7a;opacity:.66}
 .ak-sys{position:absolute;top:calc(10px + env(safe-area-inset-top));left:52px;display:flex;gap:6px;z-index:4}
 .ak-sys .blk{width:34px;height:30px}
 .ak-sys .ak-guide{width:auto;padding:0 10px;font-size:10px;flex-direction:row;gap:5px}
@@ -498,47 +503,46 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
   <section class="screen" id="s-ak-home" data-back data-ori="l">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo ak-home show-hints">
-      <div class="bg"><div class="blk low stage"><svg class="silo silo-hi"><use href="#silo-char"/></svg>
-        <span class="lbl" style="position:absolute;left:22%;bottom:96px;transform:translateX(-50%);white-space:nowrap;font-size:12px">立绘=视觉主体 · 满屏场景=衬底</span>
-        <span class="order" style="top:auto;left:22%;bottom:122px;transform:translateX(-50%)">③</span>
-        <span class="invert" style="left:22%;bottom:72px;transform:translateX(-50%)">大背景退场 = 倒置</span></div></div>
+      <div class="bg"><div class="blk lv5 stage"><svg class="silo silo-hi"><use href="#silo-char"/></svg>
+        <span class="order" style="top:73%;left:25%;transform:translateX(-50%);background:#35353d;color:#fff;box-shadow:0 0 0 2px #e8c24a">3</span>
+        <span class="lbl" style="position:absolute;top:77%;left:25%;transform:translateX(-50%);white-space:nowrap;font-size:12px">立绘=视觉主体 · 满屏场景=衬底</span></div></div>
       <!-- 顶左:系统图标 + 引导 -->
       <div class="ak-sys">
-        <div class="blk mid clk"><svg class="ic"><use href="#i-quest"/></svg></div>
-        <div class="blk mid clk"><svg class="ic"><use href="#i-bolt"/></svg></div>
-        <div class="blk mid clk"><svg class="ic"><use href="#i-bag"/></svg></div>
-        <div class="blk mid clk ak-guide"><svg class="ic"><use href="#i-map"/></svg><span class="lbl">开始熟悉罗德岛</span></div>
+        <div class="blk lv5 clk"><svg class="ic"><use href="#i-quest"/></svg></div>
+        <div class="blk lv5 clk"><svg class="ic"><use href="#i-bolt"/></svg></div>
+        <div class="blk lv5 clk"><svg class="ic"><use href="#i-bag"/></svg></div>
+        <div class="blk lv5 clk ak-guide"><svg class="ic"><use href="#i-map"/></svg><span class="lbl">开始熟悉罗德岛</span></div>
       </div>
       <!-- 左:玩家信息 -->
-      <div class="ak-pinfo"><div class="blk mid clk"><svg class="ic"><use href="#i-person"/></svg><span class="lbl">LV · 玩家名 · ID</span></div></div>
+      <div class="ak-pinfo"><div class="blk lv5 clk"><svg class="ic"><use href="#i-person"/></svg><span class="lbl">LV · 玩家名 · ID</span></div></div>
       <!-- 顶右:货币(可充值的带 +) -->
       <div class="ak-res">
-        <div class="blk low"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">龙门币</span></div>
-        <div class="blk low"><svg class="ic"><use href="#i-gem"/></svg><span class="lbl">合成玉 ＋</span></div>
-        <div class="blk low"><svg class="ic"><use href="#i-box"/></svg><span class="lbl">源石 ＋</span></div>
+        <div class="blk lv5"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">龙门币</span></div>
+        <div class="blk lv5"><svg class="ic"><use href="#i-gem"/></svg><span class="lbl">合成玉 ＋</span></div>
+        <div class="blk lv5"><svg class="ic"><use href="#i-box"/></svg><span class="lbl">源石 ＋</span></div>
       </div>
       <!-- 右侧:斜切功能大板 -->
       <div class="ak-plates">
-        <div class="ak-term blk high clk"><span class="lbl">终端 · 作战<small style="opacity:.65">理智 157/157 · 当前 TR-5(体力贴着主操作)</small></span><span class="ctatag" style="top:6px;right:6px">主操作·最大板</span><span class="order" style="top:6px;left:6px">①</span></div>
+        <div class="ak-term blk lv1 clk"><span class="lbl">终端 · 作战<small style="opacity:.65">理智 157/157 · 当前 TR-5(体力贴着主操作)</small></span><span class="ctatag" style="top:6px;right:6px">主操作·最大板</span><span class="order" style="top:6px;left:6px;background:#ffffff;color:#111;box-shadow:0 0 0 2px #e8c24a">1</span></div>
         <div class="ak-r2">
-          <div class="blk mid clk"><span class="lbl">编队</span><span class="order">②</span></div>
-          <div class="blk mid clk"><span class="lbl">干员 · 角色管理</span></div>
+          <div class="blk lv2 clk"><span class="lbl">编队</span><span class="order" style="background:#c0c0c9;color:#1b1b20;box-shadow:0 0 0 2px #e8c24a">2</span></div>
+          <div class="blk lv2 clk"><span class="lbl">干员 · 角色管理</span></div>
         </div>
         <div class="ak-r3">
-          <div class="blk low clk"><span class="lbl">采购中心</span></div>
-          <div class="blk mid clk"><span class="lbl">招募 · 寻访</span><span class="invert" style="left:auto;right:7px;bottom:auto;top:7px">原图唯一高饱和色=付费焦点</span></div>
+          <div class="blk lv3 clk"><span class="lbl">采购中心</span></div>
+          <div class="blk lv3 clk"><span class="lbl">招募 · 寻访</span><span class="order" style="top:6px;left:6px;background:#e8c24a;color:#1a1200;font-size:13px">★</span><span class="invert" style="left:auto;right:7px;bottom:auto;top:7px">原图唯一高饱和色=付费焦点</span></div>
         </div>
         <div class="ak-r4">
-          <div class="blk low clk"><span class="lbl">任务</span></div>
-          <div class="blk low clk"><span class="lbl">基建</span></div>
-          <div class="blk low clk"><span class="lbl">仓库</span></div>
+          <div class="blk lv4 clk"><span class="lbl">任务</span></div>
+          <div class="blk lv4 clk"><span class="lbl">基建</span></div>
+          <div class="blk lv4 clk"><span class="lbl">仓库</span></div>
         </div>
       </div>
       <!-- 左下:运营位 + 好友/档案 -->
       <div class="ak-news">
-        <div class="banner blk mid clk"><svg class="ic ic-lg"><use href="#i-star"/></svg><span class="lbl">News · 寻访开放</span><span class="order" style="left:-9px">④</span></div>
-        <div class="blk mid sm clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">好友</span></div>
-        <div class="blk mid sm clk"><svg class="ic ic-lg"><use href="#i-quest"/></svg><span class="lbl">档案</span></div>
+        <div class="banner blk lv4 clk"><svg class="ic ic-lg"><use href="#i-gift"/></svg><span class="lbl">News · 寻访开放</span><span class="order" style="left:-9px;background:#585862;color:#fff;box-shadow:0 0 0 2px #e8c24a">4</span></div>
+        <div class="blk lv5 sm clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">好友</span></div>
+        <div class="blk lv5 sm clk"><svg class="ic ic-lg"><use href="#i-quest"/></svg><span class="lbl">档案</span></div>
       </div>
     </div>
   </section>
