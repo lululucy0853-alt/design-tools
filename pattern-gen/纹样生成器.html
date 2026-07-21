@@ -704,6 +704,7 @@ const MOTIFS={
         s+='<line x1="'+(x*14).toFixed(1)+'" y1="'+(y*14).toFixed(1)+'" x2="'+(x*38).toFixed(1)+'" y2="'+(y*38).toFixed(1)+'"/>';
         s+='<circle cx="'+(x*26).toFixed(1)+'" cy="'+(y*26).toFixed(1)+'" r="7"/>';}
       return s+'</g><circle r="5" '+P.fill('accent')+'/>';}},
+    {id:'quatrefoil', name:'四叶草', draw:(P,k)=>'<path '+P.fill(k)+' stroke-linejoin="round" d="M-5,-5 C-32,-8 -22,-38 0,-38 C22,-38 32,-8 5,-5 C8,-32 38,-22 38,0 C38,22 8,32 5,5 C32,8 22,38 0,38 C-22,38 -32,8 -5,5 C-8,32 -38,22 -38,0 C-38,-22 -8,-32 -5,-5 Z"/>'},   // 哥特四叶草(cubic 饱满圆瓣、深内凹;线框模式=描边)
   ]},
   celtic:{name:'凯尔特结', list:[
     {id:'triquetra', name:'三叶结', dense:true, draw:(P,k)=>{let s='<g '+P.stroke(k,5)+'>';
