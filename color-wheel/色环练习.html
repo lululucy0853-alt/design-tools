@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#161412">
+</head>
+<body>
+<title>色环练习 · 数格子</title>
+<style>
+  :root{
+    --bg:#161412; --card:#1e1b18; --sunk:#141210; --line:#37332c;
+    --t1:#ece7de; --t2:#9c968a; --gold:#d9b36a; --ok:#7fb069; --no:#c9564a;
+  }
+  @media (prefers-color-scheme:light){
+    :root{ --bg:#f6f4ef; --card:#fffdf9; --sunk:#efece5; --line:#ddd8cd;
+      --t1:#2b2723; --t2:#6f695e; --gold:#a97e2f; --ok:#4c8a3f; --no:#b23e33; }
+  }
+  :root[data-theme="dark"]{
+    --bg:#161412; --card:#1e1b18; --sunk:#141210; --line:#37332c;
+    --t1:#ece7de; --t2:#9c968a; --gold:#d9b36a; --ok:#7fb069; --no:#c9564a;
+  }
+  :root[data-theme="light"]{
+    --bg:#f6f4ef; --card:#fffdf9; --sunk:#efece5; --line:#ddd8cd;
+    --t1:#2b2723; --t2:#6f695e; --gold:#a97e2f; --ok:#4c8a3f; --no:#b23e33;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--t1);
+    font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.65;padding:20px 14px 56px;-webkit-tap-highlight-color:transparent}
+  .wrap{max-width:560px;margin:0 auto}
+  h1{font-family:"Songti SC","STSong","SimSun",serif;font-weight:700;font-size:24px;
+    letter-spacing:.04em;text-wrap:balance}
+  .sub{color:var(--t2);font-size:13px;margin:4px 0 20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:18px 16px;margin-bottom:16px}
+  h2{font-family:"Songti SC","STSong","SimSun",serif;font-size:17px;font-weight:700;margin-bottom:4px}
+  .hint{color:var(--t2);font-size:12.5px;margin-bottom:12px}
+  button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--sunk);
+    color:var(--t1);border-radius:10px;padding:10px 14px;cursor:pointer;min-height:42px}
+  button:active{transform:scale(.97)}
+  button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .board{background:var(--sunk);border-radius:12px;padding:14px;min-height:64px;
+    text-align:center;color:var(--t2);font-size:13px;display:flex;flex-direction:column;justify-content:center}
+  .board b{color:var(--t1)}
+  svg text{fill:var(--t2)}
+  .band{display:flex;gap:5px;margin-bottom:6px}
+  .band div{flex:1;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .peak{display:flex;align-items:flex-end;gap:6px;height:210px}
+  @media (prefers-reduced-motion:reduce){ button:active{transform:none} }
+</style>
+
+<div class="wrap">
+  <h1>色环练习 · 数格子</h1>
+  <div class="sub">关系 = 隔几格。挨着融,隔一个撞得温和,正对面撞满格。</div>
+
+  <!-- ① 自由点 -->
+  <div class="card">
+    <h2>① 数格子:点两个色,报关系</h2>
+    <div class="hint">点任意两个色块;或用下面的常用组合。</div>
+    <div class="chips" id="presets"></div>
+    <div style="display:flex;justify-content:center">
+      <svg id="w1" viewBox="0 0 340 340" style="width:100%;max-width:330px;height:auto">
+        <circle cx="170" cy="170" r="112" fill="none" stroke="var(--line)"/>
+        <g id="l1"></g><g id="d1"></g>
+      </svg>
+    </div>
+    <div class="board" id="r1">点任意两个色块。</div>
+  </div>
+
+  <!-- ③ 顺序 -->
+  <div class="card">
+    <h2>② 顺序不用背:彩虹卷成圈</h2>
+    <div class="hint">红橙黄绿蓝紫,紫接回红 = 圈。三原色两两一调,生橙绿紫插中间。</div>
+    <div class="band" id="band"></div>
+    <div style="text-align:center;font-size:12.5px;color:var(--t2);margin-bottom:12px">↑ 把「紫」接回「红」,弯成圈 ↓</div>
+    <div style="display:flex;justify-content:center">
+      <svg viewBox="0 0 300 300" style="width:100%;max-width:270px;height:auto">
+        <circle cx="150" cy="150" r="96" fill="none" stroke="var(--line)"/><g id="w6"></g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ④ 强度剖面 -->
+  <div class="card">
+    <h2>③ 撞强度剖面:黄是最高峰</h2>
+    <div class="hint">固定拿紫配红→绿:柱越高撞越凶,离正对面(黄)越远越弱。</div>
+    <div class="peak" id="peak"></div>
+  </div>
+
+  <!-- ⑤ 强度卷圈 -->
+  <div class="card">
+    <h2>④ 强度卷成圈:融 → 撞满 → 融</h2>
+    <div class="hint">以紫为起点,点越大对紫撞得越凶;从哪个色出发都一样。</div>
+    <div style="display:flex;justify-content:center">
+      <svg viewBox="0 0 340 340" style="width:100%;max-width:310px;height:auto">
+        <circle cx="170" cy="170" r="112" fill="none" stroke="var(--line)"/><g id="q5"></g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script>
+var HUES=[{n:"红",c:"#E4322B"},{n:"红橙",c:"#E9531F"},{n:"橙",c:"#F0821E"},{n:"橙黄",c:"#F5A81B"},{n:"黄",c:"#F1D617"},{n:"黄绿",c:"#9DC02E"},{n:"绿",c:"#35A249"},{n:"青",c:"#12A79B"},{n:"蓝",c:"#2F6FB5"},{n:"蓝紫",c:"#4A3E97"},{n:"紫",c:"#7C3E9E"},{n:"红紫",c:"#B23A88"}];
+var NS="http://www.w3.org/2000/svg";
+function C(p,a){var e=document.createElementNS(NS,p);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function gapOf(a,b){var d=Math.abs(a-b);return Math.min(d,12-d);}
+function rel(g){if(g===0)return{name:"同一个色(单色/同类)",tag:"融到底",bucket:-1};
+  if(g<=2)return{name:"邻近色(邻居)",tag:"融",bucket:0};
+  if(g===3)return{name:"中差·弱对比",tag:"撞(温和)",bucket:1};
+  if(g===4)return{name:"对比色",tag:"撞",bucket:2};
+  if(g===5)return{name:"分裂互补邻位",tag:"撞(凶但好控)",bucket:3};
+  return{name:"互补色(正对面)",tag:"撞满格",bucket:4};}
+function ringDots(gid,R,cx,cy,rDot,onTap){ // 画一圈可点色点,返回位置数组
+  var g=document.getElementById(gid);
+  var pos=HUES.map(function(h,i){var a=(-90+i*30)*Math.PI/180;
+    return{x:cx+R*Math.cos(a),y:cy+R*Math.sin(a),lx:cx+(R+22)*Math.cos(a),ly:cy+(R+22)*Math.sin(a)};});
+  HUES.forEach(function(h,i){var p=pos[i];var grp=C("g",{});grp.style.cursor="pointer";
+    grp.appendChild(C("circle",{cx:p.x,cy:p.y,r:26,fill:"transparent"}));          // 加大触摸区
+    grp.appendChild(C("circle",{cx:p.x,cy:p.y,r:rDot,fill:h.c,stroke:"var(--card)","stroke-width":2,"class":"dot"}));
+    var t=C("text",{x:p.lx,y:p.ly+4,"text-anchor":"middle","font-size":12});t.textContent=h.n;
+    grp.appendChild(t);g.appendChild(grp);
+    if(onTap)grp.addEventListener("click",function(){onTap(i);});});
+  return pos;
+}
+
+/* ===== ① 自由点 ===== */
+(function(){
+  var l1=document.getElementById("l1"),r1=document.getElementById("r1"),sel=[];
+  var d1el=document.getElementById("d1");
+  var pos=ringDots("d1",112,170,170,17,pick);
+  function clr(){while(l1.firstChild)l1.removeChild(l1.firstChild);}
+  function mark(arr){d1el.querySelectorAll(".dot").forEach(function(d,i){
+    d.setAttribute("stroke",arr.indexOf(i)>=0?"var(--t1)":"var(--card)");
+    d.setAttribute("stroke-width",arr.indexOf(i)>=0?3.5:2);});}
+  function line(a,b){l1.appendChild(C("line",{x1:pos[a].x,y1:pos[a].y,x2:pos[b].x,y2:pos[b].y,stroke:"var(--t1)","stroke-width":2.5}));}
+  function pick(i){if(sel.length>=2)sel=[];if(sel.indexOf(i)<0)sel.push(i);
+    clr();mark(sel);
+    if(sel.length===2){var g=gapOf(sel[0],sel[1]);line(sel[0],sel[1]);var r=rel(g);
+      r1.innerHTML='<div>隔 <b>'+g+'</b> 格 = <b>'+(g*30)+'°</b></div><div style="font-size:17px;margin:3px 0"><b>'+HUES[sel[0]].n+' × '+HUES[sel[1]].n+'</b> → <b>'+r.name+'</b></div><div>'+r.tag+'</div>';}
+    else{r1.innerHTML='已选 <b>'+HUES[i].n+'</b>,再点一个。';}}
+  var PRE=[["紫×黄","10,4"],["紫×红","10,0"],["紫×橙","10,2"],["紫×绿","10,6"],["绿×橙","6,2"],["橙紫绿三角","tri"],["清空","clear"]];
+  var box=document.getElementById("presets");
+  PRE.forEach(function(p){var b=document.createElement("button");b.textContent=p[0];
+    b.addEventListener("click",function(){preset(p[1]);});box.appendChild(b);});
+  function preset(v){
+    if(v==="clear"){sel=[];clr();mark([]);r1.innerHTML="点任意两个色块。";return;}
+    if(v==="tri"){sel=[];clr();line(2,6);line(6,10);line(10,2);mark([2,6,10]);
+      r1.innerHTML='<div style="font-size:17px"><b>橙·绿·紫三兄弟 = 三角配色</b></div><div>三间色三等分,两两隔4格(120°)= 对比色。</div>';return;}
+    var a=v.split(",");sel=[];pick(+a[0]);pick(+a[1]);}
+})();
+
+/* ===== ③ 顺序 ===== */
+(function(){
+  var B=[{n:"红",c:"#E4322B",t:"#5a1210"},{n:"橙",c:"#F0821E",t:"#6b3708"},{n:"黄",c:"#F1D617",t:"#6b5e06"},{n:"绿",c:"#35A249",t:"#123f1c"},{n:"蓝",c:"#2F6FB5",t:"#fff"},{n:"紫",c:"#7C3E9E",t:"#fff"}];
+  var band=document.getElementById("band");
+  B.forEach(function(h){var d=document.createElement("div");d.style.background=h.c;d.style.color=h.t;d.textContent=h.n;band.appendChild(d);});
+  var H6=[{n:"红",c:"#E4322B",tc:"#5a1210",k:"原"},{n:"橙",c:"#F0821E",tc:"#6b3708",k:"红+黄"},{n:"黄",c:"#F1D617",tc:"#6b5e06",k:"原"},{n:"绿",c:"#35A249",tc:"#fff",k:"黄+蓝"},{n:"蓝",c:"#2F6FB5",tc:"#fff",k:"原"},{n:"紫",c:"#7C3E9E",tc:"#fff",k:"蓝+红"}];
+  var w6=document.getElementById("w6");
+  H6.forEach(function(h,i){var a=(-90+i*60)*Math.PI/180;var x=150+96*Math.cos(a),y=150+96*Math.sin(a);var big=h.k==="原";
+    w6.appendChild(C("circle",{cx:x,cy:y,r:big?29:23,fill:h.c,stroke:"var(--card)","stroke-width":big?3:2}));
+    var t=C("text",{x:x,y:y+1,"text-anchor":"middle","font-size":14,fill:h.tc});t.textContent=h.n;w6.appendChild(t);
+    var s=C("text",{x:x,y:y+(y<150?-36:42),"text-anchor":"middle","font-size":11});s.textContent=h.k;w6.appendChild(s);});
+})();
+
+/* ===== ④ 强度剖面 ===== */
+(function(){
+  var D=[{n:"红",c:"#E4322B",tc:"#5a1210",h:40,deg:"60°",r:"邻近·融"},{n:"红橙",c:"#E9531F",tc:"#5f2409",h:72,deg:"90°",r:"中差"},{n:"橙",c:"#F0821E",tc:"#6b3708",h:104,deg:"120°",r:"对比"},{n:"橙黄",c:"#F5A81B",tc:"#6b4906",h:138,deg:"150°",r:"近互补"},{n:"黄",c:"#F1D617",tc:"#6b5e06",h:175,deg:"180°",r:"互补撞满"},{n:"黄绿",c:"#9DC02E",tc:"#3f5010",h:138,deg:"150°",r:"近互补"},{n:"绿",c:"#35A249",tc:"#fff",h:104,deg:"120°",r:"对比"}];
+  var box=document.getElementById("peak");
+  D.forEach(function(d){var col=document.createElement("div");
+    col.style.cssText="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end";
+    var lab=document.createElement("div");
+    lab.style.cssText="font-size:10.5px;color:var(--t2);margin-bottom:4px;text-align:center;line-height:1.3";
+    lab.innerHTML=d.r+'<br>'+d.deg;
+    var bar=document.createElement("div");
+    bar.style.cssText="width:100%;height:"+d.h+"px;background:"+d.c+";border-radius:7px 7px 0 0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;color:"+d.tc+";font-size:12px";
+    bar.textContent=d.n;col.appendChild(lab);col.appendChild(bar);box.appendChild(col);});
+})();
+
+/* ===== ⑤ 强度卷圈 ===== */
+(function(){
+  var g=document.getElementById("q5"),cx=170,cy=170,R=112;
+  HUES.forEach(function(h,i){var a=(-90+i*30)*Math.PI/180;var x=cx+R*Math.cos(a),y=cy+R*Math.sin(a);
+    var gap=Math.min(Math.abs(i-10),12-Math.abs(i-10));var r=6+gap*3;
+    g.appendChild(C("circle",{cx:x,cy:y,r:r,fill:h.c,stroke:"var(--card)","stroke-width":2}));
+    var lx=cx+(R+26)*Math.cos(a),ly=cy+(R+26)*Math.sin(a);
+    var t=C("text",{x:lx,y:ly+4,"text-anchor":"middle","font-size":11.5});
+    t.textContent=h.n+(i===10?"(起·融)":i===4?"(撞满)":"");g.appendChild(t);});
+})();
+</script>
+
+</body>
+</html>
