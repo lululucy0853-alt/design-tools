@@ -94,7 +94,8 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .home.p .rail{display:flex;gap:8px;margin-bottom:12px}.home.p .rail .blk{flex:1;height:56px;font-size:11px;flex-direction:column;gap:4px}
 .home.p .cta{height:62px;gap:8px}.home.p .cta .lbl{font-size:18px;color:#111}
 /* 主界面 · 横版:右侧功能卡片(bento)+ 中央立绘(真实主界面套路) */
-.home.l{padding:0;display:block}
+.home.l{padding:0}
+.mode-landscape .home.l{display:block}
 .home.l .bg{position:absolute;inset:0}.home.l .bg .blk{width:100%;height:100%;border-radius:0}
 .home.l .bg .silo{height:74%;top:15%;left:42%;color:#6a6a7a;opacity:.6}
 .hl-id{position:absolute;top:calc(10px + env(safe-area-inset-top));left:52px;display:flex;gap:6px;z-index:4}
@@ -370,51 +371,51 @@ body.flow .clk:not([data-go]){opacity:.45}
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout p home show-hints">
       <div class="top">
-        <div class="avatar blk mid clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">头像·等级</span></div>
+        <div class="avatar blk lv5 clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">头像·等级</span></div>
         <div class="res">
-          <div class="blk low"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">金币</span></div>
-          <div class="blk low"><svg class="ic"><use href="#i-gem"/></svg><span class="lbl">钻石</span></div>
-          <div class="blk low"><svg class="ic"><use href="#i-bolt"/></svg><span class="lbl">体力</span></div>
+          <div class="blk lv5"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">金币</span></div>
+          <div class="blk lv5"><svg class="ic"><use href="#i-gem"/></svg><span class="lbl">钻石</span></div>
+          <div class="blk lv5"><svg class="ic"><use href="#i-bolt"/></svg><span class="lbl">体力</span></div>
         </div>
       </div>
-      <div class="hero"><div class="blk mid stage-star"><svg class="silo silo-hi"><use href="#silo-char"/></svg><span class="lbl" style="font-size:14px;margin-top:auto">角色立绘<small>视觉主体 · 第一眼看的</small></span><span class="order">③</span></div></div>
-      <div class="banner blk mid clk"><svg class="ic ic-lg"><use href="#i-star"/></svg><span class="lbl" style="font-size:13px">主推活动 Banner<small>限时运营位</small></span><span class="order">④</span></div>
+      <div class="hero"><div class="blk lv5 stage-star"><svg class="silo silo-hi"><use href="#silo-char"/></svg><span class="lbl" style="font-size:14px;margin-top:auto">角色立绘<small>视觉主体 · 第一眼看的</small></span><span class="order">③</span></div></div>
+      <div class="banner blk lv4 clk"><svg class="ic ic-lg"><use href="#i-star"/></svg><span class="lbl" style="font-size:13px">主推活动 Banner<small>限时运营位</small></span><span class="order">④</span></div>
       <div class="rail">
-        <div class="blk mid clk" onclick="go('s-bag')"><svg class="ic ic-lg"><use href="#i-bag"/></svg><span class="lbl">背包</span><span class="order">②</span></div>
-        <div class="blk mid clk" onclick="go('s-role')"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
-        <div class="blk mid clk" onclick="go('s-shop')"><svg class="ic ic-lg"><use href="#i-cart"/></svg><span class="lbl">商店</span></div>
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-quest"/></svg><span class="lbl">任务</span></div>
+        <div class="blk lv2 clk" onclick="go('s-bag')"><svg class="ic ic-lg"><use href="#i-bag"/></svg><span class="lbl">背包</span><span class="order">②</span></div>
+        <div class="blk lv2 clk" onclick="go('s-role')"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
+        <div class="blk lv3 clk" onclick="go('s-shop')"><svg class="ic ic-lg"><use href="#i-cart"/></svg><span class="lbl">商店</span></div>
+        <div class="blk lv3 clk"><svg class="ic ic-lg"><use href="#i-quest"/></svg><span class="lbl">任务</span></div>
       </div>
-      <div class="cta blk high clk"><span class="lbl">开始 / 进入战斗</span><span class="ctatag">主操作</span><span class="order" style="left:auto;right:-9px">①</span></div>
+      <div class="cta blk lv1 clk"><span class="lbl">开始 / 进入战斗</span><span class="ctatag">主操作</span><span class="order" style="left:auto;right:-9px">①</span></div>
     </div>
     <div class="layout l home show-hints">
-      <div class="bg"><div class="blk low stage"><svg class="silo silo-hi"><use href="#silo-char"/></svg>
+      <div class="bg"><div class="blk lv5 stage"><svg class="silo silo-hi"><use href="#silo-char"/></svg>
         <span class="lbl" style="position:absolute;left:50%;bottom:56px;transform:translateX(-50%);white-space:nowrap;font-size:12px">立绘 = 视觉主体</span>
         <span class="order" style="top:auto;left:50%;bottom:82px;transform:translateX(-50%)">③</span></div></div>
       <div class="hl-id">
-        <div class="blk mid clk"><svg class="ic"><use href="#i-person"/></svg><span class="lbl">头像·等级</span></div>
-        <div class="blk mid clk sys"><svg class="ic"><use href="#i-quest"/></svg></div>
-        <div class="blk mid clk sys"><svg class="ic"><use href="#i-bolt"/></svg></div>
+        <div class="blk lv5 clk"><svg class="ic"><use href="#i-person"/></svg><span class="lbl">头像·等级</span></div>
+        <div class="blk lv5 clk sys"><svg class="ic"><use href="#i-quest"/></svg></div>
+        <div class="blk lv5 clk sys"><svg class="ic"><use href="#i-bolt"/></svg></div>
       </div>
       <div class="hl-res">
-        <div class="blk low"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">金币</span></div>
-        <div class="blk low"><svg class="ic"><use href="#i-gem"/></svg><span class="lbl">钻石</span></div>
-        <div class="blk low"><svg class="ic"><use href="#i-bolt"/></svg><span class="lbl">体力</span></div>
+        <div class="blk lv5"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">金币</span></div>
+        <div class="blk lv5"><svg class="ic"><use href="#i-gem"/></svg><span class="lbl">钻石</span></div>
+        <div class="blk lv5"><svg class="ic"><use href="#i-bolt"/></svg><span class="lbl">体力</span></div>
       </div>
       <div class="hl-cards">
-        <div class="hl-cta blk high clk"><span class="lbl">开始 / 进入战斗</span><span class="ctatag" style="top:6px;right:6px">主操作·最大卡</span><span class="order" style="top:6px;left:6px">①</span></div>
+        <div class="hl-cta blk lv1 clk"><span class="lbl">开始 / 进入战斗</span><span class="ctatag" style="top:6px;right:6px">主操作·最大卡</span><span class="order" style="top:6px;left:6px">①</span></div>
         <div class="hl-row">
-          <div class="blk mid clk" onclick="go('s-bag')"><svg class="ic ic-lg"><use href="#i-bag"/></svg><span class="lbl">背包</span><span class="order">②</span></div>
-          <div class="blk mid clk" onclick="go('s-role')"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
+          <div class="blk lv2 clk" onclick="go('s-bag')"><svg class="ic ic-lg"><use href="#i-bag"/></svg><span class="lbl">背包</span><span class="order">②</span></div>
+          <div class="blk lv2 clk" onclick="go('s-role')"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
         </div>
         <div class="hl-row">
-          <div class="blk mid clk" onclick="go('s-shop')"><svg class="ic ic-lg"><use href="#i-cart"/></svg><span class="lbl">商店</span></div>
-          <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-quest"/></svg><span class="lbl">任务</span></div>
+          <div class="blk lv3 clk" onclick="go('s-shop')"><svg class="ic ic-lg"><use href="#i-cart"/></svg><span class="lbl">商店</span></div>
+          <div class="blk lv3 clk"><svg class="ic ic-lg"><use href="#i-quest"/></svg><span class="lbl">任务</span></div>
         </div>
       </div>
       <div class="hl-news">
-        <div class="banner blk mid clk"><svg class="ic ic-lg"><use href="#i-star"/></svg><span class="lbl">主推活动</span><span class="order" style="left:-9px">④</span></div>
-        <div class="blk mid sm clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">好友</span></div>
+        <div class="banner blk lv4 clk"><svg class="ic ic-lg"><use href="#i-star"/></svg><span class="lbl">主推活动</span><span class="order" style="left:-9px">④</span></div>
+        <div class="blk lv5 sm clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">好友</span></div>
       </div>
     </div>
   </section>
