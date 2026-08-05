@@ -258,6 +258,23 @@ body.flow .clk:not([data-go]){opacity:.45}
 .back{position:absolute;top:calc(10px + env(safe-area-inset-top));left:12px;z-index:20;background:rgba(20,20,24,.82);border:1px solid #333;color:#bbb;font-size:12px;padding:6px 12px;border-radius:16px;cursor:pointer;display:none;font-family:inherit}
 .screen[data-back] .back{display:block}
 
+/* 对照原图:实机截图覆在灰模上,拖黄线左右擦除(左灰模 / 右实机) */
+.real{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;z-index:15;display:none;pointer-events:none;
+  clip-path:inset(0 0 0 var(--pct,50%))}
+.split{position:absolute;top:0;bottom:0;left:var(--pct,50%);width:2px;background:var(--hint);z-index:16;display:none;
+  box-shadow:0 0 10px rgba(255,207,90,.5)}
+.split::after{content:"⇄";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;
+  background:var(--hint);color:#111;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.5)}
+.cmp-on .real,.cmp-on .split{display:block}
+.cmp-on{cursor:ew-resize}
+.cmp-tag{position:absolute;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:17;display:none;
+  font-size:10px;color:#e8c24a;background:rgba(20,20,24,.86);border:1px solid #55491f;padding:3px 10px;border-radius:12px;white-space:nowrap}
+.cmp-on .cmp-tag{display:block}
+.cright{position:absolute;left:0;right:0;bottom:0;z-index:17;display:none;font-size:9px;line-height:1.5;color:#7a7a84;
+  background:rgba(8,8,10,.82);padding:5px 10px calc(5px + env(safe-area-inset-bottom));text-align:center}
+.cmp-on .cright{display:block}
+
 /* 说明面板 */
 .cite-sheet{position:absolute;left:0;right:0;bottom:0;z-index:30;background:#131318;border-top:1px solid #333;border-radius:16px 16px 0 0;padding:16px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(102%);transition:transform .28s cubic-bezier(.2,.8,.2,1);max-height:74%;overflow:auto}
 .cite-sheet.open{transform:translateY(0)}
@@ -300,6 +317,7 @@ body.flow .clk:not([data-go]){opacity:.45}
     <button id="tHints" class="on" onclick="tog('show-hints',this)">引导</button>
     <button id="tCite" onclick="openCite()">说明</button>
     <button id="tFlow" onclick="toggleFlow(this)">▶ 走一遍流程</button>
+    <button id="tCmp" onclick="toggleCmp(this)">⇄ 对照原图</button>
  </div>
  <div class="flowbar" id="flowbar">
     <button class="bk" onclick="goBack()">← 上一步</button>
@@ -311,6 +329,10 @@ body.flow .clk:not([data-go]){opacity:.45}
     <span class="tip">绿框 = 下一步该点的地方</span>
  </div>
  <div class="phone mode-portrait" id="phone">
+  <img class="real" id="real" alt="实机截图对照">
+  <div class="split" id="split"></div>
+  <div class="cmp-tag">← 灰模 ｜ 实机 →　拖黄线 / 滚轮擦除</div>
+  <div class="cright" id="cright">※ 右侧游戏实机截图版权归原厂商所有;本页仅用于非商业性 UI 设计学习与分析(合理使用),如有侵权请告知即删。</div>
 
   <!-- ============ 模板库首页(分类 = 游戏类型;带「案例」标的为真实游戏研究屏,开源时可摘) ============ -->
   <section class="screen active" id="gallery" data-ori="both">
@@ -535,7 +557,7 @@ body.flow .clk:not([data-go]){opacity:.45}
   </section>
 
   <!-- ============ 案例:明日方舟 主界面 ============ -->
-  <section class="screen" id="s-ak-home" data-back data-ori="l">
+  <section class="screen" id="s-ak-home" data-back data-ori="l" data-ref="img/ak-home.jpg" data-ar="1200/540">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo ak-home show-hints">
       <div class="bg"><div class="blk lv5 stage"><svg class="silo silo-hi"><use href="#silo-char"/></svg>
@@ -720,9 +742,36 @@ function go(id,push){
   if(ori==='p')setOri(false);else if(ori==='l')setOri(true);
   tOri.disabled=(ori!=='both');
   tOri.style.opacity=tOri.disabled?.4:1;tOri.style.cursor=tOri.disabled?'default':'pointer';
-  closeCite();renderCite(id);renderFlow();
+  syncCmp(el);closeCite();renderCite(id);renderFlow();
 }
 function goBack(){go(stack.pop()||'gallery',false);}
+
+/* 对照原图:有 data-ref 的屏才可用;原图外置在 img/,撤图 = 删目录 */
+const tCmp=document.getElementById('tCmp'),realImg=document.getElementById('real'),split=document.getElementById('split');
+let cmpOn=false,drag=false;
+function syncCmp(el){
+  const ref=el.dataset.ref;
+  tCmp.disabled=!ref;
+  tCmp.style.opacity=ref?1:.4;tCmp.style.cursor=ref?'pointer':'default';
+  phone.style.aspectRatio=(ref&&el.dataset.ar)?el.dataset.ar:'';
+  if(!ref){setCmp(false);return;}
+  if(!realImg.getAttribute('src'))realImg.src=ref;
+  else if(!realImg.getAttribute('src').endsWith(ref))realImg.src=ref;
+}
+function setCmp(on){
+  cmpOn=on&&!!document.querySelector('.screen.active').dataset.ref;
+  phone.classList.toggle('cmp-on',cmpOn);
+  tCmp.classList.toggle('on',cmpOn);
+}
+function toggleCmp(btn){if(btn.disabled)return;setCmp(!cmpOn);}
+function setPct(p){phone.style.setProperty('--pct',Math.max(0,Math.min(100,p))+'%');}
+function pctFrom(e){const r=phone.getBoundingClientRect();return (e.clientX-r.left)/r.width*100;}
+phone.addEventListener('pointerdown',e=>{if(cmpOn){drag=true;setPct(pctFrom(e));}});
+phone.addEventListener('pointermove',e=>{if(cmpOn&&drag)setPct(pctFrom(e));});
+window.addEventListener('pointerup',()=>{drag=false;});
+phone.addEventListener('wheel',e=>{if(!cmpOn)return;e.preventDefault();
+  setPct((parseFloat(phone.style.getPropertyValue('--pct'))||50)+(e.deltaY>0?2.5:-2.5));},{passive:false});
+setPct(50);
 
 /* 流程模式:最短 3 屏链路(方舟线),热点由 data-go 声明 */
 const FLOW=['s-ak-home','s-ak-stage','s-ak-bt'];
