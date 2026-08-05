@@ -44,7 +44,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .lv3{background:linear-gradient(155deg,#8e8e99 0%,#73737d 100%);border:1px solid #9b9ba5;color:#141419}
 .lv4{background:linear-gradient(155deg,#585862 0%,#42424a 100%);border:1px solid #61616b;color:#d4d4dc}
 .lv5{background:linear-gradient(155deg,#35353d 0%,#242429 100%);border:1px solid #3f3f49;color:#96969f}
-.high.ghost{background:transparent;border:2px solid var(--lv-high);color:var(--lv-high);box-shadow:none}
+.high.ghost,.lv1.ghost{background:transparent;border:2px solid var(--lv-high);color:var(--lv-high);box-shadow:none}
 .cta{animation:pulse 2.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 16px 2px rgba(242,242,244,.16)}50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 30px 6px rgba(242,242,244,.4)}}
 .clk{cursor:pointer;transition:transform .12s}.clk:active{transform:scale(.96)}
@@ -258,6 +258,11 @@ body.flow .clk:not([data-go]){opacity:.45}
 /* 返回:属于界面本体的控件,留在界面内 */
 .back{position:absolute;top:calc(10px + env(safe-area-inset-top));left:12px;z-index:20;background:rgba(20,20,24,.82);border:1px solid #333;color:#bbb;font-size:12px;padding:6px 12px;border-radius:16px;cursor:pointer;display:none;font-family:inherit}
 .screen[data-back] .back{display:block}
+/* 当前界面名:跟返回键并排,始终告诉你"你在哪一屏" */
+.scr-title{position:absolute;top:calc(10px + env(safe-area-inset-top));z-index:20;background:rgba(20,20,24,.86);border:1px solid #3a3a42;
+  color:#e6e6ec;font-size:12px;font-weight:600;padding:6px 12px;border-radius:16px;display:none;white-space:nowrap;pointer-events:none}
+.scr-title small{font-weight:400;color:#8a8a95;margin-left:6px}
+.scr-title.on{display:block}
 
 /* 对照原图:实机截图覆在灰模上,拖黄线左右擦除(左灰模 / 右实机) */
 .real{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;z-index:15;display:none;pointer-events:none;
@@ -332,6 +337,7 @@ body.flow .clk:not([data-go]){opacity:.45}
  <div class="phone mode-portrait" id="phone">
   <img class="real" id="real" alt="实机截图对照">
   <div class="split" id="split"></div>
+  <div class="scr-title" id="scrTitle"></div>
   <div class="cmp-tag">← 灰模 ｜ 实机 →　拖黄线 / 滚轮擦除</div>
   <div class="cright" id="cright">※ 右侧游戏实机截图版权归原厂商所有;本页仅用于非商业性 UI 设计学习与分析(合理使用),如有侵权请告知即删。</div>
 
@@ -367,7 +373,7 @@ body.flow .clk:not([data-go]){opacity:.45}
   </section>
 
   <!-- ============ 主界面 ============ -->
-  <section class="screen" id="s-home" data-back data-ori="both">
+  <section class="screen" id="s-home" data-title="主界面 · 大厅" data-tag="通用" data-back data-ori="both">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout p home show-hints">
       <div class="top">
@@ -421,144 +427,144 @@ body.flow .clk:not([data-go]){opacity:.45}
   </section>
 
   <!-- ============ 背包 ============ -->
-  <section class="screen" id="s-bag" data-back data-ori="both">
+  <section class="screen" id="s-bag" data-title="背包 · 物品" data-tag="通用" data-back data-ori="both">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout p bag show-hints">
       <div style="height:30px"></div>
-      <div class="filt"><div class="blk mid clk"><span class="lbl">全部</span></div><div class="blk low clk"><span class="lbl">武器</span></div><div class="blk low clk"><span class="lbl">材料</span></div><div class="blk low clk"><span class="lbl">消耗</span></div><span class="order" style="top:-9px">②</span></div>
+      <div class="filt"><div class="blk lv3 clk"><span class="lbl">全部</span></div><div class="blk lv4 clk"><span class="lbl">武器</span></div><div class="blk lv4 clk"><span class="lbl">材料</span></div><div class="blk lv4 clk"><span class="lbl">消耗</span></div><span class="order" style="top:-9px">②</span></div>
       <div class="grid"><span class="order" style="top:-9px">①</span>
-        <div class="blk low"><svg class="slot-silo"><use href="#i-shield"/></svg></div>
-        <div class="blk high"><svg class="slot-silo"><use href="#i-star"/></svg><span class="lbl" style="color:#111;position:absolute;bottom:2px;font-size:9px">NEW</span></div>
-        <div class="blk low"><svg class="slot-silo"><use href="#i-flask"/></svg></div>
-        <div class="blk low"><svg class="slot-silo"><use href="#i-box"/></svg></div>
-        <div class="blk low"><svg class="slot-silo"><use href="#i-gem"/></svg></div>
-        <div class="blk low"><svg class="slot-silo"><use href="#i-box"/></svg></div>
-        <div class="blk mid"><svg class="slot-silo"><use href="#i-flask"/></svg><span class="lbl" style="position:absolute;top:2px;right:4px;padding:0;color:var(--hint);font-size:9px">●</span></div>
-        <div class="blk low"><svg class="slot-silo"><use href="#i-shield"/></svg></div>
+        <div class="blk lv4"><svg class="slot-silo"><use href="#i-shield"/></svg></div>
+        <div class="blk lv2"><svg class="slot-silo"><use href="#i-star"/></svg><span class="lbl" style="color:#111;position:absolute;bottom:2px;font-size:9px">NEW</span></div>
+        <div class="blk lv4"><svg class="slot-silo"><use href="#i-flask"/></svg></div>
+        <div class="blk lv4"><svg class="slot-silo"><use href="#i-box"/></svg></div>
+        <div class="blk lv4"><svg class="slot-silo"><use href="#i-gem"/></svg></div>
+        <div class="blk lv4"><svg class="slot-silo"><use href="#i-box"/></svg></div>
+        <div class="blk lv2"><svg class="slot-silo"><use href="#i-flask"/></svg><span class="lbl" style="position:absolute;top:2px;right:4px;padding:0;color:var(--hint);font-size:9px">●</span></div>
+        <div class="blk lv4"><svg class="slot-silo"><use href="#i-shield"/></svg></div>
       </div>
-      <div class="cta blk high ghost clk"><span class="lbl">使用 / 装备</span><span class="ctatag">选中后变主操作</span><span class="order" style="left:auto;right:-9px">③</span></div>
+      <div class="cta blk lv1 ghost clk"><span class="lbl">使用 / 装备</span><span class="ctatag">选中后变主操作</span><span class="order" style="left:auto;right:-9px">③</span></div>
     </div>
     <div class="layout l bag show-hints">
       <div style="height:30px"></div>
       <div style="display:flex;gap:10px;flex:1;margin-top:6px">
-        <div class="filtcol"><div class="blk mid clk"><span class="lbl">全部</span></div><div class="blk low clk"><span class="lbl">武器</span></div><div class="blk low clk"><span class="lbl">材料</span></div><div class="blk low clk"><span class="lbl">消耗</span></div><span class="order" style="top:-9px">②</span></div>
+        <div class="filtcol"><div class="blk lv3 clk"><span class="lbl">全部</span></div><div class="blk lv4 clk"><span class="lbl">武器</span></div><div class="blk lv4 clk"><span class="lbl">材料</span></div><div class="blk lv4 clk"><span class="lbl">消耗</span></div><span class="order" style="top:-9px">②</span></div>
         <div class="main">
           <div class="grid"><span class="order" style="top:-9px">①</span>
-            <div class="blk low"><svg class="slot-silo"><use href="#i-shield"/></svg></div>
-            <div class="blk high"><svg class="slot-silo"><use href="#i-star"/></svg></div>
-            <div class="blk low"><svg class="slot-silo"><use href="#i-flask"/></svg></div>
-            <div class="blk low"><svg class="slot-silo"><use href="#i-box"/></svg></div>
-            <div class="blk low"><svg class="slot-silo"><use href="#i-gem"/></svg></div>
-            <div class="blk mid"><svg class="slot-silo"><use href="#i-flask"/></svg></div>
-            <div class="blk low"><svg class="slot-silo"><use href="#i-box"/></svg></div>
-            <div class="blk low"><svg class="slot-silo"><use href="#i-shield"/></svg></div>
+            <div class="blk lv4"><svg class="slot-silo"><use href="#i-shield"/></svg></div>
+            <div class="blk lv2"><svg class="slot-silo"><use href="#i-star"/></svg></div>
+            <div class="blk lv4"><svg class="slot-silo"><use href="#i-flask"/></svg></div>
+            <div class="blk lv4"><svg class="slot-silo"><use href="#i-box"/></svg></div>
+            <div class="blk lv4"><svg class="slot-silo"><use href="#i-gem"/></svg></div>
+            <div class="blk lv2"><svg class="slot-silo"><use href="#i-flask"/></svg></div>
+            <div class="blk lv4"><svg class="slot-silo"><use href="#i-box"/></svg></div>
+            <div class="blk lv4"><svg class="slot-silo"><use href="#i-shield"/></svg></div>
           </div>
-          <div class="cta blk high ghost clk"><span class="lbl">使用 / 装备</span><span class="ctatag">选中后变主操作</span><span class="order" style="left:auto;right:-9px">③</span></div>
+          <div class="cta blk lv1 ghost clk"><span class="lbl">使用 / 装备</span><span class="ctatag">选中后变主操作</span><span class="order" style="left:auto;right:-9px">③</span></div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ============ 角色 / 养成 ============ -->
-  <section class="screen" id="s-role" data-back data-ori="both">
+  <section class="screen" id="s-role" data-title="角色 · 养成" data-tag="通用" data-back data-ori="both">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout p role show-hints">
       <div style="height:30px"></div>
-      <div class="hero"><div class="blk low stage"><svg class="silo"><use href="#silo-char"/></svg><span class="lbl" style="font-size:14px;margin-top:auto">角色立绘 + 战力数字<small>第一眼看的:这角色多强</small></span><span class="order">①</span></div></div>
-      <div class="rows"><div class="blk low"><span class="lbl">属性</span></div><div class="blk low"><span class="lbl">装备槽</span></div><div class="blk low"><span class="lbl">技能</span><span class="order" style="top:-9px">③</span></div></div>
-      <div class="cta blk high clk"><span class="lbl">升级 / 强化</span><span class="ctatag">主操作·材料够就高亮</span><span class="order" style="left:auto;right:-9px">②</span></div>
+      <div class="hero"><div class="blk lv2 stage"><svg class="silo"><use href="#silo-char"/></svg><span class="lbl" style="font-size:14px;margin-top:auto">角色立绘 + 战力数字<small>第一眼看的:这角色多强</small></span><span class="order">①</span></div></div>
+      <div class="rows"><div class="blk lv3"><span class="lbl">属性</span></div><div class="blk lv3"><span class="lbl">装备槽</span></div><div class="blk lv3"><span class="lbl">技能</span><span class="order" style="top:-9px">③</span></div></div>
+      <div class="cta blk lv1 clk"><span class="lbl">升级 / 强化</span><span class="ctatag">主操作·材料够就高亮</span><span class="order" style="left:auto;right:-9px">②</span></div>
     </div>
     <div class="layout l role show-hints">
       <div style="height:30px"></div>
       <div style="display:flex;gap:10px;flex:1;margin-top:6px">
-        <div class="hero"><div class="blk low stage"><svg class="silo"><use href="#silo-char"/></svg><span class="lbl" style="font-size:14px;margin-top:auto">角色立绘 + 战力<small>第一眼看的</small></span><span class="order">①</span></div></div>
-        <div class="mid"><div class="blk low"><span class="lbl">属性面板</span></div><div class="blk low"><span class="lbl">装备槽</span></div><div class="blk low"><span class="lbl">技能</span><span class="order" style="top:-9px">③</span></div></div>
-        <div class="cta blk high clk"><span class="lbl">升级 / 强化</span><span class="ctatag">主操作</span><span class="order" style="left:auto;right:-9px">②</span></div>
+        <div class="hero"><div class="blk lv2 stage"><svg class="silo"><use href="#silo-char"/></svg><span class="lbl" style="font-size:14px;margin-top:auto">角色立绘 + 战力<small>第一眼看的</small></span><span class="order">①</span></div></div>
+        <div class="mid"><div class="blk lv3"><span class="lbl">属性面板</span></div><div class="blk lv3"><span class="lbl">装备槽</span></div><div class="blk lv3"><span class="lbl">技能</span><span class="order" style="top:-9px">③</span></div></div>
+        <div class="cta blk lv1 clk"><span class="lbl">升级 / 强化</span><span class="ctatag">主操作</span><span class="order" style="left:auto;right:-9px">②</span></div>
       </div>
     </div>
   </section>
 
   <!-- ============ 乙女换装 ============ -->
-  <section class="screen" id="s-dressup" data-back data-ori="p">
+  <section class="screen" id="s-dressup" data-title="换装 · 搭配" data-tag="乙女" data-back data-ori="p">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo dress show-hints">
       <div style="height:30px"></div>
-      <div class="stagebig"><div class="blk mid stage-star"><svg class="silo silo-hi"><use href="#silo-char"/></svg><span class="lbl" style="margin-top:auto">角色立绘(换装预览)<small>C 位 · 永远第一眼</small></span><span class="order">①</span></div></div>
+      <div class="stagebig"><div class="blk lv2 stage-star"><svg class="silo silo-hi"><use href="#silo-char"/></svg><span class="lbl" style="margin-top:auto">角色立绘(换装预览)<small>C 位 · 永远第一眼</small></span><span class="order">①</span></div></div>
       <div class="score">
-        <div class="blk low"><svg class="ic"><use href="#i-star"/></svg><span class="lbl">搭配评分</span></div>
-        <div class="blk low"><svg class="ic"><use href="#i-heart"/></svg><span class="lbl">主题标签</span></div>
+        <div class="blk lv4"><svg class="ic"><use href="#i-star"/></svg><span class="lbl">搭配评分</span></div>
+        <div class="blk lv4"><svg class="ic"><use href="#i-heart"/></svg><span class="lbl">主题标签</span></div>
       </div>
       <div class="closet">
-        <div class="blk mid"><svg class="slot-silo"><use href="#i-hanger"/></svg></div>
-        <div class="blk high"><svg class="slot-silo"><use href="#i-hanger"/></svg><span class="lbl" style="position:absolute;bottom:2px;font-size:9px;color:#111">NEW</span></div>
-        <div class="blk mid"><svg class="slot-silo"><use href="#i-hanger"/></svg></div>
-        <div class="blk mid"><svg class="slot-silo"><use href="#i-hanger"/></svg><span class="order" style="top:-9px">③</span></div>
+        <div class="blk lv3"><svg class="slot-silo"><use href="#i-hanger"/></svg></div>
+        <div class="blk lv2"><svg class="slot-silo"><use href="#i-hanger"/></svg><span class="lbl" style="position:absolute;bottom:2px;font-size:9px;color:#111">NEW</span></div>
+        <div class="blk lv3"><svg class="slot-silo"><use href="#i-hanger"/></svg></div>
+        <div class="blk lv3"><svg class="slot-silo"><use href="#i-hanger"/></svg><span class="order" style="top:-9px">③</span></div>
       </div>
-      <div class="cta blk high clk"><span class="lbl">保存搭配 / 一键最优</span><span class="ctatag">主操作</span><span class="order" style="left:auto;right:-9px">②</span></div>
+      <div class="cta blk lv1 clk"><span class="lbl">保存搭配 / 一键最优</span><span class="ctatag">主操作</span><span class="order" style="left:auto;right:-9px">②</span></div>
     </div>
   </section>
 
   <!-- ============ 塔防布防战斗 HUD ============ -->
-  <section class="screen" id="s-td-battle" data-back data-ori="l">
+  <section class="screen" id="s-td-battle" data-title="布防战斗 HUD" data-tag="塔防" data-back data-ori="l">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo tdb show-hints">
-      <div class="field"><div class="blk low stage"><svg class="silo"><use href="#i-map"/></svg><span class="lbl" style="margin-top:auto">战场 / 敌人路径(要盯着看)<small>玩法主体 → UI 全退到四边</small></span><span class="order" style="top:auto;bottom:12px;left:12px">③</span></div></div>
+      <div class="field"><div class="blk lv5 stage"><svg class="silo"><use href="#i-map"/></svg><span class="lbl" style="margin-top:auto">战场 / 敌人路径(要盯着看)<small>玩法主体 → UI 全退到四边</small></span><span class="order" style="top:auto;bottom:12px;left:12px">③</span></div></div>
       <div class="tdb-top">
-        <div class="blk high"><svg class="ic"><use href="#i-heart"/></svg><span class="lbl">基地生命 · 告急</span><span class="ctatag">最紧急</span><span class="order" style="left:-9px">①</span></div>
+        <div class="blk lv1"><svg class="ic"><use href="#i-heart"/></svg><span class="lbl">基地生命 · 告急</span><span class="ctatag">最紧急</span><span class="order" style="left:-9px">①</span></div>
         <div class="tdb-top-r">
-          <div class="blk mid"><span class="lbl">波次 3/10</span></div>
-          <div class="blk low"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">金币</span></div>
+          <div class="blk lv4"><span class="lbl">波次 3/10</span></div>
+          <div class="blk lv5"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">金币</span></div>
         </div>
       </div>
       <div class="tdb-bar">
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-tower"/></svg><span class="lbl">箭塔</span></div>
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-tower"/></svg><span class="lbl">炮塔</span></div>
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-tower"/></svg><span class="lbl">法塔</span></div>
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-bolt"/></svg><span class="lbl">加速</span><span class="order" style="left:-9px">②</span></div>
+        <div class="blk lv2 clk"><svg class="ic ic-lg"><use href="#i-tower"/></svg><span class="lbl">箭塔</span></div>
+        <div class="blk lv2 clk"><svg class="ic ic-lg"><use href="#i-tower"/></svg><span class="lbl">炮塔</span></div>
+        <div class="blk lv2 clk"><svg class="ic ic-lg"><use href="#i-tower"/></svg><span class="lbl">法塔</span></div>
+        <div class="blk lv3 clk"><svg class="ic ic-lg"><use href="#i-bolt"/></svg><span class="lbl">加速</span><span class="order" style="left:-9px">②</span></div>
       </div>
     </div>
   </section>
 
   <!-- ============ 商城 ============ -->
-  <section class="screen" id="s-shop" data-back data-ori="p">
+  <section class="screen" id="s-shop" data-title="商城" data-tag="通用" data-back data-ori="p">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo shop show-hints">
       <div style="height:30px"></div>
       <div class="bal">
-        <div class="blk low"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">金币余额</span></div>
-        <div class="blk low"><svg class="ic"><use href="#i-gem"/></svg><span class="lbl">钻石余额</span></div>
+        <div class="blk lv5"><svg class="ic"><use href="#i-coin"/></svg><span class="lbl">金币余额</span></div>
+        <div class="blk lv5"><svg class="ic"><use href="#i-gem"/></svg><span class="lbl">钻石余额</span></div>
       </div>
-      <div class="feat blk high clk"><svg class="ic ic-lg" style="opacity:.75"><use href="#i-gift"/></svg><span class="lbl" style="font-size:15px;color:#111">主推限时礼包<small style="opacity:.7">限时立省 · 倒计时 05:59</small></span><span class="ctatag">主推·最跳</span><span class="order" style="left:auto;right:-9px">①</span></div>
+      <div class="feat blk lv2 clk"><svg class="ic ic-lg" style="opacity:.75"><use href="#i-gift"/></svg><span class="lbl" style="font-size:15px;color:#111">主推限时礼包<small style="opacity:.7">限时立省 · 倒计时 05:59</small></span><span class="ctatag">主推·最跳</span><span class="order" style="left:auto;right:-9px">①</span></div>
       <div class="grid">
-        <div class="blk mid"><svg class="slot-silo"><use href="#i-gift"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥6</span></div>
-        <div class="blk mid"><svg class="slot-silo"><use href="#i-gem"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥30</span></div>
-        <div class="blk mid"><svg class="slot-silo"><use href="#i-coin"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥68</span><span class="order" style="top:-9px">②</span></div>
-        <div class="blk mid"><svg class="slot-silo"><use href="#i-gift"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥128</span></div>
-        <div class="blk mid"><svg class="slot-silo"><use href="#i-box"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥6</span></div>
-        <div class="blk mid"><svg class="slot-silo"><use href="#i-flask"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥18</span></div>
+        <div class="blk lv3"><svg class="slot-silo"><use href="#i-gift"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥6</span></div>
+        <div class="blk lv3"><svg class="slot-silo"><use href="#i-gem"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥30</span></div>
+        <div class="blk lv3"><svg class="slot-silo"><use href="#i-coin"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥68</span><span class="order" style="top:-9px">②</span></div>
+        <div class="blk lv3"><svg class="slot-silo"><use href="#i-gift"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥128</span></div>
+        <div class="blk lv3"><svg class="slot-silo"><use href="#i-box"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥6</span></div>
+        <div class="blk lv3"><svg class="slot-silo"><use href="#i-flask"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥18</span></div>
       </div>
-      <div class="cta blk high clk"><span class="lbl">购买</span><span class="ctatag">主操作·余额不足则引导充值</span><span class="order" style="left:auto;right:-9px">③</span></div>
+      <div class="cta blk lv1 clk"><span class="lbl">购买</span><span class="ctatag">主操作·余额不足则引导充值</span><span class="order" style="left:auto;right:-9px">③</span></div>
     </div>
   </section>
 
   <!-- ============ RPG 战斗 HUD ============ -->
-  <section class="screen" id="s-rpg-battle" data-back data-ori="l">
+  <section class="screen" id="s-rpg-battle" data-title="战斗 HUD" data-tag="RPG" data-back data-ori="l">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo rb show-hints">
-      <div class="field"><div class="blk low stage"><span class="lbl" style="margin-top:auto">战斗场景(中心留空 · 降噪)<small>要看清场面 → 信息全退到边缘</small></span></div></div>
-      <div class="rb-hp"><div class="blk high"><svg class="ic"><use href="#i-heart"/></svg><span class="lbl">血 / 蓝条 · 濒死红闪</span><span class="order" style="left:-9px">①</span></div></div>
-      <div class="rb-map"><div class="blk mid"><svg class="ic ic-lg"><use href="#i-map"/></svg><span class="lbl">小地图</span><span class="order" style="left:auto;right:-9px">③</span></div></div>
-      <div class="rb-joy"><div class="blk mid"><svg class="ic ic-lg"><use href="#i-joy"/></svg><span class="lbl">移动摇杆</span></div></div>
+      <div class="field"><div class="blk lv5 stage"><span class="lbl" style="margin-top:auto">战斗场景(中心留空 · 降噪)<small>要看清场面 → 信息全退到边缘</small></span></div></div>
+      <div class="rb-hp"><div class="blk lv1"><svg class="ic"><use href="#i-heart"/></svg><span class="lbl">血 / 蓝条 · 濒死红闪</span><span class="order" style="left:-9px">①</span></div></div>
+      <div class="rb-map"><div class="blk lv4"><svg class="ic ic-lg"><use href="#i-map"/></svg><span class="lbl">小地图</span><span class="order" style="left:auto;right:-9px">③</span></div></div>
+      <div class="rb-joy"><div class="blk lv3"><svg class="ic ic-lg"><use href="#i-joy"/></svg><span class="lbl">移动摇杆</span></div></div>
       <div class="rb-skills">
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-target"/></svg></div>
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-target"/></svg></div>
-        <div class="blk high clk"><svg class="ic ic-lg"><use href="#i-star"/></svg><span class="ctatag">大招·就绪发光</span><span class="order" style="left:auto;right:-9px">②</span></div>
+        <div class="blk lv3 clk"><svg class="ic ic-lg"><use href="#i-target"/></svg></div>
+        <div class="blk lv3 clk"><svg class="ic ic-lg"><use href="#i-target"/></svg></div>
+        <div class="blk lv2 clk"><svg class="ic ic-lg"><use href="#i-star"/></svg><span class="ctatag">大招·就绪发光</span><span class="order" style="left:auto;right:-9px">②</span></div>
       </div>
     </div>
   </section>
 
   <!-- ============ 案例:明日方舟 主界面 ============ -->
-  <section class="screen" id="s-ak-home" data-back data-ori="l" data-ref="img/ak-home.jpg" data-ar="1200/540">
+  <section class="screen" id="s-ak-home" data-title="明日方舟 · 主界面" data-tag="案例" data-back data-ori="l" data-ref="img/ak-home.jpg" data-ar="1200/540">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo ak-home show-hints">
       <div class="bg"><div class="blk lv5 stage"><svg class="silo silo-hi"><use href="#silo-char"/></svg>
@@ -606,25 +612,25 @@ body.flow .clk:not([data-go]){opacity:.45}
   </section>
 
   <!-- ============ 案例:明日方舟 战斗部署 ============ -->
-  <section class="screen" id="s-ak-bt" data-back data-ori="l">
+  <section class="screen" id="s-ak-bt" data-title="明日方舟 · 战斗部署" data-tag="案例" data-back data-ori="l">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo ak-bt show-hints">
-      <div class="bg"><div class="blk low stage"><svg class="silo"><use href="#i-map"/></svg><span class="lbl" style="margin-top:auto">战场 · 部署格 / 敌人路径(要盯着看)<small>玩法主体 → UI 全退到四边</small></span><span class="order" style="top:auto;bottom:12px;left:12px">①</span></div></div>
+      <div class="bg"><div class="blk lv5 stage"><svg class="silo"><use href="#i-map"/></svg><span class="lbl" style="margin-top:auto">战场 · 部署格 / 敌人路径(要盯着看)<small>玩法主体 → UI 全退到四边</small></span><span class="order" style="top:auto;bottom:12px;left:12px">①</span></div></div>
       <div class="ak-bt-top">
-        <div class="blk high"><svg class="ic"><use href="#i-heart"/></svg><span class="lbl">生命 · 漏怪告急</span><span class="ctatag">最紧急</span></div>
-        <div class="r"><div class="blk mid"><span class="lbl">费用 18</span></div><div class="blk low"><span class="lbl">波次 2/8</span></div></div>
+        <div class="blk lv1"><svg class="ic"><use href="#i-heart"/></svg><span class="lbl">生命 · 漏怪告急</span><span class="ctatag">最紧急</span></div>
+        <div class="r"><div class="blk lv4"><span class="lbl">费用 18</span></div><div class="blk lv5"><span class="lbl">波次 2/8</span></div></div>
       </div>
       <div class="ak-bt-ops">
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 7</span></div>
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 12</span></div>
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 18</span></div>
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 26</span><span class="order" style="left:-9px">②</span></div>
+        <div class="blk lv2 clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 7</span></div>
+        <div class="blk lv2 clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 12</span></div>
+        <div class="blk lv2 clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 18</span></div>
+        <div class="blk lv2 clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 26</span><span class="order" style="left:-9px">②</span></div>
       </div>
     </div>
   </section>
 
   <!-- ============ 案例:明日方舟 关卡选择 / 作战准备 ============ -->
-  <section class="screen" id="s-ak-stage" data-back data-ori="l">
+  <section class="screen" id="s-ak-stage" data-title="明日方舟 · 关卡选择" data-tag="案例" data-back data-ori="l">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo ak-stage show-hints">
       <!-- 左:章节 / 关卡列表 -->
@@ -652,58 +658,58 @@ body.flow .clk:not([data-go]){opacity:.45}
   </section>
 
   <!-- ============ 案例:星穹铁道 角色详情 ============ -->
-  <section class="screen" id="s-hsr-char" data-back data-ori="l">
+  <section class="screen" id="s-hsr-char" data-title="星穹铁道 · 角色详情" data-tag="案例" data-back data-ori="l">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo hsr-char show-hints">
       <div class="nav">
-        <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
-        <div class="blk low clk"><svg class="ic ic-lg"><use href="#i-shield"/></svg><span class="lbl">遗器</span></div>
-        <div class="blk low clk"><svg class="ic ic-lg"><use href="#i-star"/></svg><span class="lbl">星魂</span></div>
+        <div class="blk lv3 clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
+        <div class="blk lv4 clk"><svg class="ic ic-lg"><use href="#i-shield"/></svg><span class="lbl">遗器</span></div>
+        <div class="blk lv4 clk"><svg class="ic ic-lg"><use href="#i-star"/></svg><span class="lbl">星魂</span></div>
       </div>
-      <div class="stg"><div class="blk mid stage-star"><svg class="silo silo-hi"><use href="#silo-char"/></svg><span class="lbl" style="margin-top:auto">角色立绘(光环聚焦)<small>视觉主体 · 第一眼</small></span><span class="order">①</span></div></div>
+      <div class="stg"><div class="blk lv2 stage-star"><svg class="silo silo-hi"><use href="#silo-char"/></svg><span class="lbl" style="margin-top:auto">角色立绘(光环聚焦)<small>视觉主体 · 第一眼</small></span><span class="order">①</span></div></div>
       <div class="info">
-        <div class="blk low row"><span class="lbl">属性数值</span><span class="order" style="top:-9px">③</span></div>
-        <div class="blk low row"><span class="lbl">技能 / 天赋</span></div>
-        <div class="cta blk high clk"><span class="lbl">升级 / 突破</span><span class="ctatag">行动焦点·右下</span><span class="order" style="left:auto;right:-9px">②</span></div>
+        <div class="blk lv4 row"><span class="lbl">属性数值</span><span class="order" style="top:-9px">③</span></div>
+        <div class="blk lv4 row"><span class="lbl">技能 / 天赋</span></div>
+        <div class="cta blk lv1 clk"><span class="lbl">升级 / 突破</span><span class="ctatag">行动焦点·右下</span><span class="order" style="left:auto;right:-9px">②</span></div>
       </div>
     </div>
   </section>
 
   <!-- ============ 案例:星穹铁道 教学目录 ============ -->
-  <section class="screen" id="s-hsr-book" data-back data-ori="l">
+  <section class="screen" id="s-hsr-book" data-title="星穹铁道 · 教学目录" data-tag="案例" data-back data-ori="l">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo hsr-book show-hints">
       <div class="nav">
-        <div class="blk high"><span class="lbl" style="color:#111">▸ 当前条目</span><span class="order">③</span></div>
-        <div class="blk low clk"><span class="lbl">条目</span></div>
-        <div class="blk low clk"><span class="lbl">条目</span></div>
-        <div class="blk low clk"><span class="lbl">条目</span></div>
-        <div class="blk low clk"><span class="lbl">条目</span></div>
+        <div class="blk lv2"><span class="lbl" style="color:#111">▸ 当前条目</span><span class="order">③</span></div>
+        <div class="blk lv4 clk"><span class="lbl">条目</span></div>
+        <div class="blk lv4 clk"><span class="lbl">条目</span></div>
+        <div class="blk lv4 clk"><span class="lbl">条目</span></div>
+        <div class="blk lv4 clk"><span class="lbl">条目</span></div>
       </div>
       <div class="page">
-        <div class="art blk high"><span class="lbl" style="color:#111;margin-top:auto">奶白书页:图 + 标题 + 正文<small style="opacity:.55">明暗分区 = 信息分区 · 视觉主体</small></span><span class="order">①</span></div>
-        <div class="cta blk mid clk"><span class="lbl">下一页</span><span class="ctatag">行动焦点</span><span class="order" style="left:auto;right:-9px">②</span></div>
+        <div class="art blk lv1"><span class="lbl" style="color:#111;margin-top:auto">奶白书页:图 + 标题 + 正文<small style="opacity:.55">明暗分区 = 信息分区 · 视觉主体</small></span><span class="order">①</span></div>
+        <div class="cta blk lv2 clk"><span class="lbl">下一页</span><span class="ctatag">行动焦点</span><span class="order" style="left:auto;right:-9px">②</span></div>
       </div>
     </div>
   </section>
 
   <!-- ============ 案例:星穹铁道 任务弹窗 ============ -->
-  <section class="screen" id="s-hsr-q" data-back data-ori="l">
+  <section class="screen" id="s-hsr-q" data-title="星穹铁道 · 任务弹窗" data-tag="案例" data-back data-ori="l">
     <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo hsr-q show-hints">
-      <div class="bg"><div class="blk low stage"><svg class="silo"><use href="#silo-char"/></svg><span class="lbl" style="margin-top:auto">虚化的游戏世界(背景失焦)<small>压成安静底 → 让前景成主体</small></span></div></div>
+      <div class="bg"><div class="blk lv5 stage"><svg class="silo"><use href="#silo-char"/></svg><span class="lbl" style="margin-top:auto">虚化的游戏世界(背景失焦)<small>压成安静底 → 让前景成主体</small></span></div></div>
       <div class="modal">
         <div class="list">
-          <div class="blk mid"><span class="lbl">▸ 追踪中</span><span class="order">③</span></div>
-          <div class="blk low clk"><span class="lbl">任务</span></div>
-          <div class="blk low clk"><span class="lbl">任务</span></div>
-          <div class="blk low clk"><span class="lbl">任务</span></div>
+          <div class="blk lv3"><span class="lbl">▸ 追踪中</span><span class="order">③</span></div>
+          <div class="blk lv4 clk"><span class="lbl">任务</span></div>
+          <div class="blk lv4 clk"><span class="lbl">任务</span></div>
+          <div class="blk lv4 clk"><span class="lbl">任务</span></div>
         </div>
         <div class="detail">
           <div class="body blk" style="background:transparent;border:1px dashed #55555f;color:#c7c7cf"><span class="lbl" style="margin-top:auto">任务详情 · 目标 · 奖励<small style="opacity:.6">磨砂玻璃 + 景深 → 顶成视觉主体</small></span><span class="order">①</span></div>
           <div class="btns">
-            <div class="blk high ghost clk"><span class="lbl">停止追踪</span></div>
-            <div class="blk high clk"><span class="lbl">前往</span><span class="ctatag">行动焦点</span><span class="order" style="left:auto;right:-9px">②</span></div>
+            <div class="blk lv1 ghost clk"><span class="lbl">停止追踪</span></div>
+            <div class="blk lv1 clk"><span class="lbl">前往</span><span class="ctatag">行动焦点</span><span class="order" style="left:auto;right:-9px">②</span></div>
           </div>
         </div>
       </div>
@@ -743,7 +749,15 @@ function go(id,push){
   if(ori==='p')setOri(false);else if(ori==='l')setOri(true);
   tOri.disabled=(ori!=='both');
   tOri.style.opacity=tOri.disabled?.4:1;tOri.style.cursor=tOri.disabled?'default':'pointer';
-  syncCmp(el);closeCite();renderCite(id);renderFlow();
+  syncCmp(el);renderTitle(el);closeCite();renderCite(id);renderFlow();
+}
+function renderTitle(el){
+  const st=document.getElementById('scrTitle'),tt=el.dataset.title;
+  st.classList.toggle('on',!!tt);
+  if(!tt)return;
+  st.innerHTML=tt+(el.dataset.tag?'<small>'+el.dataset.tag+'</small>':'');
+  const b=el.querySelector('.back');
+  st.style.left=(b&&b.offsetWidth?b.offsetLeft+b.offsetWidth+8:12)+'px';
 }
 function goBack(){go(stack.pop()||'gallery',false);}
 
