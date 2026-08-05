@@ -10,6 +10,7 @@
   --lv-high:#f2f2f4;   /* 高 · 主焦点/主操作 */
   --hint:#ffcf5a;      /* 提示标记色(仅引导层用) */
   --cite:#5ac8fa;
+  --flow:#5ee0a8;      /* 流程模式:下一步该点的地方(与引导黄、主操作白区分开) */
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#000;font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:#ccc}
@@ -194,6 +195,16 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .ak-bt-top .r{display:flex;gap:8px}
 .ak-bt-ops{position:absolute;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;gap:6px;z-index:3}
 .ak-bt-ops .blk{width:60px;height:58px;font-size:10px;flex-direction:column;gap:2px}
+/* 明日方舟 · 关卡选择 / 作战准备(横):左章节列表 + 右情报,底部编队 + 出击 */
+.ak-stage{flex-direction:row;gap:10px;padding-top:calc(50px + env(safe-area-inset-top))}
+.ak-stage .chap{width:min(160px,25%);min-width:0;display:flex;flex-direction:column;gap:6px}
+.ak-stage .chap .blk{flex:1;min-height:34px;max-height:56px;font-size:11px}
+.ak-stage .main{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.ak-stage .info{flex:1;font-size:12px}
+.ak-stage .team{display:flex;gap:6px;align-items:stretch;flex:0 0 auto}
+.ak-stage .team .op{width:52px;height:54px;font-size:10px;flex-direction:column;gap:2px}
+.ak-stage .team .go{flex:1;height:54px}
+.ak-stage .team .go .lbl{font-size:17px;color:#111}
 /* 星穹铁道 · 角色详情(横):立绘=视觉主体,升级=行动焦点 */
 .hsr-char{flex-direction:row;gap:10px}
 .hsr-char .nav{width:min(104px,16%);min-width:0;display:flex;flex-direction:column;gap:8px}
@@ -225,6 +236,19 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .controls{display:flex;gap:6px}
 .controls button{background:#1a1a20;border:1px solid #383840;color:#bbb;font-size:12px;padding:7px 14px;border-radius:16px;cursor:pointer;font-family:inherit}
 .controls button.on{background:var(--hint);color:#111;border-color:var(--hint);font-weight:700}
+.controls button#tFlow.on{background:var(--flow);border-color:var(--flow)}
+
+/* 流程模式:链路热点发光,其余可点块变哑 */
+body.flow [data-go]{outline:2px solid var(--flow);outline-offset:2px;animation:flowpulse 1.7s ease-in-out infinite}
+@keyframes flowpulse{0%,100%{box-shadow:0 0 0 0 rgba(94,224,168,.45)}50%{box-shadow:0 0 0 8px rgba(94,224,168,0)}}
+body.flow .clk:not([data-go]){opacity:.45}
+.flowbar{display:none;gap:7px;align-items:center;font-size:11px;color:#7e7e88;flex-wrap:wrap;justify-content:center}
+.flowbar.on{display:flex}
+.flowbar .stp{padding:4px 9px;border:1px solid #34343c;border-radius:14px;cursor:pointer}
+.flowbar .stp.cur{border-color:var(--flow);color:var(--flow)}
+.flowbar .sep{color:#4a4a52}
+.flowbar .bk{background:#1a1a20;border:1px solid #383840;color:#bbb;font-size:11px;padding:4px 10px;border-radius:14px;cursor:pointer;font-family:inherit}
+.flowbar .tip{width:100%;text-align:center;color:#5f5f68;font-size:10px}
 @media (max-width:430px){
   .wrap{height:100dvh;gap:0}
   .controls{width:100%;justify-content:center;flex:0 0 auto;padding:calc(6px + env(safe-area-inset-top)) 6px 8px;background:#08080a}
@@ -275,6 +299,16 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
     <button id="tOri" onclick="toggleOri()">竖 ▸ 横</button>
     <button id="tHints" class="on" onclick="tog('show-hints',this)">引导</button>
     <button id="tCite" onclick="openCite()">说明</button>
+    <button id="tFlow" onclick="toggleFlow(this)">▶ 走一遍流程</button>
+ </div>
+ <div class="flowbar" id="flowbar">
+    <button class="bk" onclick="goBack()">← 上一步</button>
+    <span class="stp" data-step="s-ak-home" onclick="go('s-ak-home')">① 主界面</span>
+    <span class="sep">›</span>
+    <span class="stp" data-step="s-ak-stage" onclick="go('s-ak-stage')">② 关卡选择</span>
+    <span class="sep">›</span>
+    <span class="stp" data-step="s-ak-bt" onclick="go('s-ak-bt')">③ 战斗部署</span>
+    <span class="tip">绿框 = 下一步该点的地方</span>
  </div>
  <div class="phone mode-portrait" id="phone">
 
@@ -293,6 +327,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
       <div class="gcat"><h3>塔防</h3>
         <button onclick="go('s-td-battle')">布防战斗 HUD<em>横</em></button>
         <button onclick="go('s-ak-home')">明日方舟 · 主界面<em>横</em><em>案例</em></button>
+        <button onclick="go('s-ak-stage')">明日方舟 · 关卡选择<em>横</em><em>案例</em></button>
         <button onclick="go('s-ak-bt')">明日方舟 · 战斗部署<em>横</em><em>案例</em></button>
       </div>
       <div class="gcat"><h3>RPG</h3>
@@ -523,7 +558,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
       </div>
       <!-- 右侧:斜切功能大板 -->
       <div class="ak-plates">
-        <div class="ak-term blk lv1 clk"><span class="lbl">终端 · 作战<small style="opacity:.65">理智 157/157 · 当前 TR-5(体力贴着主操作)</small></span><span class="ctatag" style="top:6px;right:6px">主操作·最大板</span><span class="order" style="top:6px;left:6px;background:#ffffff;color:#111;box-shadow:0 0 0 2px #e8c24a">1</span></div>
+        <div class="ak-term blk lv1 clk" data-go="s-ak-stage"><span class="lbl">终端 · 作战<small style="opacity:.65">理智 157/157 · 当前 TR-5(体力贴着主操作)</small></span><span class="ctatag" style="top:6px;right:6px">主操作·最大板</span><span class="order" style="top:6px;left:6px;background:#ffffff;color:#111;box-shadow:0 0 0 2px #e8c24a">1</span></div>
         <div class="ak-r2">
           <div class="blk lv2 clk"><span class="lbl">编队</span><span class="order" style="background:#c0c0c9;color:#1b1b20;box-shadow:0 0 0 2px #e8c24a">2</span></div>
           <div class="blk lv2 clk"><span class="lbl">干员 · 角色管理</span></div>
@@ -561,6 +596,34 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
         <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 12</span></div>
         <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 18</span></div>
         <div class="blk mid clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员 26</span><span class="order" style="left:-9px">②</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 案例:明日方舟 关卡选择 / 作战准备 ============ -->
+  <section class="screen" id="s-ak-stage" data-back data-ori="l">
+    <button class="back" onclick="go('gallery')">← 模板库</button>
+    <div class="layout solo ak-stage show-hints">
+      <!-- 左:章节 / 关卡列表 -->
+      <div class="chap">
+        <div class="blk lv5 clk"><span class="lbl">主线 · 第四章</span></div>
+        <div class="blk lv2 clk"><span class="lbl">TR-5 · 当前<small>推荐等级 35</small></span><span class="order" style="left:-9px;background:#c0c0c9;color:#1b1b20;box-shadow:0 0 0 2px #e8c24a">2</span></div>
+        <div class="blk lv4 clk"><span class="lbl">TR-6<small>未解锁</small></span></div>
+        <div class="blk lv4 clk"><span class="lbl">TR-7<small>未解锁</small></span></div>
+        <div class="blk lv4 clk"><span class="lbl">TR-8<small>未解锁</small></span></div>
+        <div class="blk lv5 clk"><span class="lbl">剿灭作战</span></div>
+        <div class="blk lv5 clk"><span class="lbl">资源收集</span></div>
+      </div>
+      <!-- 右:关卡情报(面积最大却最暗)+ 底部编队与出击 -->
+      <div class="main">
+        <div class="blk lv5 info"><svg class="silo"><use href="#i-map"/></svg><span class="lbl" style="margin-top:auto">关卡情报 · 敌方配置 / 掉落预览 / 地形<small>看一眼就够 → 面积最大、明度压最低</small></span><span class="invert" style="left:auto;right:8px;top:8px;bottom:auto">面积≠重要度</span></div>
+        <div class="team">
+          <div class="blk lv3 clk op"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员</span><span class="order" style="left:-9px;background:#8e8e99;color:#141419;box-shadow:0 0 0 2px #e8c24a">3</span></div>
+          <div class="blk lv3 clk op"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员</span></div>
+          <div class="blk lv3 clk op"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">干员</span></div>
+          <div class="blk lv3 clk op"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">＋编队</span></div>
+          <div class="blk lv1 clk go" data-go="s-ak-bt"><span class="lbl">开始行动<small style="opacity:.65">理智 −18(体力仍贴着主操作)</small></span><span class="ctatag" style="top:-10px;right:6px">主操作</span><span class="order" style="top:-9px;left:-9px;background:#ffffff;color:#111;box-shadow:0 0 0 2px #e8c24a">1</span></div>
+        </div>
       </div>
     </div>
   </section>
@@ -645,15 +708,39 @@ function setOri(land){
 }
 function toggleOri(){if(tOri.disabled)return;setOri(!phone.classList.contains('mode-landscape'));}
 function tog(cls,btn){document.querySelectorAll('.layout').forEach(s=>s.classList.toggle(cls));btn.classList.toggle('on');}
-function go(id){
+/* 屏与屏之间:走过的屏进栈,返回=退回上一屏(流程模式的时间轴) */
+const stack=[];
+function go(id,push){
+  const cur=document.querySelector('.screen.active');
+  if(push!==false&&cur&&cur.id!==id)stack.push(cur.id);
+  if(id==='gallery')stack.length=0;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById(id);el.classList.add('active');
   const ori=el.dataset.ori||'both';
   if(ori==='p')setOri(false);else if(ori==='l')setOri(true);
   tOri.disabled=(ori!=='both');
   tOri.style.opacity=tOri.disabled?.4:1;tOri.style.cursor=tOri.disabled?'default':'pointer';
-  closeCite();renderCite(id);
+  closeCite();renderCite(id);renderFlow();
 }
+function goBack(){go(stack.pop()||'gallery',false);}
+
+/* 流程模式:最短 3 屏链路(方舟线),热点由 data-go 声明 */
+const FLOW=['s-ak-home','s-ak-stage','s-ak-bt'];
+let flowOn=false;
+function toggleFlow(btn){
+  flowOn=!flowOn;
+  document.body.classList.toggle('flow',flowOn);
+  btn.classList.toggle('on',flowOn);
+  document.getElementById('flowbar').classList.toggle('on',flowOn);
+  stack.length=0;go(flowOn?FLOW[0]:'gallery',false);
+}
+function renderFlow(){
+  const id=document.querySelector('.screen.active').id;
+  document.querySelectorAll('.flowbar .stp').forEach(s=>s.classList.toggle('cur',s.dataset.step===id));
+  document.querySelectorAll('.back').forEach(b=>b.textContent=stack.length?'← 上一步':'← 模板库');
+}
+document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
+document.querySelectorAll('.back').forEach(b=>b.onclick=goBack);
 const CITES={
  'gallery':{title:'关于这个模板库',rows:[
   ['黑白灰 = 层级','亮 = 最先看到/主操作,灰 = 次要/引导,暗 = 背景/陪衬。一眼就能看出这屏"先看哪、点哪"。','明度 = 注意力顺序'],
@@ -709,11 +796,21 @@ const CITES={
   ['④ 左下 News banner + 好友/档案(运营位)','运营资讯固定左下角,常驻但不抢右侧功能板。','运营位靠边'],
   ['顶右货币(可充值带＋)· 顶左系统图标(低)','货币常驻右上,可充值的带"＋"一步直达获取;设置/邮件/公告等低频系统功能缩成左上小图标;满屏基地场景面积最大却去饱和压最低。','四角分区 · 面积≠重要度'],
   ['依据','本屏 2026-07 按实机截图逐区位核对修正过一遍:货币栏内容、板块行序(采购中心与招募同排)、体力位置均照实更新。','实证核对,非凭印象'],
+  ['▶ 流程判断 · 这屏往哪走','主界面的作用是分流,所以最大最亮的板必须是"玩家每次进来最想做的事"= 去打关。理智直接印在这块板上,玩家不用先去别处查够不够体力——把"决策要用的信息"搬到"做决策的按钮"上。','主操作 = 下一步的入口'],
+ ]},
+ 's-ak-stage':{title:'案例 · 明日方舟 关卡选择 / 作战准备',rows:[
+  ['① 开始行动(主操作·最亮最大)','这屏只有一个目的:出击。所以其他都可以让,唯独这个键最亮;理智消耗贴在键上,和主界面同一个做法——延续到第二屏,玩家不用重新学。','一屏一个主操作 · 跨屏保持同一套规则'],
+  ['② 当前关卡(选中态,中高)','列表里只有一项是亮的 = "你在这儿"。选中态是导航里唯一需要强调的东西,其余关卡压平成一档,别互相抢。','选中态 = 我在哪'],
+  ['③ 编队预览(中)','出击前最后一次确认带谁,排在出击键旁边;它比情报重要,因为它是"还能改的东西",情报只是"看一眼的东西"。','可改的 > 只读的'],
+  ['关卡情报(面积最大却压最低)','敌方配置、掉落、地形占了整屏最大一块,但明度压到最暗——看一眼就够,不是要点的。和主界面"满屏基地场景去饱和"是同一条。','面积≠重要度'],
+  ['▶ 流程判断 · 为什么是这三屏','主界面(选择去哪)→ 关卡选择(确认带谁、花多少)→ 战斗(执行)。三屏各回答一个问题:去哪 / 准备好没 / 打。中间这屏的存在理由就是"花钱前的最后一次确认",所以它必须有出击键和编队,不能只是个列表。','一屏一个决策'],
+  ['⚠️ 诚实边界','本屏为串通链路自建,**未按实机截图核对**(主界面那屏核过)。真实明日方舟把编队独立成一屏(关卡详情 → 编队 → 出击),这里为跑通最短链路,把编队并成关卡屏上的确认区。要做到与实机一致,需拆出第四屏。','未核对,自建示意'],
  ]},
  's-ak-bt':{title:'案例 · 明日方舟 战斗部署',rows:[
   ['① 战场 / 部署格(玩法主体,居中)','为什么居中留给它:战斗屏里"要盯着看"的是战场本身,所以 UI 全退到四边、把中间让出来。','战场是主体,UI 退边'],
   ['② 干员部署槽(主操作,费用升序)','布置干员是这屏的核心操作,做成底部一排;费用从低到高排,方便快速决策。','高频核心操作 = 主操作'],
   ['生命 / 漏怪告急(最紧急)','掉血/漏怪 = 直接输,用最强信号在角落报警。','最紧急威胁 = 最高'],
+  ['▶ 流程判断 · 链路终点','前两屏都在"做选择",这屏在"执行"——所以规则反过来:前两屏最亮的是按钮,这屏最亮的让给了战场本身。链路走到底,UI 要学会退场。','执行屏 = UI 退场'],
  ]},
  's-hsr-char':{title:'案例 · 星穹铁道 角色详情',rows:[
   ['① 角色立绘(视觉主体·第一眼)','用光环把视线圈向角色;这里立绘是"要看的主体",最先被注意到。','立绘 = 视觉主体'],
