@@ -98,7 +98,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .mode-landscape .home.l{display:block}
 .home.l .bg{position:absolute;inset:0}.home.l .bg .blk{width:100%;height:100%;border-radius:0}
 .home.l .bg .silo{height:74%;top:15%;left:42%;color:#6a6a7a;opacity:.6}
-.hl-id{position:absolute;top:calc(10px + env(safe-area-inset-top));left:52px;display:flex;gap:6px;z-index:4}
+.hl-id{position:absolute;top:calc(10px + env(safe-area-inset-top));left:12px;display:flex;gap:6px;z-index:4}
 .hl-id .blk{height:32px;font-size:10px;flex-direction:row;gap:5px;padding:0 10px}
 .hl-id .sys{width:32px;padding:0}
 .hl-res{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;display:flex;gap:8px;z-index:4}
@@ -139,7 +139,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .tdb{padding:0}
 .tdb .field{position:absolute;inset:0}.tdb .field .blk{width:100%;height:100%;border-radius:0}
 .tdb .field .silo{height:52%;top:22%;color:#3f3f4a}
-.tdb-top{position:absolute;top:calc(10px + env(safe-area-inset-top));left:54px;right:12px;display:flex;justify-content:space-between;gap:8px;z-index:3}
+.tdb-top{position:absolute;top:calc(10px + env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;z-index:3}
 .tdb-top .blk{height:36px;font-size:10px;flex-direction:row;gap:5px;padding:0 10px}
 .tdb-top-r{display:flex;gap:8px}
 .tdb-bar{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;justify-content:center;z-index:3}
@@ -155,7 +155,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 /* RPG 战斗 HUD(横) */
 .rb{padding:0}
 .rb .field{position:absolute;inset:0}.rb .field .blk{width:100%;height:100%;border-radius:0}
-.rb-hp{position:absolute;top:calc(10px + env(safe-area-inset-top));left:56px;z-index:3}
+.rb-hp{position:absolute;top:calc(10px + env(safe-area-inset-top));left:12px;z-index:3}
 .rb-hp .blk{height:34px;font-size:10px;flex-direction:row;gap:5px;padding:0 10px}
 .rb-map{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:3}
 .rb-map .blk{width:70px;height:56px;font-size:10px;flex-direction:column;gap:2px}
@@ -170,7 +170,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .ak-home{padding:0}
 .ak-home .bg{position:absolute;inset:0}.ak-home .bg .blk{width:100%;height:100%;border-radius:0}
 .ak-home .bg .silo{height:60%;top:11%;left:25%;color:#6a6a7a;opacity:.66}
-.ak-sys{position:absolute;top:calc(10px + env(safe-area-inset-top));left:52px;display:flex;gap:6px;z-index:4}
+.ak-sys{position:absolute;top:calc(10px + env(safe-area-inset-top));left:12px;display:flex;gap:6px;z-index:4}
 .ak-sys .blk{width:34px;height:30px}
 .ak-sys .ak-guide{width:auto;padding:0 10px;font-size:10px;flex-direction:row;gap:5px}
 .ak-pinfo{position:absolute;left:12px;top:calc(50px + env(safe-area-inset-top));z-index:4}
@@ -191,13 +191,13 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .ak-bt{padding:0}
 .ak-bt .bg{position:absolute;inset:0}.ak-bt .bg .blk{width:100%;height:100%;border-radius:0}
 .ak-bt .bg .silo{height:58%;top:16%;color:#41414b}
-.ak-bt-top{position:absolute;top:calc(12px + env(safe-area-inset-top));left:54px;right:12px;display:flex;justify-content:space-between;gap:8px;z-index:3}
+.ak-bt-top{position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;z-index:3}
 .ak-bt-top .blk{height:34px;font-size:10px;flex-direction:row;gap:4px;padding:0 10px}
 .ak-bt-top .r{display:flex;gap:8px}
 .ak-bt-ops{position:absolute;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;gap:6px;z-index:3}
 .ak-bt-ops .blk{width:60px;height:58px;font-size:10px;flex-direction:column;gap:2px}
 /* 明日方舟 · 关卡选择 / 作战准备(横):左章节列表 + 右情报,底部编队 + 出击 */
-.ak-stage{flex-direction:row;gap:10px;padding-top:calc(50px + env(safe-area-inset-top))}
+.ak-stage{flex-direction:row;gap:10px}
 .ak-stage .chap{width:min(160px,25%);min-width:0;display:flex;flex-direction:column;gap:6px}
 .ak-stage .chap .blk{flex:1;min-height:34px;max-height:56px;font-size:11px}
 .ak-stage .main{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
@@ -256,8 +256,9 @@ body.flow .clk:not([data-go]){opacity:.45}
   .phone.mode-portrait{flex:1 1 auto;height:auto;min-height:0}
 }
 /* 返回:属于界面本体的控件,留在界面内 */
-.back{position:absolute;top:calc(10px + env(safe-area-inset-top));left:12px;z-index:20;background:rgba(20,20,24,.82);border:1px solid #333;color:#bbb;font-size:12px;padding:6px 12px;border-radius:16px;cursor:pointer;display:none;font-family:inherit}
-.screen[data-back] .back{display:block}
+.back-unused{position:absolute;top:calc(10px + env(safe-area-inset-top));left:12px;z-index:20;background:rgba(20,20,24,.82);border:1px solid #333;color:#bbb;font-size:12px;padding:6px 12px;border-radius:16px;cursor:pointer;display:none;font-family:inherit}
+#tBack{display:none}
+#tBack.on{display:inline-block}
 /* 当前界面名:在手机框外,和控制条同属工具层,不占界面本体的位置 */
 .scr-title{display:none;font-size:14px;font-weight:600;color:#e6e6ec;letter-spacing:.02em}
 .scr-title.on{display:block}
@@ -318,6 +319,7 @@ body.flow .clk:not([data-go]){opacity:.45}
 
 <div class="wrap">
  <div class="controls">
+    <button id="tBack" onclick="goBack()">← 模板库</button>
     <button id="tOri" onclick="toggleOri()">竖 ▸ 横</button>
     <button id="tHints" class="on" onclick="tog('show-hints',this)">引导</button>
     <button id="tCite" onclick="openCite()">说明</button>
@@ -325,7 +327,6 @@ body.flow .clk:not([data-go]){opacity:.45}
     <button id="tCmp" onclick="toggleCmp(this)">⇄ 对照原图</button>
  </div>
  <div class="flowbar" id="flowbar">
-    <button class="bk" onclick="goBack()">← 上一步</button>
     <span class="stp" data-step="s-ak-home" onclick="go('s-ak-home')">① 主界面</span>
     <span class="sep">›</span>
     <span class="stp" data-step="s-ak-stage" onclick="go('s-ak-stage')">② 关卡选择</span>
@@ -373,7 +374,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 主界面 ============ -->
   <section class="screen" id="s-home" data-title="主界面 · 大厅" data-tag="通用" data-back data-ori="both">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout p home show-hints">
       <div class="top">
         <div class="avatar blk lv5 clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">头像·等级</span></div>
@@ -427,7 +427,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 背包 ============ -->
   <section class="screen" id="s-bag" data-title="背包 · 物品" data-tag="通用" data-back data-ori="both">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout p bag show-hints">
       <div style="height:30px"></div>
       <div class="filt"><div class="blk lv3 clk"><span class="lbl">全部</span></div><div class="blk lv4 clk"><span class="lbl">武器</span></div><div class="blk lv4 clk"><span class="lbl">材料</span></div><div class="blk lv4 clk"><span class="lbl">消耗</span></div><span class="order" style="top:-9px">②</span></div>
@@ -466,7 +465,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 角色 / 养成 ============ -->
   <section class="screen" id="s-role" data-title="角色 · 养成" data-tag="通用" data-back data-ori="both">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout p role show-hints">
       <div style="height:30px"></div>
       <div class="hero"><div class="blk lv2 stage"><svg class="silo"><use href="#silo-char"/></svg><span class="lbl" style="font-size:14px;margin-top:auto">角色立绘 + 战力数字<small>第一眼看的:这角色多强</small></span><span class="order">①</span></div></div>
@@ -485,7 +483,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 乙女换装 ============ -->
   <section class="screen" id="s-dressup" data-title="换装 · 搭配" data-tag="乙女" data-back data-ori="p">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo dress show-hints">
       <div style="height:30px"></div>
       <div class="stagebig"><div class="blk lv2 stage-star"><svg class="silo silo-hi"><use href="#silo-char"/></svg><span class="lbl" style="margin-top:auto">角色立绘(换装预览)<small>C 位 · 永远第一眼</small></span><span class="order">①</span></div></div>
@@ -505,7 +502,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 塔防布防战斗 HUD ============ -->
   <section class="screen" id="s-td-battle" data-title="布防战斗 HUD" data-tag="塔防" data-back data-ori="l">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo tdb show-hints">
       <div class="field"><div class="blk lv5 stage"><svg class="silo"><use href="#i-map"/></svg><span class="lbl" style="margin-top:auto">战场 / 敌人路径(要盯着看)<small>玩法主体 → UI 全退到四边</small></span><span class="order" style="top:auto;bottom:12px;left:12px">③</span></div></div>
       <div class="tdb-top">
@@ -526,7 +522,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 商城 ============ -->
   <section class="screen" id="s-shop" data-title="商城" data-tag="通用" data-back data-ori="p">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo shop show-hints">
       <div style="height:30px"></div>
       <div class="bal">
@@ -548,7 +543,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ RPG 战斗 HUD ============ -->
   <section class="screen" id="s-rpg-battle" data-title="战斗 HUD" data-tag="RPG" data-back data-ori="l">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo rb show-hints">
       <div class="field"><div class="blk lv5 stage"><span class="lbl" style="margin-top:auto">战斗场景(中心留空 · 降噪)<small>要看清场面 → 信息全退到边缘</small></span></div></div>
       <div class="rb-hp"><div class="blk lv1"><svg class="ic"><use href="#i-heart"/></svg><span class="lbl">血 / 蓝条 · 濒死红闪</span><span class="order" style="left:-9px">①</span></div></div>
@@ -564,7 +558,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 案例:明日方舟 主界面 ============ -->
   <section class="screen" id="s-ak-home" data-title="明日方舟 · 主界面" data-tag="案例" data-back data-ori="l" data-ref="img/ak-home.jpg" data-ar="1200/540">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo ak-home show-hints">
       <div class="bg"><div class="blk lv5 stage"><svg class="silo silo-hi"><use href="#silo-char"/></svg>
         <span class="order" style="top:73%;left:25%;transform:translateX(-50%);background:#35353d;color:#fff;box-shadow:0 0 0 2px #e8c24a">3</span>
@@ -612,7 +605,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 案例:明日方舟 战斗部署 ============ -->
   <section class="screen" id="s-ak-bt" data-title="明日方舟 · 战斗部署" data-tag="案例" data-back data-ori="l">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo ak-bt show-hints">
       <div class="bg"><div class="blk lv5 stage"><svg class="silo"><use href="#i-map"/></svg><span class="lbl" style="margin-top:auto">战场 · 部署格 / 敌人路径(要盯着看)<small>玩法主体 → UI 全退到四边</small></span><span class="order" style="top:auto;bottom:12px;left:12px">①</span></div></div>
       <div class="ak-bt-top">
@@ -630,7 +622,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 案例:明日方舟 关卡选择 / 作战准备 ============ -->
   <section class="screen" id="s-ak-stage" data-title="明日方舟 · 关卡选择" data-tag="案例" data-back data-ori="l">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo ak-stage show-hints">
       <!-- 左:章节 / 关卡列表 -->
       <div class="chap">
@@ -658,7 +649,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 案例:星穹铁道 角色详情 ============ -->
   <section class="screen" id="s-hsr-char" data-title="星穹铁道 · 角色详情" data-tag="案例" data-back data-ori="l">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo hsr-char show-hints">
       <div class="nav">
         <div class="blk lv3 clk"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
@@ -676,7 +666,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 案例:星穹铁道 教学目录 ============ -->
   <section class="screen" id="s-hsr-book" data-title="星穹铁道 · 教学目录" data-tag="案例" data-back data-ori="l">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo hsr-book show-hints">
       <div class="nav">
         <div class="blk lv2"><span class="lbl" style="color:#111">▸ 当前条目</span><span class="order">③</span></div>
@@ -694,7 +683,6 @@ body.flow .clk:not([data-go]){opacity:.45}
 
   <!-- ============ 案例:星穹铁道 任务弹窗 ============ -->
   <section class="screen" id="s-hsr-q" data-title="星穹铁道 · 任务弹窗" data-tag="案例" data-back data-ori="l">
-    <button class="back" onclick="go('gallery')">← 模板库</button>
     <div class="layout solo hsr-q show-hints">
       <div class="bg"><div class="blk lv5 stage"><svg class="silo"><use href="#silo-char"/></svg><span class="lbl" style="margin-top:auto">虚化的游戏世界(背景失焦)<small>压成安静底 → 让前景成主体</small></span></div></div>
       <div class="modal">
@@ -753,6 +741,7 @@ function go(id,push){
 function renderTitle(el){
   const st=document.getElementById('scrTitle'),tt=el.dataset.title;
   st.classList.toggle('on',!!tt);
+  document.getElementById('tBack').classList.toggle('on',el.id!=='gallery');
   if(!tt)return;
   st.innerHTML=tt+(el.dataset.tag?'<small>'+el.dataset.tag+'</small>':'');
 }
@@ -798,10 +787,10 @@ function toggleFlow(btn){
 function renderFlow(){
   const id=document.querySelector('.screen.active').id;
   document.querySelectorAll('.flowbar .stp').forEach(s=>s.classList.toggle('cur',s.dataset.step===id));
-  document.querySelectorAll('.back').forEach(b=>b.textContent=stack.length?'← 上一步':'← 模板库');
+  const tb=document.getElementById('tBack');tb.textContent=stack.length>1?'← 上一步':'← 模板库';
 }
 document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
-document.querySelectorAll('.back').forEach(b=>b.onclick=goBack);
+
 const CITES={
  'gallery':{title:'关于这个模板库',rows:[
   ['黑白灰 = 层级','亮 = 最先看到/主操作,灰 = 次要/引导,暗 = 背景/陪衬。一眼就能看出这屏"先看哪、点哪"。','明度 = 注意力顺序'],
