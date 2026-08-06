@@ -84,6 +84,11 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .gcat button::after{content:"›";position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#777;font-size:18px}
 .gcat button em{font-style:normal;font-size:10px;color:#888;background:#1c1c22;border:1px solid #3a3a42;padding:1px 6px;border-radius:8px;margin-left:6px}
 .gnote{font-size:11px;color:#666;text-align:center;margin-top:6px;padding:10px;border:1px dashed #333;border-radius:8px}
+/* 流程入口用绿系,和走流程时的绿框呼应——一眼分得清「看一屏」和「走一条路」 */
+#gflows h3{border-left-color:var(--flow);color:var(--flow)}
+#gflows button{border-color:#37624f;background:linear-gradient(155deg,#2b3a35,#22292a)}
+#gflows button::after{content:"▶";font-size:12px;color:var(--flow)}
+#gflows button em{color:var(--flow);background:rgba(94,224,168,.12);border-color:#37624f}
 /* 横屏时首页收成居中一栏,别让按钮拉满全宽 */
 .mode-landscape .gallery h2,.mode-landscape .gallery .ghelp,.mode-landscape .gallery .gcat,.mode-landscape .gallery .gnote{width:min(560px,94%);margin-left:auto;margin-right:auto}
 
@@ -239,7 +244,6 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .controls{display:flex;gap:6px}
 .controls button{background:#1a1a20;border:1px solid #383840;color:#bbb;font-size:12px;padding:7px 14px;border-radius:16px;cursor:pointer;font-family:inherit}
 .controls button.on{background:var(--hint);color:#111;border-color:var(--hint);font-weight:700}
-.controls button#tFlow.on{background:var(--flow);border-color:var(--flow)}
 
 /* 流程模式:链路热点发光,其余可点块变哑 */
 /* 绿框只给「当前这条流程的下一步」,同一屏可以是多条流程的岔口 */
@@ -331,12 +335,13 @@ body.flow .clk:not(.flow-next){opacity:.3;pointer-events:none}
     <button id="tOri" onclick="toggleOri()">竖 ▸ 横</button>
     <button id="tHints" class="on" onclick="tog('show-hints',this)">引导</button>
     <button id="tCite" onclick="openCite()">说明</button>
-    <button id="tFlow" onclick="toggleFlow(this)">▶ 走一遍流程</button>
     <button id="tCmp" onclick="toggleCmp(this)">⇄ 对照原图</button>
  </div>
+ <!-- 流程条只在走流程时出现;流程从模板库首页进,顶栏没有全局开关(避免在某屏误点、跳去无关的流程) -->
  <div class="flowbar" id="flowbar">
     <select class="fsel" id="fsel" onchange="pickFlow(this.value)"></select>
     <span class="fsteps" id="fsteps"></span>
+    <button class="bk" onclick="exitFlow()">✕ 退出</button>
  </div>
  <div class="scr-title" id="scrTitle"></div>
  <div class="phone mode-portrait" id="phone">
@@ -350,8 +355,10 @@ body.flow .clk:not(.flow-next){opacity:.3;pointer-events:none}
     <div class="layout solo gallery">
       <div style="height:8px"></div>
       <h2>灰模模板库</h2>
-      <p class="ghelp">选一个界面 → 一键套用它的层级线框(黑白灰 = 高/中/低)</p>
-      <div class="gcat"><h3>通用(跨品类)</h3>
+      <p class="ghelp">选一个<b>界面</b> → 看这一屏的层级线框(黑白灰 = 高/中/低)<br>或选一条<b>流程</b> → 跟着绿框走一遍,看屏与屏之间怎么走</p>
+      <!-- 流程按钮由 FLOWS 生成,避免和 JS 里的定义两处维护 -->
+      <div class="gcat" id="gflows"><h3>▶ 可走的流程</h3></div>
+      <div class="gcat"><h3>单屏 · 通用(跨品类)</h3>
         <button onclick="go('s-home')">主界面 · 大厅<em>竖/横</em></button>
         <button onclick="go('s-bag')">背包 · 物品<em>竖/横</em></button>
         <button onclick="go('s-role')">角色 · 养成<em>竖/横</em></button>
@@ -733,7 +740,7 @@ const stack=[];
 function go(id,push){
   const cur=document.querySelector('.screen.active');
   if(push!==false&&cur&&cur.id!==id)stack.push(cur.id);
-  if(id==='gallery')stack.length=0;
+  if(id==='gallery'){stack.length=0;if(flowOn)setFlow(false);} /* 回模板库 = 流程结束,不留错位状态 */
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById(id);el.classList.add('active');
   const ori=el.dataset.ori||'both';
@@ -749,11 +756,8 @@ function renderTitle(el){
   if(!tt)return;
   st.innerHTML=tt+(el.dataset.tag?'<small>'+el.dataset.tag+'</small>':'');
 }
-/* 流程模式下退到起点再返回 = 直接退出流程,不会落在"开着流程条却站在模板库"的错位状态 */
-function goBack(){
-  if(flowOn&&!stack.length){toggleFlow(document.getElementById('tFlow'));return;}
-  go(stack.pop()||'gallery',false);
-}
+/* 走到起点再返回就回模板库,go() 会顺手关掉流程模式 */
+function goBack(){go(stack.pop()||'gallery',false);}
 
 /* 对照原图:有 data-ref 的屏才可用;原图外置在 img/,撤图 = 删目录 */
 const tCmp=document.getElementById('tCmp'),realImg=document.getElementById('real'),split=document.getElementById('split');
@@ -794,6 +798,9 @@ const FLOWS=[
    ['s-home','主界面'],['s-shop','商城'],['s-bag','背包·拿到手']]},
 ];
 const NUM='①②③④⑤⑥';
+/* 模板库首页的流程入口:由 FLOWS 生成,和链路定义只有一处 */
+document.getElementById('gflows').insertAdjacentHTML('beforeend',FLOWS.map((f,i)=>
+  '<button onclick="startFlow('+i+')">'+f.name+'<em>'+f.steps.length+' 屏</em></button>').join(''));
 let flowOn=false,curFlow=0,hintsBefore=null;
 /* 走流程时收起黄色层级序号:一屏只留绿框一个信号。退出时恢复原状,「引导」按钮随时能叫回来 */
 function syncHints(){
@@ -814,18 +821,20 @@ function buildFlowbar(){
     .map((s,i)=>'<span class="stp" data-idx="'+i+'" onclick="go(\''+s[0]+'\')">'+NUM[i]+' '+s[1]+'</span>')
     .join('<span class="sep">›</span>');
 }
+function setFlow(on){
+  flowOn=on;
+  document.body.classList.toggle('flow',on);
+  document.getElementById('flowbar').classList.toggle('on',on);
+  if(on)buildFlowbar();
+  syncHints();
+}
+/* 从模板库首页进一条流程 */
+function startFlow(i){curFlow=+i;setFlow(true);stack.length=0;go(FLOWS[curFlow].steps[0][0],false);}
+function exitFlow(){go('gallery',false);}
+/* 流程条上换一条流程:直接跳新流程的起点 */
 function pickFlow(i){
   curFlow=+i;buildFlowbar();
   stack.length=0;go(FLOWS[curFlow].steps[0][0],false);
-}
-function toggleFlow(btn){
-  flowOn=!flowOn;
-  document.body.classList.toggle('flow',flowOn);
-  btn.classList.toggle('on',flowOn);
-  document.getElementById('flowbar').classList.toggle('on',flowOn);
-  if(flowOn)buildFlowbar();
-  syncHints();
-  stack.length=0;go(flowOn?FLOWS[curFlow].steps[0][0]:'gallery',false);
 }
 /* 当前屏在这条流程里的下一屏;不在这条流程上就没有下一步 */
 function flowNext(id){
