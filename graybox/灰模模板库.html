@@ -62,6 +62,8 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
   font-size:12px;font-weight:800;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.5);z-index:6}
 .ctatag{position:absolute;right:-4px;top:-10px;background:var(--hint);color:#111;font-size:9px;font-weight:800;
   padding:2px 6px;border-radius:20px;z-index:6;white-space:nowrap;display:none}
+/* 序号被挪到右上角时,主操作标签让到左上角——两个标注各占一头,不叠在一起 */
+.blk:has(.order[style*="right:-9px"]) .ctatag{right:auto;left:-4px}
 .invert{position:absolute;left:7px;bottom:7px;background:rgba(255,207,90,.14);border:1px dashed var(--hint);color:var(--hint);
   font-size:9px;padding:2px 6px;border-radius:6px;z-index:5;display:none}
 .show-hints .order,.show-hints .ctatag,.show-hints .invert{display:flex}
@@ -240,9 +242,10 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 .controls button#tFlow.on{background:var(--flow);border-color:var(--flow)}
 
 /* 流程模式:链路热点发光,其余可点块变哑 */
-body.flow [data-go]{outline:2px solid var(--flow);outline-offset:2px;animation:flowpulse 1.7s ease-in-out infinite}
+/* 绿框只给「当前这条流程的下一步」,同一屏可以是多条流程的岔口 */
+body.flow .flow-next{outline:2px solid var(--flow);outline-offset:2px;animation:flowpulse 1.7s ease-in-out infinite}
 @keyframes flowpulse{0%,100%{box-shadow:0 0 0 0 rgba(94,224,168,.45)}50%{box-shadow:0 0 0 8px rgba(94,224,168,0)}}
-body.flow .clk:not([data-go]){opacity:.45}
+body.flow .clk:not(.flow-next){opacity:.45}
 .flowbar{display:none;gap:7px;align-items:center;font-size:11px;color:#7e7e88;flex-wrap:wrap;justify-content:center}
 .flowbar.on{display:flex}
 .flowbar .stp{padding:4px 9px;border:1px solid #34343c;border-radius:14px;cursor:pointer}
@@ -250,6 +253,9 @@ body.flow .clk:not([data-go]){opacity:.45}
 .flowbar .sep{color:#4a4a52}
 .flowbar .bk{background:#1a1a20;border:1px solid #383840;color:#bbb;font-size:11px;padding:4px 10px;border-radius:14px;cursor:pointer;font-family:inherit}
 .flowbar .tip{width:100%;text-align:center;color:#5f5f68;font-size:10px}
+.flowbar .fsel{background:#1a1a20;border:1px solid #383840;color:#ddd;font-size:11px;font-family:inherit;padding:4px 8px;border-radius:14px;cursor:pointer}
+.flowbar .fsel:focus{outline:none;border-color:var(--flow)}
+.flowbar .fsteps{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:center}
 @media (max-width:430px){
   .wrap{height:100dvh;gap:0}
   .controls{width:100%;justify-content:center;flex:0 0 auto;padding:calc(6px + env(safe-area-inset-top)) 6px 8px;background:#08080a}
@@ -327,11 +333,8 @@ body.flow .clk:not([data-go]){opacity:.45}
     <button id="tCmp" onclick="toggleCmp(this)">⇄ 对照原图</button>
  </div>
  <div class="flowbar" id="flowbar">
-    <span class="stp" data-step="s-ak-home" onclick="go('s-ak-home')">① 主界面</span>
-    <span class="sep">›</span>
-    <span class="stp" data-step="s-ak-stage" onclick="go('s-ak-stage')">② 关卡选择</span>
-    <span class="sep">›</span>
-    <span class="stp" data-step="s-ak-bt" onclick="go('s-ak-bt')">③ 战斗部署</span>
+    <select class="fsel" id="fsel" onchange="pickFlow(this.value)"></select>
+    <span class="fsteps" id="fsteps"></span>
     <span class="tip">绿框 = 下一步该点的地方</span>
  </div>
  <div class="scr-title" id="scrTitle"></div>
@@ -386,9 +389,9 @@ body.flow .clk:not([data-go]){opacity:.45}
       <div class="hero"><div class="blk lv5 stage-star"><svg class="silo silo-hi"><use href="#silo-char"/></svg><span class="lbl" style="font-size:14px;margin-top:auto">角色立绘<small>视觉主体 · 第一眼看的</small></span><span class="order">③</span></div></div>
       <div class="banner blk lv4 clk"><svg class="ic ic-lg"><use href="#i-star"/></svg><span class="lbl" style="font-size:13px">主推活动 Banner<small>限时运营位</small></span><span class="order">④</span></div>
       <div class="rail">
-        <div class="blk lv2 clk" onclick="go('s-bag')"><svg class="ic ic-lg"><use href="#i-bag"/></svg><span class="lbl">背包</span><span class="order">②</span></div>
-        <div class="blk lv2 clk" onclick="go('s-role')"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
-        <div class="blk lv3 clk" onclick="go('s-shop')"><svg class="ic ic-lg"><use href="#i-cart"/></svg><span class="lbl">商店</span></div>
+        <div class="blk lv2 clk" data-go="s-bag"><svg class="ic ic-lg"><use href="#i-bag"/></svg><span class="lbl">背包</span><span class="order">②</span></div>
+        <div class="blk lv2 clk" data-go="s-role"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
+        <div class="blk lv3 clk" data-go="s-shop"><svg class="ic ic-lg"><use href="#i-cart"/></svg><span class="lbl">商店</span></div>
         <div class="blk lv3 clk"><svg class="ic ic-lg"><use href="#i-quest"/></svg><span class="lbl">任务</span></div>
       </div>
       <div class="cta blk lv1 clk"><span class="lbl">开始 / 进入战斗</span><span class="ctatag">主操作</span><span class="order" style="left:auto;right:-9px">①</span></div>
@@ -410,11 +413,11 @@ body.flow .clk:not([data-go]){opacity:.45}
       <div class="hl-cards">
         <div class="hl-cta blk lv1 clk"><span class="lbl">开始 / 进入战斗</span><span class="ctatag" style="top:6px;right:6px">主操作·最大卡</span><span class="order" style="top:6px;left:6px">①</span></div>
         <div class="hl-row">
-          <div class="blk lv2 clk" onclick="go('s-bag')"><svg class="ic ic-lg"><use href="#i-bag"/></svg><span class="lbl">背包</span><span class="order">②</span></div>
-          <div class="blk lv2 clk" onclick="go('s-role')"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
+          <div class="blk lv2 clk" data-go="s-bag"><svg class="ic ic-lg"><use href="#i-bag"/></svg><span class="lbl">背包</span><span class="order">②</span></div>
+          <div class="blk lv2 clk" data-go="s-role"><svg class="ic ic-lg"><use href="#i-person"/></svg><span class="lbl">角色</span></div>
         </div>
         <div class="hl-row">
-          <div class="blk lv3 clk" onclick="go('s-shop')"><svg class="ic ic-lg"><use href="#i-cart"/></svg><span class="lbl">商店</span></div>
+          <div class="blk lv3 clk" data-go="s-shop"><svg class="ic ic-lg"><use href="#i-cart"/></svg><span class="lbl">商店</span></div>
           <div class="blk lv3 clk"><svg class="ic ic-lg"><use href="#i-quest"/></svg><span class="lbl">任务</span></div>
         </div>
       </div>
@@ -469,14 +472,14 @@ body.flow .clk:not([data-go]){opacity:.45}
       <div style="height:30px"></div>
       <div class="hero"><div class="blk lv2 stage"><svg class="silo"><use href="#silo-char"/></svg><span class="lbl" style="font-size:14px;margin-top:auto">角色立绘 + 战力数字<small>第一眼看的:这角色多强</small></span><span class="order">①</span></div></div>
       <div class="rows"><div class="blk lv3"><span class="lbl">属性</span></div><div class="blk lv3"><span class="lbl">装备槽</span></div><div class="blk lv3"><span class="lbl">技能</span><span class="order" style="top:-9px">③</span></div></div>
-      <div class="cta blk lv1 clk"><span class="lbl">升级 / 强化</span><span class="ctatag">主操作·材料够就高亮</span><span class="order" style="left:auto;right:-9px">②</span></div>
+      <div class="cta blk lv1 clk" data-go="s-bag"><span class="lbl">升级 / 强化</span><span class="ctatag">主操作·材料够就高亮</span><span class="order" style="left:auto;right:-9px">②</span></div>
     </div>
     <div class="layout l role show-hints">
       <div style="height:30px"></div>
       <div style="display:flex;gap:10px;flex:1;margin-top:6px">
         <div class="hero"><div class="blk lv2 stage"><svg class="silo"><use href="#silo-char"/></svg><span class="lbl" style="font-size:14px;margin-top:auto">角色立绘 + 战力<small>第一眼看的</small></span><span class="order">①</span></div></div>
         <div class="mid"><div class="blk lv3"><span class="lbl">属性面板</span></div><div class="blk lv3"><span class="lbl">装备槽</span></div><div class="blk lv3"><span class="lbl">技能</span><span class="order" style="top:-9px">③</span></div></div>
-        <div class="cta blk lv1 clk"><span class="lbl">升级 / 强化</span><span class="ctatag">主操作</span><span class="order" style="left:auto;right:-9px">②</span></div>
+        <div class="cta blk lv1 clk" data-go="s-bag"><span class="lbl">升级 / 强化</span><span class="ctatag">主操作</span><span class="order" style="left:auto;right:-9px">②</span></div>
       </div>
     </div>
   </section>
@@ -537,7 +540,7 @@ body.flow .clk:not([data-go]){opacity:.45}
         <div class="blk lv3"><svg class="slot-silo"><use href="#i-box"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥6</span></div>
         <div class="blk lv3"><svg class="slot-silo"><use href="#i-flask"/></svg><span class="lbl" style="position:absolute;bottom:3px;font-size:9px">¥18</span></div>
       </div>
-      <div class="cta blk lv1 clk"><span class="lbl">购买</span><span class="ctatag">主操作·余额不足则引导充值</span><span class="order" style="left:auto;right:-9px">③</span></div>
+      <div class="cta blk lv1 clk" data-go="s-bag"><span class="lbl">购买</span><span class="ctatag">主操作·余额不足则引导充值</span><span class="order" style="left:auto;right:-9px">③</span></div>
     </div>
   </section>
 
@@ -774,19 +777,53 @@ phone.addEventListener('wheel',e=>{if(!cmpOn)return;e.preventDefault();
   setPct((parseFloat(phone.style.getPropertyValue('--pct'))||50)+(e.deltaY>0?2.5:-2.5));},{passive:false});
 setPct(50);
 
-/* 流程模式:最短 3 屏链路(方舟线),热点由 data-go 声明 */
-const FLOW=['s-ak-home','s-ak-stage','s-ak-bt'];
-let flowOn=false;
+/* 流程模式:每条 = 一条可点链路,热点由 data-go 声明。
+   同一屏可以出现在多条流程里(主界面既是养成的起点、也是购买的起点),
+   所以绿框不认元素、只认「当前这条流程的下一步是哪屏」。 */
+const FLOWS=[
+ {name:'塔防案例 · 明日方舟 出击一次',steps:[
+   ['s-ak-home','主界面'],['s-ak-stage','关卡选择'],['s-ak-bt','战斗部署']]},
+ {name:'通用 · 养成一次',steps:[
+   ['s-home','主界面'],['s-role','角色养成'],['s-bag','背包找材料']]},
+ {name:'通用 · 买一次',steps:[
+   ['s-home','主界面'],['s-shop','商城'],['s-bag','背包·拿到手']]},
+];
+const NUM='①②③④⑤⑥';
+let flowOn=false,curFlow=0;
+function buildFlowbar(){
+  const sel=document.getElementById('fsel');
+  if(!sel.options.length)sel.innerHTML=FLOWS.map((f,i)=>'<option value="'+i+'">'+f.name+'</option>').join('');
+  sel.value=curFlow;
+  document.getElementById('fsteps').innerHTML=FLOWS[curFlow].steps
+    .map((s,i)=>'<span class="stp" data-idx="'+i+'" onclick="go(\''+s[0]+'\')">'+NUM[i]+' '+s[1]+'</span>')
+    .join('<span class="sep">›</span>');
+}
+function pickFlow(i){
+  curFlow=+i;buildFlowbar();
+  stack.length=0;go(FLOWS[curFlow].steps[0][0],false);
+}
 function toggleFlow(btn){
   flowOn=!flowOn;
   document.body.classList.toggle('flow',flowOn);
   btn.classList.toggle('on',flowOn);
   document.getElementById('flowbar').classList.toggle('on',flowOn);
-  stack.length=0;go(flowOn?FLOW[0]:'gallery',false);
+  if(flowOn)buildFlowbar();
+  stack.length=0;go(flowOn?FLOWS[curFlow].steps[0][0]:'gallery',false);
+}
+/* 当前屏在这条流程里的下一屏;不在这条流程上就没有下一步 */
+function flowNext(id){
+  const st=FLOWS[curFlow].steps,i=st.findIndex(s=>s[0]===id);
+  return (i>=0&&i<st.length-1)?st[i+1][0]:null;
 }
 function renderFlow(){
+  document.querySelectorAll('.flow-next').forEach(e=>e.classList.remove('flow-next'));
   const id=document.querySelector('.screen.active').id;
-  document.querySelectorAll('.flowbar .stp').forEach(s=>s.classList.toggle('cur',s.dataset.step===id));
+  document.querySelectorAll('#fsteps .stp').forEach(s=>
+    s.classList.toggle('cur',FLOWS[curFlow].steps[+s.dataset.idx][0]===id));
+  if(flowOn){
+    const nx=flowNext(id);
+    if(nx)document.querySelectorAll('.screen.active [data-go="'+nx+'"]').forEach(e=>e.classList.add('flow-next'));
+  }
   const tb=document.getElementById('tBack');tb.textContent=stack.length>1?'← 上一步':'← 模板库';
 }
 document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
@@ -803,16 +840,19 @@ const CITES={
   ['③ 中央立绘(视觉主体)','立绘居中较清晰,是第一眼看的情感锚点;但它不是要点的按钮 → 视觉主体 ≠ 行动焦点。','立绘抓眼球,功能卡抓操作'],
   ['④ 主推活动 banner(运营位)','限时活动放一角,常驻但让位给主操作。','运营位靠边'],
   ['资源 / 背景(低)','资源是常驻状态数字;满屏场景去饱和当衬底——都不抢注意力。','状态信息弱化 · 面积≠重要度'],
+  ['▶ 流程判断 · 一个大厅要接住好几条路','主界面的工作是分流:同一个大厅,想打关的、想养成的、想买东西的都从这儿进。所以它的层级排的不是"哪个功能重要",而是"最常走的那条路给最大最亮"。这也是大厅最难做的原因——它要同时当好几条链路的第一步,每条链路都觉得自己该排前面。','主界面 = 分流器,最常走的路给最大'],
  ]},
  's-bag':{title:'说明 · 背包 / 物品',rows:[
   ['① 物品网格(高)','为什么最高:玩家来背包就是找东西,所以物品格是第一眼要看的;带 NEW/红点的(新获得)最跳。','找东西 → 网格优先'],
   ['② 分类筛选(中)','为什么中等:筛选只是找东西的手段、不是目的,所以压低让位给网格;横屏转成左侧竖排。','手段让位于目的'],
   ['③ 使用/装备(选中后变主操作)','为什么:平时不抢眼,选中某个物品后才升为最突出的按钮。','按需出现的操作'],
+  ['▶ 流程判断 · 两条路都通到这一屏','背包同时是「养成线」的终点(来找材料)和「买一次」的终点(来看买到了什么)。来路不同,玩家要的东西也不同:找材料的人要**筛得快**,刚买完的人要**一眼认出新东西**。所以 NEW 标记不是装饰,它是购买链路的收尾反馈——玩家花了钱,得看见东西真的到手。','同一屏,来路不同,任务就不同'],
  ]},
  's-role':{title:'说明 · 角色 / 养成',rows:[
   ['① 立绘 + 战力数字(高·第一眼)','为什么最高:玩家进来第一件事是看"我这角色现在多强、下一步练谁"。','养成界面的第一焦点'],
   ['② 升级/强化(主操作,材料够就高亮)','为什么:这是养成里最高频的动作,所以做成主操作;材料不够时置灰不可点。','高频动作 → 主操作'],
   ['③ 属性/装备/技能(中,让位)','为什么中等:是查看用的信息,不是当前要做的动作,所以让位给立绘和强化键。看到的主体和要点的按钮,是两个不同焦点。','信息让位于操作'],
+  ['▶ 流程判断 · 强化选材料,要不要跳出去','⚠️ 这条链路**故意留了一个坏味道**:点「升级/强化」会跳去背包找材料,玩家得退回来才能接着强化——决策在这屏、材料却在那屏。这正是原型最容易验出来的那类问题:静态图上看每屏都挺好,一走链路就发现玩家被支使着来回跑。真做的时候应该把材料格直接嵌进强化面板,让人不用离开这屏。','决策和它要用的信息,放在同一屏'],
  ]},
  's-dressup':{title:'说明 · 乙女换装 / 搭配',rows:[
   ['① 角色立绘(最高·C 位)','为什么最高:换装游戏的核心就是"看角色美不美",立绘永远是第一眼。注意:同样是立绘,大厅里当背景弱化、换装里却是绝对主角——层级看这屏要干什么。','立绘 = 换装的主角'],
@@ -831,6 +871,7 @@ const CITES={
   ['② 商品网格(中)','常驻商品分类陈列,重要但让位给主推礼包。','常驻商品次于主推'],
   ['③ 购买(主操作,余额不足则置灰引导充值)','这屏的核心转化动作。','转化动作 = 主操作'],
   ['余额(低)','状态信息,常驻不抢焦点。','状态信息弱化'],
+  ['▶ 流程判断 · 入口要短,收尾要有落点','从大厅到商城只隔一步——付费入口普遍会贴着主界面放,中间每多一层,走到的人就少一批。但买完不能停在这儿:玩家需要看见东西真的到手,所以链路要再接一屏背包收尾。付费流程的完整形状是「一步进来 + 一步确认拿到」,前半段决定有多少人来,后半段决定他下次还来不来。','入口要短,收尾要给落点'],
  ]},
  's-rpg-battle':{title:'说明 · RPG 战斗 HUD',rows:[
   ['① 自身血 / 蓝条(最高·濒死红闪)','为什么最高:生死即时、每秒都在看,濒死是最高威胁。','生死信息 = 最高'],
@@ -878,8 +919,9 @@ const CITES={
   ['③ 左侧任务列表选中(中)','用选中色标当前任务,列表让位给右侧详情。','列表让位于详情'],
  ]},
 };
+const md=s=>String(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>'); /* 说明文案里的 **重点** 转粗体 */
 function renderCite(id){const c=CITES[id];if(!c)return;document.getElementById('cite-title').textContent=c.title;
-  document.getElementById('cite-body').innerHTML=c.rows.map(r=>`<div class="cite-row"><b>${r[0]}</b><br>${r[1]}<br><span class="src">↳ ${r[2]}</span></div>`).join('');}
+  document.getElementById('cite-body').innerHTML=c.rows.map(r=>`<div class="cite-row"><b>${md(r[0])}</b><br>${md(r[1])}<br><span class="src">↳ ${md(r[2])}</span></div>`).join('');}
 function openCite(){renderCite(document.querySelector('.screen.active').id);document.getElementById('cite').classList.add('open');document.getElementById('tCite').classList.add('on');}
 function closeCite(){document.getElementById('cite').classList.remove('open');document.getElementById('tCite').classList.remove('on');}
 go('gallery');setOri(true); /* 默认横屏(多数游戏界面为横屏) */
