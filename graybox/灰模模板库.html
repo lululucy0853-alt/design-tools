@@ -794,7 +794,18 @@ const FLOWS=[
    ['s-home','主界面'],['s-shop','商城'],['s-bag','背包·拿到手']]},
 ];
 const NUM='①②③④⑤⑥';
-let flowOn=false,curFlow=0;
+let flowOn=false,curFlow=0,hintsBefore=null;
+/* 走流程时收起黄色层级序号:一屏只留绿框一个信号。退出时恢复原状,「引导」按钮随时能叫回来 */
+function syncHints(){
+  const th=document.getElementById('tHints');
+  if(flowOn){
+    hintsBefore=th.classList.contains('on');
+    if(hintsBefore)tog('show-hints',th);
+  }else if(hintsBefore){
+    if(!th.classList.contains('on'))tog('show-hints',th);
+    hintsBefore=null;
+  }
+}
 function buildFlowbar(){
   const sel=document.getElementById('fsel');
   if(!sel.options.length)sel.innerHTML=FLOWS.map((f,i)=>'<option value="'+i+'">'+f.name+'</option>').join('');
@@ -813,6 +824,7 @@ function toggleFlow(btn){
   btn.classList.toggle('on',flowOn);
   document.getElementById('flowbar').classList.toggle('on',flowOn);
   if(flowOn)buildFlowbar();
+  syncHints();
   stack.length=0;go(flowOn?FLOWS[curFlow].steps[0][0]:'gallery',false);
 }
 /* 当前屏在这条流程里的下一屏;不在这条流程上就没有下一步 */
