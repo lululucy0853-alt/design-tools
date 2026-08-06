@@ -245,11 +245,13 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh}
 /* 绿框只给「当前这条流程的下一步」,同一屏可以是多条流程的岔口 */
 body.flow .flow-next{outline:2px solid var(--flow);outline-offset:2px;animation:flowpulse 1.7s ease-in-out infinite}
 @keyframes flowpulse{0%,100%{box-shadow:0 0 0 0 rgba(94,224,168,.45)}50%{box-shadow:0 0 0 8px rgba(94,224,168,0)}}
-body.flow .clk:not(.flow-next){opacity:.45}
+/* 流程模式 = 一条路走到底:除了绿框,其他都点不动,走不丢 */
+body.flow .clk:not(.flow-next){opacity:.3;pointer-events:none}
 .flowbar{display:none;gap:7px;align-items:center;font-size:11px;color:#7e7e88;flex-wrap:wrap;justify-content:center}
 .flowbar.on{display:flex}
-.flowbar .stp{padding:4px 9px;border:1px solid #34343c;border-radius:14px;cursor:pointer}
-.flowbar .stp.cur{border-color:var(--flow);color:var(--flow)}
+.flowbar .stp{padding:4px 9px;border:1px solid #2a2a31;border-radius:14px;cursor:pointer;color:#5f5f68}
+.flowbar .stp.done{color:#9a9aa4;border-color:#3a3a42}
+.flowbar .stp.cur{background:var(--flow);border-color:var(--flow);color:#111;font-weight:800}
 .flowbar .sep{color:#4a4a52}
 .flowbar .bk{background:#1a1a20;border:1px solid #383840;color:#bbb;font-size:11px;padding:4px 10px;border-radius:14px;cursor:pointer;font-family:inherit}
 .flowbar .tip{width:100%;text-align:center;color:#5f5f68;font-size:10px}
@@ -335,7 +337,6 @@ body.flow .clk:not(.flow-next){opacity:.45}
  <div class="flowbar" id="flowbar">
     <select class="fsel" id="fsel" onchange="pickFlow(this.value)"></select>
     <span class="fsteps" id="fsteps"></span>
-    <span class="tip">绿框 = 下一步该点的地方</span>
  </div>
  <div class="scr-title" id="scrTitle"></div>
  <div class="phone mode-portrait" id="phone">
@@ -748,7 +749,11 @@ function renderTitle(el){
   if(!tt)return;
   st.innerHTML=tt+(el.dataset.tag?'<small>'+el.dataset.tag+'</small>':'');
 }
-function goBack(){go(stack.pop()||'gallery',false);}
+/* 流程模式下退到起点再返回 = 直接退出流程,不会落在"开着流程条却站在模板库"的错位状态 */
+function goBack(){
+  if(flowOn&&!stack.length){toggleFlow(document.getElementById('tFlow'));return;}
+  go(stack.pop()||'gallery',false);
+}
 
 /* 对照原图:有 data-ref 的屏才可用;原图外置在 img/,撤图 = 删目录 */
 const tCmp=document.getElementById('tCmp'),realImg=document.getElementById('real'),split=document.getElementById('split');
@@ -818,8 +823,12 @@ function flowNext(id){
 function renderFlow(){
   document.querySelectorAll('.flow-next').forEach(e=>e.classList.remove('flow-next'));
   const id=document.querySelector('.screen.active').id;
-  document.querySelectorAll('#fsteps .stp').forEach(s=>
-    s.classList.toggle('cur',FLOWS[curFlow].steps[+s.dataset.idx][0]===id));
+  const st=FLOWS[curFlow].steps,ci=st.findIndex(s=>s[0]===id);
+  document.querySelectorAll('#fsteps .stp').forEach(s=>{
+    const i=+s.dataset.idx;
+    s.classList.toggle('cur',i===ci);       /* 绿底 = 你在这儿 */
+    s.classList.toggle('done',ci>=0&&i<ci); /* 亮灰 = 走过了 */
+  });
   if(flowOn){
     const nx=flowNext(id);
     if(nx)document.querySelectorAll('.screen.active [data-go="'+nx+'"]').forEach(e=>e.classList.add('flow-next'));
