@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>策划案看板</title>
+<style>
+:root{
+  --bg:#F5F3EF; --card:#FFFFFF; --line:#E3DED4; --line2:#EFEAE1; --soft:#FAF8F5;
+  --ink:#1B1A18; --ink2:#5F5A53; --ink3:#8F8880;
+  --red:#C0402B; --red-bg:#FBEDEA; --red-line:#EBC9C1;
+  --amber:#B07A14; --amber-bg:#FBF3E2; --amber-line:#E9D6AC;
+  --green:#3F7350; --green-bg:#EDF3EE; --green-line:#C8DCCE;
+  --blue:#2C5A78; --blue-bg:#EBF1F5; --blue-line:#C3D5E0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans CN",system-ui,sans-serif;
+  font-size:15px;line-height:1.7;padding:0 0 96px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* 顶栏 + 五层步进 */
+.top{position:sticky;top:0;z-index:30;background:rgba(245,243,239,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top .r1{display:flex;align-items:center;gap:14px;height:52px}
+.top h1{font-size:15px;font-weight:600;white-space:nowrap}
+.tags{display:flex;gap:6px;flex:1;flex-wrap:wrap}
+.tag{font-size:11px;color:var(--ink2);border:1px solid var(--line);border-radius:99px;padding:2px 10px;background:var(--card);white-space:nowrap}
+.date{font-size:11px;color:var(--ink3);white-space:nowrap}
+.steps{display:flex;gap:0;padding-bottom:10px;overflow-x:auto}
+.step{flex:1;min-width:120px;text-align:left;padding:8px 12px 0;border-top:3px solid var(--line);cursor:pointer;transition:.15s;background:none;font-family:inherit;text-align:left}
+.step:hover{border-top-color:var(--ink3)}
+.step .no{font-size:10px;letter-spacing:.14em;color:var(--ink3);font-weight:600}
+.step .nm{font-size:13px;font-weight:600;margin-top:1px}
+.step .st{font-size:11px;color:var(--ink3);margin-top:1px}
+.step.block{border-top-color:var(--red)}
+.step.block .no,.step.block .st{color:var(--red)}
+.step.done{border-top-color:var(--green)}
+
+/* 结论 */
+.verdict{margin:36px 0 0;padding:30px;border-radius:10px;border:1px solid var(--red-line);background:var(--red-bg)}
+.verdict .lab{font-size:11px;letter-spacing:.16em;color:var(--red);font-weight:700;margin-bottom:10px}
+.verdict h2{font-size:29px;line-height:1.35;font-weight:700;letter-spacing:-.01em;margin-bottom:14px}
+.verdict p{color:var(--ink2);max-width:62ch;font-size:14.5px}
+.blockers{margin-top:22px;display:grid;gap:10px}
+.blocker{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--red-line);border-radius:8px;padding:15px 17px}
+.blocker .n{flex:none;width:22px;height:22px;border-radius:99px;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:3px}
+.blocker .q{font-weight:600;font-size:15.5px;margin-bottom:3px}
+.blocker .i{font-size:13px;color:var(--ink2)}
+.blocker .i b{color:var(--red);font-weight:600}
+
+/* 层区块 */
+.layer{margin-top:64px;scroll-margin-top:130px}
+.lhd{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:8px}
+.lhd .no{font-size:11px;letter-spacing:.16em;font-weight:700;color:var(--ink3)}
+.lhd h3{font-size:23px;font-weight:700;letter-spacing:-.01em}
+.lhd .cause{font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--ink);color:#fff}
+.lhd .cnt{margin-left:auto;font-size:12px;color:var(--ink3)}
+.lsub{color:var(--ink2);font-size:14px;margin:14px 0 22px;max-width:66ch}
+.lsub b{color:var(--ink)}
+
+/* 界面工作卡 */
+.scard{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.scard.ghost{border-color:var(--red-line);background:linear-gradient(0deg,var(--red-bg),var(--red-bg))}
+.sch{display:flex;align-items:center;gap:12px;padding:15px 18px;cursor:pointer;user-select:none}
+.sch:hover{background:var(--soft)}
+.scard.ghost .sch:hover{background:#F9E7E3}
+.sch .idx{flex:none;width:22px;height:22px;border-radius:5px;background:var(--ink);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.scard.ghost .sch .idx{background:var(--red)}
+.sch .nm{font-weight:600;font-size:15.5px;flex:1}
+.sch .mt{font-size:11px;color:var(--ink3)}
+.sch .mt b{color:var(--ink2);font-weight:600}
+.sch .arw{font-size:11px;color:var(--ink3);transition:.2s}
+.scard.open .arw{transform:rotate(90deg)}
+.scb{display:none;border-top:1px solid var(--line2);padding:20px 18px}
+.scard.open .scb{display:block}
+.miniNote{padding:0 18px 15px;font-size:12.5px;color:var(--red)}
+
+/* 因 */
+.why3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.w1{background:var(--soft);border:1px solid var(--line2);border-radius:8px;padding:12px 14px}
+.w1 .k{font-size:10.5px;letter-spacing:.1em;color:var(--ink3);font-weight:700;margin-bottom:5px}
+.w1 .v{font-size:13.5px;line-height:1.6}
+.kv{display:flex;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13.5px}
+.kv:last-child{border-bottom:0}
+.kv .k{flex:none;width:64px;color:var(--ink3);font-size:12px;padding-top:2px}
+.ord{margin-top:14px;background:var(--blue-bg);border:1px solid var(--blue-line);border-radius:8px;padding:14px 16px}
+.ord .t{font-size:11px;letter-spacing:.1em;color:var(--blue);font-weight:700;margin-bottom:9px}
+.ord ol{list-style:none;counter-reset:o}
+.ord li{counter-increment:o;padding:5px 0 5px 30px;position:relative;font-size:13.5px;border-bottom:1px dashed var(--blue-line)}
+.ord li:last-child{border-bottom:0}
+.ord li::before{content:counter(o);position:absolute;left:0;top:5px;width:20px;height:20px;border-radius:99px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ord ol.cs li::before{content:none}
+.ord li .dotc{position:absolute;left:0;top:5px;width:20px;height:20px;border-radius:99px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:1}
+
+/* CTA 块 */
+.cta{margin-top:12px;border:1px solid var(--ink);border-radius:8px;overflow:hidden}
+.cta .ch{background:var(--ink);color:#fff;font-size:10.5px;letter-spacing:.14em;font-weight:700;padding:6px 14px}
+.cta .cb{padding:12px 14px}
+.cta .row{display:flex;gap:12px;padding:6px 0;font-size:13.5px}
+.cta .row .k{flex:none;width:52px;font-size:11px;color:var(--ink3);padding-top:3px;font-weight:600}
+.cta .row .v b{font-weight:700}
+.cta .row.main .v{font-size:15px}
+.cta .none{font-size:13.5px;color:var(--ink2)}
+.cta .none b{color:var(--ink);font-weight:700}
+.cta .cw{margin-top:8px;padding-top:9px;border-top:1px dashed var(--line2);font-size:12.5px;color:#5C4A20;background:none}
+.cta .cw b{color:var(--amber);font-weight:700}
+.on1,.on2,.on3,.on4,.on5{display:inline-flex;width:16px;height:16px;border-radius:99px;font-size:10px;font-weight:700;align-items:center;justify-content:center;vertical-align:-3px;margin:0 1px}
+
+/* 果 */
+.hcard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:12px}
+.hcard h4{font-size:16px;font-weight:700;margin-bottom:4px}
+.hcard .from{font-size:11.5px;color:var(--ink3);margin-bottom:16px}
+.hlv{display:flex;gap:14px;padding:13px 0;border-bottom:1px dashed var(--line2)}
+.hlv:last-of-type{border-bottom:0}
+.hlv .tagL{flex:none;width:58px}
+.hlv .tagL span{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px}
+.hlv.h .tagL span{background:var(--ink);color:#fff}
+.hlv.m .tagL span{background:#D8D2C7;color:var(--ink)}
+.hlv.l .tagL span{background:transparent;color:var(--ink3);border:1px solid var(--line)}
+.hlv .txt b{font-weight:600}
+.hlv .why{display:block;font-size:12.5px;color:var(--ink2);margin-top:3px}
+.path{margin-top:16px;background:var(--soft);border:1px solid var(--line2);border-radius:8px;padding:14px 16px;font-size:13.5px}
+.path .t{font-size:10.5px;letter-spacing:.1em;color:var(--ink3);font-weight:700;margin-bottom:7px}
+.path .p b{font-weight:600}
+.path .p i{font-style:normal;color:var(--ink3);padding:0 6px}
+.hwarn{margin-top:14px;background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:8px;padding:13px 15px;font-size:13.5px;color:#5C4A20}
+.hwarn b{color:var(--amber);font-weight:700}
+
+/* 通用块 */
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:12px}
+.box h4{font-size:15px;font-weight:700;margin-bottom:10px}
+.li{display:flex;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line2);font-size:14px}
+.li:last-child{border-bottom:0}
+.li .mk{flex:none;width:16px;text-align:center;font-weight:700}
+.li .mk.x{color:var(--red)}.li .mk.q{color:var(--amber)}.li .mk.v{color:var(--green)}
+.li .sm{display:block;font-size:12.5px;color:var(--ink2);margin-top:2px}
+
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:14px}
+th{text-align:left;font-size:10.5px;letter-spacing:.1em;color:var(--ink3);font-weight:700;padding:11px 15px;background:var(--soft);border-bottom:1px solid var(--line)}
+td{padding:11px 15px;border-bottom:1px solid var(--line2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr.miss td:nth-child(2){color:var(--red);font-weight:600}
+tr.ask td:nth-child(2){color:var(--amber);font-weight:600}
+tr.ok td:nth-child(2){color:var(--green);font-weight:600}
+td.dim{color:var(--ink3);font-size:12.5px}
+td.jd{color:var(--ink2);font-size:13px}
+
+/* 工作量 */
+.wl{display:grid;grid-template-columns:1fr 288px;gap:14px;align-items:start;margin-top:14px}
+.wl .big{background:var(--ink);color:#fff;border-radius:10px;padding:22px}
+.wl .big .n{font-size:42px;font-weight:700;line-height:1;letter-spacing:-.03em}
+.wl .big .u{font-size:12.5px;opacity:.72;margin-top:7px}
+.wl .big hr{border:0;border-top:1px solid rgba(255,255,255,.16);margin:18px 0}
+.wl .big .ex{font-size:12px;opacity:.74;line-height:1.7}
+.wl .big .ex b{opacity:1;font-weight:600}
+
+/* 问题清单 */
+.qlayer{margin-bottom:22px}
+.qlh{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.qlh .bad{font-size:11px;font-weight:700;letter-spacing:.08em;padding:3px 10px;border-radius:5px;background:var(--ink);color:#fff}
+.qlh .bad.r{background:var(--red)}
+.qlh .ct{font-size:12px;color:var(--ink3)}
+.qlh .copy{margin-left:auto;font-size:12px;color:var(--ink2);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit}
+.qlh .copy:hover{border-color:var(--ink3);color:var(--ink)}
+.qi{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--ink);border-radius:8px;padding:13px 16px;display:flex;gap:12px;align-items:flex-start;margin-bottom:8px}
+.qi.r{border-left-color:var(--red)}
+.qi input{margin-top:5px;flex:none;width:15px;height:15px;accent-color:#1B1A18;cursor:pointer}
+.qi .t{font-size:14px;line-height:1.6;font-weight:500}
+.qi .im{font-size:12.5px;color:var(--ink2);margin-top:4px}
+.qi .im b{color:var(--red);font-weight:600}
+.qi.done .t{text-decoration:line-through;color:var(--ink3)}
+
+.decided{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 18px;margin-top:8px}
+.foot{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink3);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;padding:10px 20px;border-radius:99px;opacity:0;pointer-events:none;transition:.22s;z-index:50}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:760px){.wl,.why3{grid-template-columns:1fr}.verdict{padding:20px}.verdict h2{font-size:22px}}
+@media print{.top{position:static}.copy{display:none}body{background:#fff}.scb{display:block!important}}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="wrap">
+  <div class="r1">
+    <h1 id="tTitle">策划案看板</h1>
+    <div class="tags" id="tTags"></div>
+    <div class="date" id="tDate"></div>
+  </div>
+  <div class="steps" id="tSteps"></div>
+</div></div>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <div class="lab" id="vLab"></div>
+    <h2 id="vHead"></h2>
+    <p id="vWhy"></p>
+    <div class="blockers" id="vBlock"></div>
+  </div>
+
+  <!-- 第1层 -->
+  <section class="layer" id="L1">
+    <div class="lhd"><span class="no">第 1 层</span><h3>架构 · 装什么 + 排优先级</h3><span class="cause">因</span><span class="cnt" id="l1cnt"></span></div>
+    <p class="lsub" id="l1sub"></p>
+    <div class="box" id="l1con"></div>
+    <div id="l1screens"></div>
+    <div class="box" style="margin-top:18px"><h4>工作量【估算,不是承诺】</h4>
+      <p style="font-size:13.5px;color:var(--ink2)" id="wSub"></p>
+      <div class="wl">
+        <table><thead><tr><th>项目</th><th style="width:92px">类型</th><th style="width:76px">折合</th></tr></thead><tbody id="wBody"></tbody></table>
+        <div class="big"><div class="n" id="wNum"></div><div class="u" id="wUnit"></div><hr><div class="ex" id="wEx"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 第2层 -->
+  <section class="layer" id="L2">
+    <div class="lhd"><span class="no">第 2 层</span><h3>引导 · 视觉层级</h3><span class="cause">果</span><span class="cnt">高 / 中 / 低 = 注意力,不是面积</span></div>
+    <p class="lsub" id="l2sub"></p>
+    <div id="l2wrap"></div>
+  </section>
+
+  <!-- 第3层 -->
+  <section class="layer" id="L3">
+    <div class="lhd"><span class="no">第 3 层</span><h3>视觉语言 · 气质与零件</h3><span class="cnt" id="l3cnt"></span></div>
+    <p class="lsub" id="l3sub"></p>
+    <div id="l3wrap"></div>
+  </section>
+
+  <!-- 第4层 -->
+  <section class="layer" id="L4">
+    <div class="lhd"><span class="no">第 4 层</span><h3>交互 · 状态与反馈</h3><span class="cnt" id="l4cnt"></span></div>
+    <p class="lsub">第 1 层列的状态清单,这里逐个落成表现。下面是策划案<b>没写、但必然会遇到</b>的。</p>
+    <table><thead><tr><th style="width:30%">什么时候出现</th><th style="width:18%">状态</th><th>怎么办</th></tr></thead><tbody id="gBody"></tbody></table>
+  </section>
+
+  <!-- 第5层 -->
+  <section class="layer" id="L5">
+    <div class="lhd"><span class="no">第 5 层</span><h3>交付 · 规范与适配</h3><span class="cnt" id="l5cnt"></span></div>
+    <p class="lsub" id="l5sub"></p>
+    <div id="l5wrap"></div>
+  </section>
+
+  <!-- 问题 -->
+  <section class="layer" id="QQ">
+    <div class="lhd"><span class="no">汇总</span><h3>要问策划的,按层归位</h3><span class="cnt" id="qcnt"></span></div>
+    <p class="lsub">每条都标了<b>卡住哪一层</b>——不是所有问题都得现在问,<b>卡在第 1 层的必须先问</b>,卡在第 5 层的可以边做边问。</p>
+    <div id="qWrap"></div>
+    <h4 style="margin:26px 0 8px;font-size:15px">我替你定了(不同意可以推翻)</h4>
+    <div class="decided" id="qSelf"></div>
+    <h4 style="margin:26px 0 8px;font-size:15px">策划已经写清的(存证,防后期改口)</h4>
+    <div class="decided" id="qClear"></div>
+  </section>
+
+  <div class="foot">
+    <span id="fSrc"></span>
+    <span>【推测】= 我从文档推断 ｜【要问】= 需策划确认 ｜ 其余均有原文依据</span>
+  </div>
+</div>
+<div class="toast" id="toast">已复制</div>
+
+<script>
+/* ═══════════ 数据区:换策划案只换这一段 ═══════════ */
+const DATA=/*__DATA__*/;
+
+/* ═══════════ 渲染 ═══════════ */
+const $=s=>document.querySelector(s),
+ el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+const KEY='specboard2:'+DATA.meta.title, saved=JSON.parse(localStorage.getItem(KEY)||'{}'),
+ save=()=>localStorage.setItem(KEY,JSON.stringify(saved));
+
+/* 优先级色阶:序号越靠后越浅 */
+const SCALE=[['#2C5A78','#FFFFFF'],['#517E97','#FFFFFF'],['#7CA1B5','#FFFFFF'],['#ABC5D3','#1B1A18'],['#D5E1E9','#5F5A53']];
+const sc=i=>SCALE[Math.min(i,SCALE.length-1)];
+const CIRC='①②③④⑤';
+const colorNums=h=>h.replace(/[①②③④⑤]/g,m=>{const i=CIRC.indexOf(m),[bg,fg]=sc(i);
+  return '<span class="on'+(i+1)+'" style="background:'+bg+';color:'+fg+'">'+(i+1)+'</span>'});
+
+/* CTA 块 */
+function ctaBox(cta){
+  const box=el('div','cta'); box.append(el('div','ch','主 CTA · 行动焦点'));
+  const b=el('div','cb');
+  if(cta.none){ b.append(el('div','none',cta.txt)); }
+  else{
+    const r1=el('div','row main'); r1.append(el('div','k','主 CTA'),el('div','v','<b>'+cta.main+'</b>')); b.append(r1);
+    if(cta.sub){const r2=el('div','row'); r2.append(el('div','k','次级'),el('div','v',cta.sub)); b.append(r2);}
+  }
+  if(cta.warn)b.append(el('div','cw','<b>⚠</b> '+cta.warn));
+  box.append(b); return box;
+}
+
+document.title='策划案看板 · '+DATA.meta.title;
+$('#tTitle').textContent=DATA.meta.title;
+$('#tDate').textContent=DATA.meta.date;
+$('#fSrc').textContent='来源:'+DATA.meta.src;
+DATA.meta.tags.forEach(t=>$('#tTags').append(el('span','tag',t)));
+
+DATA.steps.forEach((s,i)=>{
+  const b=el('button','step'+(s.block?' block':''));
+  b.innerHTML='<div class="no">第 '+(i+1)+' 层</div><div class="nm">'+s.nm+'</div><div class="st">'+s.st+'</div>';
+  b.onclick=()=>document.getElementById('L'+(i+1)).scrollIntoView({behavior:'smooth'});
+  $('#tSteps').append(b);
+});
+
+$('#vLab').textContent=DATA.verdict.lab;
+$('#vHead').textContent=DATA.verdict.head;
+$('#vWhy').textContent=DATA.verdict.why;
+DATA.verdict.blockers.forEach((b,i)=>{
+  const d=el('div','blocker');d.append(el('div','n',String(i+1)));
+  const x=el('div');x.append(el('div','q',b.q),el('div','i',b.i));d.append(x);$('#vBlock').append(d);
+});
+
+// L1
+$('#l1sub').innerHTML=DATA.L1.sub;
+const gh=DATA.L1.screens.filter(s=>!s.w).length;
+$('#l1cnt').textContent=DATA.L1.screens.length+' 屏,其中 '+gh+' 屏策划没单独列';
+const cbox=$('#l1con');cbox.append(el('h4',null,DATA.L1.constraint.title));
+DATA.L1.constraint.items.forEach(it=>{
+  const r=el('div','li');r.append(el('span','mk '+it.mk,it.mk==='x'?'✕':it.mk==='q'?'?':'✓'));
+  const v=el('div',null,it.t);if(it.s)v.append(el('span','sm',it.s));r.append(v);cbox.append(r);
+});
+DATA.L1.screens.forEach((s,i)=>{
+  const c=el('div','scard'+(s.w?'':' ghost')+(s.detail?' open':''));
+  const h=el('div','sch');
+  h.innerHTML='<div class="idx">'+(i+1)+'</div><div class="nm">'+s.n+'</div>'+
+    '<div class="mt"><b>'+s.t+'</b>'+(s.wl?' · 折合 '+s.wl:'')+'</div><div class="arw">▸</div>';
+  c.append(h);
+  if(s.why||s.cta){
+    const b=el('div','scb');
+    if(s.why){
+      const w3=el('div','why3');
+      [['业务目标',s.why.biz],['用户任务',s.why.task],['使用频次',s.why.freq]].forEach(([k,v])=>{
+        const d=el('div','w1');d.append(el('div','k',k),el('div','v',v));w3.append(d)});
+      b.append(w3);
+    }
+    if(s.info){const r=el('div','kv');r.append(el('div','k','装什么'),el('div',null,s.info));b.append(r)}
+    if(s.ops){const r=el('div','kv');r.append(el('div','k','操作'),el('div',null,s.ops));b.append(r)}
+    if(s.states){const r=el('div','kv');r.append(el('div','k','状态'),el('div',null,s.states));b.append(r)}
+    if(s.order){
+      const o=el('div','ord');o.append(el('div','t','排优先级 · 强制排序不许并列(越靠后越浅)'));
+      const ol=el('ol','cs');
+      s.order.forEach((x,i)=>{
+        const li=el('li',null,x), [bg,fg]=sc(i), d=el('span','dotc',String(i+1));
+        d.style.background=bg; d.style.color=fg; li.prepend(d); ol.append(li);
+      });
+      o.append(ol);b.append(o);
+    }
+    if(s.cta)b.append(ctaBox(s.cta));
+    c.append(b);
+    h.onclick=()=>c.classList.toggle('open');
+  } else { h.style.cursor='default'; h.querySelector('.arw').style.visibility='hidden'; }
+  if(s.note)c.append(el('div','miniNote','↑ '+s.note));
+  $('#l1screens').append(c);
+});
+$('#wSub').textContent=DATA.L1.workload.sub;
+DATA.L1.workload.rows.forEach(r=>{const tr=el('tr');
+  tr.append(el('td',null,r.n),el('td','dim',r.t),el('td',null,'<b>'+r.v+'</b>'));$('#wBody').append(tr)});
+$('#wNum').textContent=DATA.L1.workload.num;$('#wUnit').textContent=DATA.L1.workload.unit;
+$('#wEx').innerHTML=DATA.L1.workload.ex;
+
+// L2
+$('#l2sub').innerHTML=DATA.L2.sub;
+DATA.L2.items.forEach(it=>{
+  const c=el('div','hcard');c.append(el('h4',null,it.n),el('div','from',it.from));
+  it.lv.forEach(l=>{
+    const r=el('div','hlv '+(l.k==='高'?'h':l.k==='中'?'m':'l'));
+    r.append(el('div','tagL','<span>'+l.k+'</span>'));
+    const t=el('div','txt',l.t);t.append(el('span','why',colorNums(l.why)));r.append(t);c.append(r);
+  });
+  const p=el('div','path');p.append(el('div','t','视线引导路径'),el('div','p',it.path));c.append(p);
+  if(it.cta)c.append(ctaBox(it.cta));
+  if(it.warn)c.append(el('div','hwarn','<b>⚠ 提醒:</b>'+it.warn));
+  $('#l2wrap').append(c);
+});
+
+// L3 / L5 通用块
+function blocks(host,arr){arr.forEach(b=>{
+  const box=el('div','box');box.append(el('h4',null,b.h));
+  b.items.forEach(it=>{const r=el('div','li');
+    r.append(el('span','mk '+it.mk,it.mk==='x'?'✕':it.mk==='q'?'?':'✓'));
+    const v=el('div',null,it.t);if(it.s)v.append(el('span','sm',it.s));r.append(v);box.append(r)});
+  host.append(box)})}
+$('#l3sub').innerHTML=DATA.L3.sub;$('#l3cnt').textContent=DATA.L3.cnt;blocks($('#l3wrap'),DATA.L3.blocks);
+$('#l5sub').innerHTML=DATA.L5.sub;$('#l5cnt').textContent=DATA.L5.cnt;blocks($('#l5wrap'),DATA.L5.blocks);
+
+// L4
+const miss=DATA.L4.gaps.filter(g=>g.lv==='miss').length;
+$('#l4cnt').textContent=miss+' 个必须补 · '+DATA.L4.gaps.filter(g=>g.lv==='ask').length+' 个要问 · '+DATA.L4.gaps.filter(g=>g.lv==='ok').length+' 个已写';
+DATA.L4.gaps.forEach(g=>{const tr=el('tr',g.lv);
+  tr.append(el('td','dim',g.trg),el('td',null,g.st),el('td','jd',g.jd));$('#gBody').append(tr)});
+
+// 问题按层
+const byLayer={};DATA.questions.forEach(q=>(byLayer[q.layer]=byLayer[q.layer]||[]).push(q));
+$('#qcnt').textContent=DATA.questions.length+' 条 · 其中 '+(byLayer[1]||[]).length+' 条卡住第 1 层';
+const LN={1:'架构',2:'引导',3:'视觉语言',4:'交互',5:'交付'};
+Object.keys(byLayer).sort().forEach(k=>{
+  const arr=byLayer[k],wrap=el('div','qlayer'),head=el('div','qlh');
+  head.append(el('span','bad'+(k==='1'?' r':''),'卡住第 '+k+' 层 · '+LN[k]),
+              el('span','ct',arr.length+' 条'+(k==='1'?' · 必须先问,否则开不了工':'')));
+  const btn=el('button','copy','复制这组');
+  btn.onclick=()=>{
+    const txt='关于'+DATA.meta.title+',以下问题会卡住「第 '+k+' 层 '+LN[k]+'」,需要先确认:\n\n'+
+      arr.map((q,i)=>(i+1)+'. '+q.t+'\n   ('+q.im.replace(/<[^>]+>/g,'')+')').join('\n');
+    navigator.clipboard.writeText(txt).then(()=>{const t=$('#toast');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1600)});
+  };
+  head.append(btn);wrap.append(head);
+  arr.forEach((q,i)=>{
+    const id='q'+k+i,row=el('div','qi'+(k==='1'?' r':''));
+    const cb=el('input');cb.type='checkbox';cb.checked=!!saved[id];
+    if(cb.checked)row.classList.add('done');
+    cb.onchange=()=>{saved[id]=cb.checked;save();row.classList.toggle('done',cb.checked)};
+    const box=el('div');box.append(el('div','t',q.t),el('div','im',q.im));
+    row.append(cb,box);wrap.append(row);
+  });
+  $('#qWrap').append(wrap);
+});
+DATA.self.forEach(t=>{const r=el('div','li');r.append(el('span','mk q','·'),el('div',null,t));$('#qSelf').append(r)});
+DATA.clear.forEach(t=>{const r=el('div','li');r.append(el('span','mk v','✓'),el('div',null,t));$('#qClear').append(r)});
+</script>
+</body>
+</html>

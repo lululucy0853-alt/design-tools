@@ -33,6 +33,10 @@ Markdown → PDF with proper CJK fonts (tables & code blocks render correctly), 
 ### 📥 capture · `capture.py` / `capture.js`
 Tiny helper scripts that fetch a web page's title/meta and append it to a local inbox note (paired with a personal note-taking workflow). Niche / personal — included for completeness.
 
+### 📋 Spec Board · `spec-reader/`
+Turns a game-UI design spec into **a single double-clickable board**, laid out along the 5 layers of game-UI production: layer 1 gives the *why* (business goal / player task / usage frequency + what goes on screen + forced priority order), layer 2 gives the *result* (visual hierarchy high / mid / low + gaze path + primary CTA), and open questions are filed by **which layer they block**, copyable in one click. It does not summarize the spec — it surfaces **what the spec never said**: missing screens, unwritten states, boundaries that must be nailed down before work starts.
+`board-template.html` is the template; `build.py` injects the data. 🔒 Analysis data contains real project content and is git-ignored.
+
 ### ✂️ Sprite Cutout — separate repo
 Transparent-edge trimming + 9-slice is split into its own open-source repo:
 👉 **https://github.com/lululucy0853-alt/sprite-cutout**

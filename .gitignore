@@ -3,3 +3,11 @@ vpn/
 
 # 空的 skill 副本目录
 Remotion_skill/
+
+# 策划案分析数据含真实项目内容,不入公开库(只开源模板与脚本)
+spec-reader/data-*.js
+spec-reader/*看板.html
+spec-reader/out/
+
+# 标注工具:2026-08-24 暂停(Unity 可直接读 PSD 对位,位置数值用不上),先不开源
+ui-annotate/
