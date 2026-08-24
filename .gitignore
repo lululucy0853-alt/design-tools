@@ -11,3 +11,12 @@ spec-reader/out/
 
 # 标注工具:2026-08-24 暂停(Unity 可直接读 PSD 对位,位置数值用不上),先不开源
 ui-annotate/
+
+# 🔒 策划案原件绝不入库(本仓库 PUBLIC)
+spec-reader/*.xlsx
+spec-reader/*.xls
+spec-reader/*.pdf
+spec-reader/*.doc
+spec-reader/*.docx
+spec-reader/*.pptx
+spec-reader/src/
