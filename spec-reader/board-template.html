@@ -59,6 +59,8 @@ body{background:var(--bg);color:var(--ink);
 .lsub b{color:var(--ink)}
 
 /* 界面工作卡 */
+.sdiv{margin:26px 0 12px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;letter-spacing:.1em;font-weight:700;color:var(--ink2)}
+.sdiv span{display:block;font-weight:400;letter-spacing:0;font-size:12.5px;color:var(--ink3);margin-top:4px}
 .scard{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
 .scard.ghost{border-color:var(--red-line);background:linear-gradient(0deg,var(--red-bg),var(--red-bg))}
 .sch{display:flex;align-items:center;gap:12px;padding:15px 18px;cursor:pointer;user-select:none}
@@ -319,7 +321,13 @@ DATA.L1.constraint.items.forEach(it=>{
   const r=el('div','li');r.append(el('span','mk '+it.mk,it.mk==='x'?'✕':it.mk==='q'?'?':'✓'));
   const v=el('div',null,it.t);if(it.s)v.append(el('span','sm',it.s));r.append(v);cbox.append(r);
 });
-DATA.L1.screens.forEach((s,i)=>{
+let _si=0;
+DATA.L1.screens.forEach(s=>{
+  if(s.t==='分隔'){
+    $('#l1screens').append(el('div','sdiv',s.n+(s.note?' <span>'+s.note+'</span>':'')));
+    return;
+  }
+  const i=_si++;
   const c=el('div','scard'+(s.w?'':' ghost')+(s.detail?' open':''));
   const h=el('div','sch');
   h.innerHTML='<div class="idx">'+(i+1)+'</div><div class="nm">'+s.n+'</div>'+
