@@ -49,11 +49,30 @@ body{background:var(--bg);color:var(--ink);
 .blocker .i b{color:var(--red);font-weight:600}
 
 /* 层区块 */
-.layer{margin-top:64px;scroll-margin-top:130px}
-.lhd{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:8px}
-.lhd .no{font-size:11px;letter-spacing:.16em;font-weight:700;color:var(--ink3)}
+.layer{margin-top:56px;scroll-margin-top:calc(var(--toph,120px) + 14px);--lc:#5F5A53}
+.layer[data-l="0"]{--lc:#3B3936}
+.layer[data-l="1"]{--lc:#2C5A78}
+.layer[data-l="2"]{--lc:#3F7350}
+.layer[data-l="3"]{--lc:#7A5B8E}
+.layer[data-l="4"]{--lc:#A06D2C}
+.layer[data-l="5"]{--lc:#4A6670}
+.layer[data-l="q"]{--lc:#5F5A53}
+.lhd{position:sticky;top:var(--toph,120px);z-index:12;display:flex;align-items:baseline;gap:12px;
+  background:var(--bg);padding:12px 0 10px 14px;margin-bottom:10px;
+  border-bottom:2px solid var(--lc);border-left:4px solid var(--lc)}
+.lhd .no{background:var(--lc);color:#fff;padding:3px 9px;border-radius:5px;font-size:10px;letter-spacing:.12em;font-weight:700}
+.lhd .cause{background:var(--lc)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 17px}
+.stat .n{font-size:29px;font-weight:700;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.stat .k{font-size:11.5px;color:var(--ink3);margin-top:7px;line-height:1.5}
+.stat.warn{border-color:var(--red-line);background:var(--red-bg)}
+.stat.warn .n{color:var(--red)}
+.stat.warn .k{color:#8C4436}
+.step.cur{background:rgba(27,26,24,.06)}
+.step.cur .nm{font-weight:700}
 .lhd h3{font-size:23px;font-weight:700;letter-spacing:-.01em}
-.lhd .cause{font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--ink);color:#fff}
+.lhd .cause{font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;color:#fff}
 .lhd .cnt{margin-left:auto;font-size:12px;color:var(--ink3)}
 .lsub{color:var(--ink2);font-size:14px;margin:14px 0 22px;max-width:66ch}
 .lsub b{color:var(--ink)}
@@ -200,14 +219,12 @@ td.jd{color:var(--ink2);font-size:13px}
     <div class="blockers" id="vBlock"></div>
   </div>
 
-  <!-- 第1层 -->
-  <section class="layer" id="L1">
-    <div class="lhd"><span class="no">第 1 层</span><h3>架构 · 装什么 + 排优先级</h3><span class="cause">因</span><span class="cnt" id="l1cnt"></span></div>
-    <p class="lsub" id="l1sub"></p>
-    <div class="box" id="l1con"></div>
-    <div id="l1screens"></div>
-    <div class="box" style="margin-top:18px"><h4>工作量【估算,不是承诺】</h4>
-      <p style="font-size:13.5px;color:var(--ink2)" id="wSub"></p>
+  <!-- 总览:关键数字 + 工作量 -->
+  <section class="layer" id="OV" data-l="0">
+    <div class="lhd"><span class="no">总览</span><h3>要做多少</h3><span class="cnt">估算,不是承诺</span></div>
+    <div class="stats" id="stats"></div>
+    <div class="box" style="margin-top:12px">
+      <p style="font-size:13.5px;color:var(--ink2);margin-bottom:6px" id="wSub"></p>
       <div class="wl">
         <table><thead><tr><th>项目</th><th style="width:92px">类型</th><th style="width:76px">折合</th></tr></thead><tbody id="wBody"></tbody></table>
         <div class="big"><div class="n" id="wNum"></div><div class="u" id="wUnit"></div><hr><div class="ex" id="wEx"></div></div>
@@ -215,36 +232,44 @@ td.jd{color:var(--ink2);font-size:13px}
     </div>
   </section>
 
+  <!-- 第1层 -->
+  <section class="layer" id="L1" data-l="1">
+    <div class="lhd"><span class="no">第 1 层</span><h3>架构 · 装什么 + 排优先级</h3><span class="cause">因</span><span class="cnt" id="l1cnt"></span></div>
+    <p class="lsub" id="l1sub"></p>
+    <div class="box" id="l1con"></div>
+    <div id="l1screens"></div>
+  </section>
+
   <!-- 第2层 -->
-  <section class="layer" id="L2">
+  <section class="layer" id="L2" data-l="2">
     <div class="lhd"><span class="no">第 2 层</span><h3>引导 · 视觉层级</h3><span class="cause">果</span><span class="cnt">高 / 中 / 低 = 注意力,不是面积</span></div>
     <p class="lsub" id="l2sub"></p>
     <div id="l2wrap"></div>
   </section>
 
   <!-- 第3层 -->
-  <section class="layer" id="L3">
+  <section class="layer" id="L3" data-l="3">
     <div class="lhd"><span class="no">第 3 层</span><h3>视觉语言 · 气质与零件</h3><span class="cnt" id="l3cnt"></span></div>
     <p class="lsub" id="l3sub"></p>
     <div id="l3wrap"></div>
   </section>
 
   <!-- 第4层 -->
-  <section class="layer" id="L4">
+  <section class="layer" id="L4" data-l="4">
     <div class="lhd"><span class="no">第 4 层</span><h3>交互 · 状态与反馈</h3><span class="cnt" id="l4cnt"></span></div>
     <p class="lsub">第 1 层列的状态清单,这里逐个落成表现。下面是策划案<b>没写、但必然会遇到</b>的。</p>
     <table><thead><tr><th style="width:30%">什么时候出现</th><th style="width:18%">状态</th><th>怎么办</th></tr></thead><tbody id="gBody"></tbody></table>
   </section>
 
   <!-- 第5层 -->
-  <section class="layer" id="L5">
+  <section class="layer" id="L5" data-l="5">
     <div class="lhd"><span class="no">第 5 层</span><h3>交付 · 规范与适配</h3><span class="cnt" id="l5cnt"></span></div>
     <p class="lsub" id="l5sub"></p>
     <div id="l5wrap"></div>
   </section>
 
   <!-- 问题 -->
-  <section class="layer" id="QQ">
+  <section class="layer" id="QQ" data-l="q">
     <div class="lhd"><span class="no">汇总</span><h3>要问策划的,按层归位</h3><span class="cnt" id="qcnt"></span></div>
     <p class="lsub">每条都标了<b>卡住哪一层</b>——不是所有问题都得现在问,<b>卡在第 1 层的必须先问</b>,卡在第 5 层的可以边做边问。</p>
     <div id="qWrap"></div>
@@ -360,6 +385,21 @@ DATA.L1.screens.forEach(s=>{
   if(s.note)c.append(el('div','miniNote','↑ '+s.note));
   $('#l1screens').append(c);
 });
+/* 总览数字(打开就看到) */
+(function(){
+  const scr=DATA.L1.screens.filter(x=>x.t!=='分隔');
+  const ghost=scr.filter(x=>!x.w).length;
+  const blk=(DATA.verdict.blockers||[]).length;
+  [{n:scr.length,k:'个界面要做'},
+   {n:ghost,k:'个策划案里没单独列',warn:ghost>0},
+   {n:DATA.L1.workload.num,k:DATA.L1.workload.unit},
+   {n:blk,k:'个问题卡着开工',warn:blk>0}
+  ].forEach(t=>{
+    const d=el('div','stat'+(t.warn?' warn':''));
+    d.append(el('div','n',String(t.n)),el('div','k',t.k));
+    $('#stats').append(d);
+  });
+})();
 $('#wSub').textContent=DATA.L1.workload.sub;
 DATA.L1.workload.rows.forEach(r=>{const tr=el('tr');
   tr.append(el('td',null,r.n),el('td','dim',r.t),el('td',null,'<b>'+r.v+'</b>'));$('#wBody').append(tr)});
@@ -424,6 +464,33 @@ Object.keys(byLayer).sort().forEach(k=>{
 });
 DATA.self.forEach(t=>{const r=el('div','li');r.append(el('span','mk q','·'),el('div',null,t));$('#qSelf').append(r)});
 DATA.clear.forEach(t=>{const r=el('div','li');r.append(el('span','mk v','✓'),el('div',null,t));$('#qClear').append(r)});
+
+/* 顶栏实高 → sticky 层标题的吸附位置 */
+function syncTopH(){
+  const t=document.querySelector('.top');
+  if(t)document.documentElement.style.setProperty('--toph',t.offsetHeight+'px');
+}
+syncTopH(); window.addEventListener('resize',syncTopH);
+
+/* 滚动时高亮当前所在层 */
+(function(){
+  const secs=[...document.querySelectorAll('section.layer')];
+  const steps=[...document.querySelectorAll('.step')];
+  let tick=false;
+  function upd(){
+    const y=window.scrollY+(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--toph'))||120)+30;
+    let cur=null;
+    secs.forEach(s=>{ if(s.offsetTop<=y) cur=s; });
+    steps.forEach(b=>b.classList.remove('cur'));
+    if(cur){
+      const l=cur.dataset.l;
+      if(l>='1'&&l<='5'&&steps[+l-1]) steps[+l-1].classList.add('cur');
+    }
+  }
+  window.addEventListener('scroll',()=>{ if(!tick){tick=true;requestAnimationFrame(()=>{upd();tick=false})} },{passive:true});
+  upd();
+})();
+
 </script>
 </body>
 </html>
