@@ -97,10 +97,13 @@ body{background:var(--bg);color:var(--ink);
 .miniNote{padding:0 18px 15px;font-size:12.5px;color:var(--red)}
 
 /* 因 */
-.why3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-.w1{background:var(--soft);border:1px solid var(--line2);border-radius:8px;padding:12px 14px}
+.dlv{display:flex;gap:10px;align-items:baseline;background:var(--ink);color:#fff;border-radius:7px;padding:9px 13px;margin-bottom:14px;font-size:13.5px}
+.dlv .k{flex:none;font-size:10px;letter-spacing:.14em;opacity:.65;font-weight:700}
+.dlv .v{font-weight:600}
+.why3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.w1{background:var(--soft);border:1px solid var(--line2);border-radius:8px;padding:9px 12px}
 .w1 .k{font-size:10.5px;letter-spacing:.1em;color:var(--ink3);font-weight:700;margin-bottom:5px}
-.w1 .v{font-size:13.5px;line-height:1.6}
+.w1 .v{font-size:13.5px;line-height:1.5}
 .kv{display:flex;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13.5px}
 .kv:last-child{border-bottom:0}
 .kv .k{flex:none;width:64px;color:var(--ink3);font-size:12px;padding-top:2px}
@@ -358,8 +361,13 @@ DATA.L1.screens.forEach(s=>{
   h.innerHTML='<div class="idx">'+(i+1)+'</div><div class="nm">'+s.n+'</div>'+
     '<div class="mt"><b>'+s.t+'</b>'+(s.wl?' · 折合 '+s.wl:'')+'</div><div class="arw">▸</div>';
   c.append(h);
-  if(s.why||s.cta){
+  if(s.why||s.cta||s.deliver){
     const b=el('div','scb');
+    if(s.deliver){
+      const d=el('div','dlv');
+      d.append(el('span','k','产出'),el('span','v',s.deliver));
+      b.append(d);
+    }
     if(s.why){
       const w3=el('div','why3');
       [['业务目标',s.why.biz],['用户任务',s.why.task],['使用频次',s.why.freq]].forEach(([k,v])=>{
