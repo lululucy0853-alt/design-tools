@@ -20,3 +20,6 @@ spec-reader/*.doc
 spec-reader/*.docx
 spec-reader/*.pptx
 spec-reader/src/
+
+# Python 缓存
+__pycache__/
