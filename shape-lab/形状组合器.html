@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>形状组合器 · 一屏 12 个变体</title>
+<style>
+:root{
+ --bg:#1B1A19; --panel:#232221; --panel2:#2B2A28; --line:#393735; --line2:#302E2C;
+ --ink:#EEEBE5; --ink2:#A29C94; --ink3:#6D6862;
+ --acc:#E0A94B; --acc2:#7FB3D5; --ok:#7BB98A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+ font-size:13px;line-height:1.6;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+button{font-family:inherit;cursor:pointer}
+
+.bar{height:50px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+.bar .logo{font-weight:700;font-size:14px}
+.bar .sub{font-size:11.5px;color:var(--ink3)}
+.sep{width:1px;height:20px;background:var(--line)}
+.btn{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:7px 14px;font-size:12.5px}
+.btn:hover{border-color:var(--ink3);background:#343230}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#241A08;font-weight:700}
+.bar .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+
+.main{flex:1;display:flex;min-height:0}
+.side{width:270px;flex:none;background:var(--panel);border-right:1px solid var(--line);overflow:auto;padding:12px}
+.side.right{border-right:0;border-left:1px solid var(--line);width:340px}
+.grp{margin-bottom:16px}
+.gh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.gh .t{font-size:10.5px;letter-spacing:.12em;color:var(--ink3);font-weight:700}
+.gh .lk{margin-left:auto;font-size:10.5px;color:var(--ink3);background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:3px 9px}
+.gh .lk.on{background:var(--acc);border-color:var(--acc);color:#241A08;font-weight:700}
+.opts{display:flex;flex-wrap:wrap;gap:5px}
+.opt{background:var(--bg);border:1px solid var(--line);color:var(--ink2);border-radius:5px;padding:5px 9px;font-size:11.5px}
+.opt:hover{border-color:var(--ink3);color:var(--ink)}
+.opt.on{background:var(--acc2);border-color:var(--acc2);color:#0D1A21;font-weight:700}
+.rw{display:flex;align-items:center;gap:9px;margin:7px 0;font-size:12px;color:var(--ink2)}
+.rw input[type=range]{flex:1;accent-color:var(--acc)}
+.rw .v{width:34px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+.note{font-size:11px;color:var(--ink3);line-height:1.65;margin-top:6px}
+
+.stage{flex:1;overflow:auto;padding:16px;background:
+ linear-gradient(45deg,#1F1E1D 25%,transparent 25%),linear-gradient(-45deg,#1F1E1D 25%,transparent 25%),
+ linear-gradient(45deg,transparent 75%,#1F1E1D 75%),linear-gradient(-45deg,transparent 75%,#1F1E1D 75%);
+ background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.cell{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;transition:.14s;position:relative}
+.cell:hover{border-color:var(--ink3)}
+.cell.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.cell .cap{font-size:10.5px;color:var(--ink3);margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+.cell .cap b{color:var(--ink2);font-weight:600}
+.cell .no{position:absolute;top:8px;right:10px;font-size:10px;color:var(--ink3);font-variant-numeric:tabular-nums}
+svg{display:block;width:100%;height:auto}
+
+.rh{font-size:15px;font-weight:700;margin-bottom:3px}
+.rs{font-size:11.5px;color:var(--ink3);margin-bottom:12px}
+.parts{display:grid;gap:10px}
+.part{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:10px}
+.part .pn{font-size:10.5px;letter-spacing:.1em;color:var(--ink3);font-weight:700;margin-bottom:7px}
+.chk{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:11px 13px;margin-top:12px}
+.chk h4{font-size:10.5px;letter-spacing:.12em;color:var(--ink3);font-weight:700;margin-bottom:8px}
+.chk .ci{display:flex;gap:8px;font-size:12px;padding:3px 0;color:var(--ink2)}
+.chk .ci b{color:var(--ok)}
+.params{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:11px 13px;margin-top:10px;font-size:12px}
+.params .pr{display:flex;gap:10px;padding:3px 0;border-bottom:1px dashed var(--line2)}
+.params .pr:last-child{border-bottom:0}
+.params .pr .k{flex:none;width:56px;color:var(--ink3);font-size:11.5px}
+.empty{color:var(--ink3);padding:22px 4px;line-height:1.9;font-size:12.5px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(14px);background:var(--acc);color:#241A08;
+ font-size:12.5px;font-weight:700;padding:8px 18px;border-radius:99px;opacity:0;pointer-events:none;transition:.2s;z-index:9}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="logo">形状组合器</span>
+  <span class="sub">锁住想留的,重掷其余 · 一屏 12 个变体</span>
+  <span class="sep"></span>
+  <button class="btn pri" id="bRoll">重掷 12 个</button>
+  <button class="btn" id="bMore">再来 12 个</button>
+  <div class="right">
+    <button class="btn" id="bSvg" disabled>导出选中 SVG</button>
+    <button class="btn" id="bSheet" disabled>导出这一屏</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="side" id="ctrl"></div>
+  <div class="stage"><div class="grid" id="grid"></div></div>
+  <div class="side right" id="rp"><div class="empty">点左边任意一格,看这套形状语言<b>套在五种件上</b>分别长什么样。<br><br>觉得某一轴对了,就在左栏点「锁」——重掷时它不变,只换其余的。</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════ 参数轴:直接对应 wiki「轮廓 · 分割 · 填充」+ 转角(怎么连接) ══════ */
+const AXES=[
+ {k:'base', t:'轮廓 · 基底', o:[['rect','方'],['round','圆'],['tri','三角'],['hex','六边']]},
+ {k:'corner', t:'轮廓 · 转角', o:[['sharp','直角'],['round','圆角'],['cut','切角'],['notch','内凹'],['step','阶梯']]},
+ {k:'edge', t:'轮廓 · 边缘(材料感)', o:[['clean','规则'],['rough','轻微不规则'],['torn','强不规则']]},
+ {k:'split', t:'分割', o:[['none','无'],['h','横分'],['v','纵分'],['band','顶饰带'],['inset','内嵌框'],['diag','斜分']]},
+ {k:'fill', t:'填充', o:[['flat','平涂'],['grad','渐变'],['edge','边缘发光'],['dots','网点'],['hatch','斜线'],['none','空']]},
+ {k:'joint', t:'转角装饰(怎么连接)', o:[['none','无'],['rivet','铆钉'],['wrap','包角'],['gap','缺口'],['bind','缠绕']]}
+];
+const PARTS=[
+ {k:'btn', t:'主按钮', w:200, h:62, label:'开始'},
+ {k:'back', t:'返回键', w:64, h:64, label:'←'},
+ {k:'bar', t:'长条框 / 列表项', w:230, h:48, label:'道具名称'},
+ {k:'slot', t:'方形道具格', w:76, h:76, label:''},
+ {k:'title', t:'标题条', w:210, h:40, label:'章节标题'}
+];
+
+let LOCK={}, PICK={}, CELLS=[], SEL=-1, seedBase=1;
+const $=s=>document.querySelector(s), el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1400)};
+
+/* 确定性伪随机(同一个种子永远出同一个形) */
+function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296}}
+
+/* ══════ 形状生成 ══════ */
+function jitter(pts,amt,R){
+  if(amt<=0)return pts;
+  return pts.map(p=>[p[0]+(R()-.5)*amt,p[1]+(R()-.5)*amt]);
+}
+function toPath(pts,close){return 'M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')+(close!==false?'Z':'')}
+
+/* 轮廓:返回点数组 */
+function outline(w,h,p,R){
+  const c=Math.min(w,h), amt=p.edge==='clean'?0:(p.edge==='rough'?c*.022:c*.06);
+  let r=p.corner==='round'?c*.22:0;
+  const cut=c*.2;
+  let pts=[];
+  if(p.base==='round'){
+    const n=48,rx=w/2,ry=h/2;
+    for(let i=0;i<n;i++){const a=i/n*Math.PI*2;pts.push([w/2+Math.cos(a)*rx,h/2+Math.sin(a)*ry])}
+    return jitter(pts,amt,R);
+  }
+  if(p.base==='tri'){
+    pts=[[w/2,0],[w,h],[0,h]];
+    return jitter(pts,amt,R);
+  }
+  if(p.base==='hex'){
+    const k=w*.18;
+    pts=[[k,0],[w-k,0],[w,h/2],[w-k,h],[k,h],[0,h/2]];
+    return jitter(pts,amt,R);
+  }
+  /* rect + 转角处理 */
+  const C=[[0,0],[w,0],[w,h],[0,h]];
+  if(p.corner==='sharp'){ pts=C; }
+  else if(p.corner==='cut'){
+    pts=[[cut,0],[w-cut,0],[w,cut],[w,h-cut],[w-cut,h],[cut,h],[0,h-cut],[0,cut]];
+  }
+  else if(p.corner==='notch'){
+    const q=cut*.62;
+    pts=[[q,0],[q,q],[w-q,q],[w-q,0],[w,0],[w,h],[w-q,h],[w-q,h-q],[q,h-q],[q,h],[0,h],[0,0]];
+  }
+  else if(p.corner==='step'){
+    const q=cut*.5;
+    pts=[[q,0],[w-q,0],[w-q,q],[w,q],[w,h-q],[w-q,h-q],[w-q,h],[q,h],[q,h-q],[0,h-q],[0,q],[q,q]];
+  }
+  else { /* round:用多段近似,便于统一 jitter */
+    const n=6;
+    const corners=[[r,r,Math.PI,Math.PI*1.5],[w-r,r,Math.PI*1.5,Math.PI*2],[w-r,h-r,0,Math.PI*.5],[r,h-r,Math.PI*.5,Math.PI]];
+    corners.forEach(([cx,cy,a0,a1])=>{for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n;pts.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r])}});
+  }
+  return jitter(pts,amt,R);
+}
+
+/* 分割线 */
+function splits(w,h,p){
+  const g=[];
+  if(p.split==='h') g.push(['M',0,h*.38,'L',w,h*.38]);
+  else if(p.split==='v') g.push(['M',w*.28,0,'L',w*.28,h]);
+  else if(p.split==='band') g.push(['M',0,h*.24,'L',w,h*.24]);
+  else if(p.split==='diag') g.push(['M',w*.62,0,'L',w*.38,h]);
+  else if(p.split==='inset'){
+    const m=Math.min(w,h)*.14;
+    g.push(['M',m,m,'L',w-m,m,'L',w-m,h-m,'L',m,h-m,'Z']);
+  }
+  return g.map(a=>a.map(x=>typeof x==='number'?x.toFixed(1):x).join(' '));
+}
+
+/* 转角装饰 */
+function joints(w,h,p,id){
+  if(p.joint==='none')return '';
+  const c=Math.min(w,h), r=c*.055, m=c*.16;
+  const P=[[m,m],[w-m,m],[w-m,h-m],[m,h-m]];
+  if(p.joint==='rivet') return P.map(([x,y])=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="var(--l3)"/>`).join('');
+  if(p.joint==='wrap'){
+    const L=c*.26,t=c*.07;
+    return [[0,0,1,1],[w,0,-1,1],[w,h,-1,-1],[0,h,1,-1]].map(([x,y,sx,sy])=>
+      `<path d="M${x},${y+sy*L} L${x},${y} L${x+sx*L},${y}" stroke="var(--l3)" stroke-width="${t.toFixed(1)}" fill="none" stroke-linecap="square"/>`).join('');
+  }
+  if(p.joint==='gap'){
+    const L=c*.2,t=c*.09;
+    return [[w/2,0],[w/2,h]].map(([x,y])=>`<rect x="${(x-L/2).toFixed(1)}" y="${(y-t/2).toFixed(1)}" width="${L.toFixed(1)}" height="${t.toFixed(1)}" fill="var(--bgc)"/>`).join('');
+  }
+  if(p.joint==='bind'){
+    const t=c*.055;
+    return [[m*.7,h/2],[w-m*.7,h/2]].map(([x,y])=>
+      `<path d="M${(x-t*1.6).toFixed(1)},${(y-t*2).toFixed(1)} q${(t*3.2).toFixed(1)},${t.toFixed(1)} 0,${(t*4).toFixed(1)}" stroke="var(--l3)" stroke-width="${(t*.7).toFixed(1)}" fill="none"/>`).join('');
+  }
+  return '';
+}
+
+/* 组装一个「件」的 SVG */
+function renderPart(p,part,seed,opt){
+  opt=opt||{};
+  const w=part.w,h=part.h,pad=Math.max(6,Math.min(w,h)*.12);
+  const R=rng(seed*7919+part.k.length*131);
+  const pts=outline(w,h,p,R);
+  const id='g'+Math.abs(seed)+part.k;
+  const fillMap={
+    flat:`fill="var(--l1)"`,
+    grad:`fill="url(#lg${id})"`,
+    edge:`fill="url(#rg${id})"`,
+    dots:`fill="url(#dt${id})"`,
+    hatch:`fill="url(#ht${id})"`,
+    none:`fill="none"`
+  };
+  const defs=`<defs>
+   <linearGradient id="lg${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--l2)"/><stop offset="1" stop-color="var(--l0)"/></linearGradient>
+   <radialGradient id="rg${id}" cx=".5" cy=".5" r=".72"><stop offset=".45" stop-color="var(--l0)"/><stop offset="1" stop-color="var(--l2)"/></radialGradient>
+   <pattern id="dt${id}" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="var(--l0)"/><circle cx="3" cy="3" r="1.15" fill="var(--l2)"/></pattern>
+   <pattern id="ht${id}" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(38)"><rect width="7" height="7" fill="var(--l0)"/><rect width="2.2" height="7" fill="var(--l2)"/></pattern>
+  </defs>`;
+  const sw=Math.max(1.4,Math.min(w,h)*.028);
+  const body=`<path d="${toPath(pts)}" ${fillMap[p.fill]} stroke="var(--l3)" stroke-width="${sw.toFixed(1)}" stroke-linejoin="${p.edge==='clean'?'miter':'round'}"/>`;
+  const sp=splits(w,h,p).map(d=>`<path d="${d}" stroke="var(--l3)" stroke-width="${(sw*.75).toFixed(1)}" fill="none" opacity=".85"/>`).join('');
+  const jt=joints(w,h,p,id);
+  /* 可点击四条之三:内部留白够放文字 */
+  const txt=part.label?`<text x="${(w/2).toFixed(1)}" y="${(h/2+Math.min(w,h)*.055).toFixed(1)}" text-anchor="middle"
+      font-size="${(Math.min(w,h)*(part.k==='back'?.42:.3)).toFixed(1)}" fill="var(--l4)" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-weight="600">${part.label}</text>`:'';
+  const inner=defs+body+sp+jt+txt;
+  return {inner,w,h,pad};
+}
+
+/* 可点击四条之四:同类成组重复 —— 网格里一个件画三个 */
+function svgFor(p,part,seed,group){
+  const r=renderPart(p,part,seed);
+  const n=group?3:1, gap=r.w*.16;
+  const totalW=r.w*n+gap*(n-1);
+  let g='';
+  for(let i=0;i<n;i++){
+    const rr=renderPart(p,part,seed+i*(group?37:0));
+    g+=`<g transform="translate(${(i*(r.w+gap)).toFixed(1)},0)" opacity="${i===0?1:(group?.55:1)}">${rr.inner}</g>`;
+  }
+  const m=r.w*.09;
+  return `<svg viewBox="${-m} ${-m} ${(totalW+m*2).toFixed(1)} ${(r.h+m*2).toFixed(1)}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+
+/* ══════ 采样 ══════ */
+function pick(axis,R){
+  if(LOCK[axis.k]&&PICK[axis.k])return PICK[axis.k];
+  const o=axis.o;
+  return o[Math.floor(R()*o.length)][0];
+}
+function sample(seed){
+  const R=rng(seed);
+  const p={};
+  AXES.forEach(a=>p[a.k]=pick(a,R));
+  return p;
+}
+function labelOf(p){
+  return AXES.map(a=>{
+    const f=a.o.find(x=>x[0]===p[a.k]);
+    return f?f[1]:p[a.k];
+  });
+}
+
+/* ══════ 渲染 ══════ */
+function buildCtrl(){
+  const host=$('#ctrl'); host.innerHTML='';
+  AXES.forEach(a=>{
+    const g=el('div','grp'), h=el('div','gh');
+    h.append(el('span','t',a.t));
+    const lk=el('button','lk'+(LOCK[a.k]?' on':''),LOCK[a.k]?'已锁':'锁');
+    lk.onclick=()=>{LOCK[a.k]=!LOCK[a.k];buildCtrl()};
+    h.append(lk); g.append(h);
+    const o=el('div','opts');
+    a.o.forEach(([v,t])=>{
+      const b=el('button','opt'+(PICK[a.k]===v?' on':''),t);
+      b.onclick=()=>{PICK[a.k]=v;LOCK[a.k]=true;buildCtrl();roll(true)};
+      o.append(b);
+    });
+    g.append(o); host.append(g);
+  });
+  const tip=el('div','note','<b style="color:var(--ink2)">怎么用:</b>先随便重掷几轮,看到某一轴对了就点「锁」,再重掷——锁住的不变,只换其余的。直接点某个选项也会自动锁上。');
+  host.append(tip);
+  const hard=el('div','chk','<h4>已内置的硬约束</h4>'+
+    ['轮廓封闭','与背景有明度差','内部留出文字位','同类成组重复(每格画 3 个)']
+    .map(t=>`<div class="ci"><b>✓</b>${t}</div>`).join('')+
+    '<div class="note">这四条决定「像不像能点的东西」,和世界观无关。工具替你守住,你只判断<b style="color:var(--ink2)">好不好看</b>和<b style="color:var(--ink2)">符不符合世界观</b>。</div>');
+  host.append(hard);
+}
+
+function roll(keep){
+  if(!keep)seedBase=Math.floor(Math.random()*1e9);
+  CELLS=[]; SEL=-1;
+  for(let i=0;i<12;i++)CELLS.push({seed:seedBase+i*104729,p:sample(seedBase+i*104729)});
+  drawGrid(); $('#rp').innerHTML='<div class="empty">点任意一格,看这套形状语言<b>套在五种件上</b>分别长什么样。</div>';
+  $('#bSvg').disabled=true;
+}
+function more(){
+  seedBase+=1e6;
+  for(let i=0;i<12;i++)CELLS.push({seed:seedBase+i*104729,p:sample(seedBase+i*104729)});
+  drawGrid();
+}
+function drawGrid(){
+  const g=$('#grid'); g.innerHTML='';
+  CELLS.forEach((c,i)=>{
+    const d=el('div','cell'+(SEL===i?' sel':''));
+    d.append(el('div','no',String(i+1)));
+    const box=el('div');box.innerHTML=svgFor(c.p,PARTS[0],c.seed,true);
+    d.append(box);
+    const L=labelOf(c.p);
+    d.append(el('div','cap','<b>'+L[1]+'</b>·'+L[3]+'·'+L[4]+(c.p.joint!=='none'?'·'+L[5]:'')));
+    d.onclick=()=>{SEL=i;drawGrid();showDetail(c)};
+    g.append(d);
+  });
+  $('#bSheet').disabled=CELLS.length===0;
+}
+function showDetail(c){
+  const rp=$('#rp'); rp.innerHTML='';
+  rp.append(el('div','rh','这套形状语言套在五种件上'));
+  rp.append(el('div','rs','缩到最小的返回键还认得出是同一套吗?认不出就是这套语言在小元件上不成立。'));
+  const ps=el('div','parts');
+  PARTS.forEach(part=>{
+    const b=el('div','part'); b.append(el('div','pn',part.t));
+    const s=el('div'); s.innerHTML=svgFor(c.p,part,c.seed,false);
+    s.style.maxWidth=Math.min(300,part.w*1.5)+'px';
+    b.append(s); ps.append(b);
+  });
+  rp.append(ps);
+  const pm=el('div','params');
+  AXES.forEach((a,i)=>{
+    const r=el('div','pr');
+    r.append(el('div','k',a.t.split(' · ').pop()),el('div',null,labelOf(c.p)[i]));
+    pm.append(r);
+  });
+  rp.append(pm);
+  $('#bSvg').disabled=false;
+}
+
+/* ══════ 导出 ══════ */
+function dl(name,text){
+  const b=new Blob([text],{type:'image/svg+xml;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+const PALETTE=`<style>:root{--l0:#F2EFE9;--l1:#E4DED4;--l2:#C9C0B2;--l3:#2A2724;--l4:#2A2724;--bgc:#FFFFFF}</style>`;
+function wrapSVG(inner,w,h){
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${PALETTE}<rect width="${w}" height="${h}" fill="#FFFFFF"/>${inner}</svg>`;
+}
+$('#bSvg').onclick=()=>{
+  const c=CELLS[SEL]; if(!c)return;
+  const gap=40; let x=0,inner='',H=0;
+  PARTS.forEach(part=>{
+    const r=renderPart(c.p,part,c.seed);
+    inner+=`<g transform="translate(${x},${(120-r.h)/2})">${r.inner}</g>`;
+    x+=r.w+gap; H=Math.max(H,r.h);
+  });
+  dl('形状语言-'+labelOf(c.p).slice(0,3).join('')+'.svg',wrapSVG(inner,x-gap+40,140));
+  toast('已导出 · 五个件都在里面');
+};
+$('#bSheet').onclick=()=>{
+  const cols=4, cw=260, ch=110; let inner='';
+  CELLS.forEach((c,i)=>{
+    const r=renderPart(c.p,PARTS[0],c.seed);
+    const x=(i%cols)*cw+20, y=Math.floor(i/cols)*ch+20;
+    inner+=`<g transform="translate(${x},${y})">${r.inner}</g>`;
+    inner+=`<text x="${x}" y="${y+r.h+16}" font-size="11" fill="#6D6862" font-family="PingFang SC,sans-serif">${i+1} · ${labelOf(c.p).slice(1,5).join(' · ')}</text>`;
+  });
+  dl('形状变体一屏.svg',wrapSVG(inner,cols*cw+20,Math.ceil(CELLS.length/cols)*ch+30));
+  toast('这一屏都导出了');
+};
+$('#bRoll').onclick=()=>roll(false);
+$('#bMore').onclick=more;
+
+/* 页面内的浅色调色板(预览用) */
+const st=document.createElement('style');
+st.textContent=':root{--l0:#F2EFE9;--l1:#E4DED4;--l2:#C9C0B2;--l3:#2A2724;--l4:#2A2724;--bgc:#232221}';
+document.head.append(st);
+
+buildCtrl(); roll(false);
+</script>
+</body>
+</html>

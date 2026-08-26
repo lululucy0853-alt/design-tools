@@ -33,6 +33,10 @@ Markdown → PDF with proper CJK fonts (tables & code blocks render correctly), 
 ### 📥 capture · `capture.py` / `capture.js`
 Tiny helper scripts that fetch a web page's title/meta and append it to a local inbox note (paired with a personal note-taking workflow). Niche / personal — included for completeness.
 
+### 🔷 Shape Lab · `shape-lab/形状组合器.html`
+The most expensive moment in game-UI work is when the greybox first turns into actual shapes — you only find out whether a shape combination holds up after building it by hand. This tool shows **12 variants at once**: lock the axis that already works, reroll the rest. Pick one and see **the same shape language applied to five parts** (primary button / back key / list row / item slot / title bar), then export SVG into Photoshop. Axes = outline (base · corner · edge) × division × fill × joint decoration.
+⭐ Four hard constraints are baked in (closed outline / value separation from background / room for a label / repeated as a group) — they decide whether something *reads as pressable*, independent of art direction, so you only judge beauty and world fit.
+
 ### 📋 Spec Board · `spec-reader/`
 Turns a game-UI design spec into **a single double-clickable board**, laid out along the 5 layers of game-UI production: layer 1 gives the *why* (business goal / player task / usage frequency + what goes on screen + forced priority order), layer 2 gives the *result* (visual hierarchy high / mid / low + gaze path + primary CTA), and open questions are filed by **which layer they block**, copyable in one click. It does not summarize the spec — it surfaces **what the spec never said**: missing screens, unwritten states, boundaries that must be nailed down before work starts.
 `board-template.html` is the template; `build.py` injects the data. 🔒 Analysis data contains real project content and is git-ignored.
